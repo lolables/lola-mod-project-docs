@@ -1,0 +1,23 @@
+module/skills/docs-organization/scripts/check-staleness.test.sh
+  s_69fb5a28911bb6::t_2ca5f1d8543317 170-285
+  s_69fb5a28911bb6::t_a4526818f7b5f9 73,80-83
+  s_69fb5a28911bb6::t_8101426f07cc3c 25-33
+module/skills/docs-organization/scripts/check-staleness.sh
+  s_69fb5a28911bb6::t_bf01c6300a7bbc 5-13,25-38,40-59,68-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4d9abe808c7fbb75f321916517f886649894ea59",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
