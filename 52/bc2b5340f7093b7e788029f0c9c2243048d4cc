@@ -1,0 +1,76 @@
+module/skills/docs-organization/SKILL.md
+  s_69fb5a28911bb6::t_75e28e55fb32be 66-71,75,77-78
+  s_69fb5a28911bb6::t_8c38f99a0585f8 146
+  s_69fb5a28911bb6::t_55fed8df47fa36 153-160
+  s_69fb5a28911bb6::t_bf0112931dc297 141-145
+  s_69fb5a28911bb6::t_f2a382a998622d 127-131,147-148
+  s_69fb5a28911bb6::t_6b7af923bb7e86 79-83
+  s_69fb5a28911bb6::t_c1648d5b552e56 72-74
+CHANGELOG.md
+  s_69fb5a28911bb6::t_725f13e411961e 17-19
+  s_69fb5a28911bb6::t_574ccf7486e4ae 89-91
+  s_69fb5a28911bb6::t_b3ed33a726c196 54-63
+  s_69fb5a28911bb6::t_b2aeb80bd207fd 11-16,20-27
+module/skills/docs-organization/reference/deterministic-vs-llm.md
+  s_69fb5a28911bb6::t_ecfc55ae82c8c6 29-32
+module/commands/docs-audit.md
+  s_69fb5a28911bb6::t_cfba0f5a15d879 342
+  s_69fb5a28911bb6::t_04a18c46cc5d58 105-110
+  s_69fb5a28911bb6::t_4c11f49d24860b 301-306,311,313-318
+  s_69fb5a28911bb6::t_f936c403af2f3c 70-74
+  s_69fb5a28911bb6::t_af58d1308ef071 167-175,177
+  s_69fb5a28911bb6::t_99650ab23762e5 288-290
+  s_69fb5a28911bb6::t_5af935cf707fac 95-96
+  s_69fb5a28911bb6::t_c02c60efa30253 343-350
+  s_69fb5a28911bb6::t_eb5121e84960d1 59-63
+  s_69fb5a28911bb6::t_a6971d671a0f0a 147
+  s_69fb5a28911bb6::t_cfaaf68cbb5ead 149-159
+  s_69fb5a28911bb6::t_d9f73066344f80 144
+  s_69fb5a28911bb6::t_28ba28b9f81aa2 404-406
+  s_69fb5a28911bb6::t_adf032df505523 460-466
+  s_69fb5a28911bb6::t_55a51d54cc51a5 178-180
+  s_69fb5a28911bb6::t_27526577d4d928 176
+  s_69fb5a28911bb6::t_7d1c65531f0dcd 307-310
+  s_69fb5a28911bb6::t_6a8019c00767cf 391-397
+  s_69fb5a28911bb6::t_7b795ac54cc178 291-294
+  s_69fb5a28911bb6::t_28d9269b5360c2 111-112
+  s_69fb5a28911bb6::t_54c52351c8ed93 91-94
+  s_69fb5a28911bb6::t_40dbd933e7acea 148
+  s_69fb5a28911bb6::t_dac7ffd5b0c05f 145-146
+  s_69fb5a28911bb6::t_68bd16aa51fbb8 455-459
+  s_69fb5a28911bb6::t_269a44906defba 467-471
+  s_69fb5a28911bb6::t_062419235c9538 333-335
+  s_69fb5a28911bb6::t_fc7d656082448c 398-401
+  s_69fb5a28911bb6::t_c8cd12fee4c303 414,422,431
+  s_69fb5a28911bb6::t_e148de5afa664b 331-332
+  s_69fb5a28911bb6::t_5ebd79430f90a0 131-137
+module/commands/docs-update.md
+  s_69fb5a28911bb6::t_bd7a85348a16d6 269-270
+  s_69fb5a28911bb6::t_845b7fb349353c 46-48
+  s_69fb5a28911bb6::t_19879175a1f514 271-272
+  s_69fb5a28911bb6::t_193a2e47e25a52 180-181,186
+  s_69fb5a28911bb6::t_6ef050ccaf5ac0 45,52-53
+  s_69fb5a28911bb6::t_62fb0dcc3f2d9d 49-51
+  s_69fb5a28911bb6::t_66e37c345e85c6 182-185,187-190
+docs/dev/architecture.md
+  s_69fb5a28911bb6::t_c2f7738718a945 53-54,70-72
+  s_69fb5a28911bb6::t_87163ccc4bfc0e 65-69
+  s_69fb5a28911bb6::t_68484c1cd88726 59-64
+  s_69fb5a28911bb6::t_d4cb8b77e038d7 73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "52bc2b5340f7093b7e788029f0c9c2243048d4cc",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
