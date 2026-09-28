@@ -1,0 +1,26 @@
+module/skills/docs-organization/scripts/md-files.mjs
+  s_69fb5a28911bb6::t_91bc9bee7d58fd 1-25
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_69fb5a28911bb6::t_d4b36a870f0612 30-32
+  s_69fb5a28911bb6::t_25819bdcd6209d 17-22
+  s_69fb5a28911bb6::t_2cf36c5eeb3b51 192-193,195-202,207
+module/skills/docs-organization/scripts/check-prose.test.mjs
+  s_69fb5a28911bb6::t_12cb6a804ee4a8 4-8
+  s_69fb5a28911bb6::t_12992db8fc887b 96-154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "42618ec73bf86245b8029412a08285b593446576",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
