@@ -1,0 +1,29 @@
+AGENTS.md
+  s_69fb5a28911bb6::t_ae093123505829 18
+module/skills/docs-organization/SKILL.md
+  s_69fb5a28911bb6::t_75e28e55fb32be 66-71,75,77-83
+  s_69fb5a28911bb6::t_f2a382a998622d 127-131,141-146
+  s_69fb5a28911bb6::t_c1648d5b552e56 72-74
+  s_69fb5a28911bb6::t_f2a988b004f978 154-157
+module/commands/docs-audit.md
+  s_69fb5a28911bb6::t_04a18c46cc5d58 104-111
+  s_69fb5a28911bb6::t_985743758fafe1 70-73
+  s_69fb5a28911bb6::t_f72471dc25d6ab 144
+  s_69fb5a28911bb6::t_27526577d4d928 165-180
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3b7c9250d6866986248f7794235a445dcd96e926",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
