@@ -1,0 +1,55 @@
+module/skills/docs-organization/scripts/check-structure.test.sh
+  s_69fb5a28911bb6::t_79935c7de78099 33-55
+  s_69fb5a28911bb6::t_35b395940a93b2 174-178
+  s_69fb5a28911bb6::t_46ba2d7f7eebf5 120-128,134-173,179-180
+  s_69fb5a28911bb6::t_7e4a6daf7160f5 181-261,263-283
+  s_69fb5a28911bb6::t_5ae76b0efb8f00 262
+  s_69fb5a28911bb6::t_bd048cc005d9fb 129-133
+  s_69fb5a28911bb6::t_905af297e3a5ba 284
+module/skills/docs-organization/scripts/check-structure.sh
+  s_69fb5a28911bb6::t_0c0c278284ff58 4-5,10-16,35-37,39-40
+  s_69fb5a28911bb6::t_0df9096c8160d2 80-89,93-101,103-150,153-182
+  s_69fb5a28911bb6::t_b65fff14e68ad3 90-92,102,151-152
+  s_69fb5a28911bb6::t_034f25d94f98cf 17-34
+  s_69fb5a28911bb6::t_b2ec772d98ac5a 183-184
+module/skills/docs-organization/scripts/check-refs.test.mjs
+  s_69fb5a28911bb6::t_84ccd86350601b 140-147,153
+  s_69fb5a28911bb6::t_e58ef0a2595d49 22-23,29-31
+  s_69fb5a28911bb6::t_91f11758cf6edf 4,6-7
+  s_69fb5a28911bb6::t_79415aa8242d6a 32,103-139,148-152
+AGENTS.md
+  s_69fb5a28911bb6::t_ae093123505829 18
+module/skills/docs-organization/scripts/md-files.mjs
+  s_69fb5a28911bb6::t_91bc9bee7d58fd 1-25
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_69fb5a28911bb6::t_fe4c9e9016c09e 139-144,148-159,166-168
+  s_69fb5a28911bb6::t_f848cb77133aa6 27-30,33-34
+  s_69fb5a28911bb6::t_641787d2acab74 145,160-165,169-170,172
+  s_69fb5a28911bb6::t_3f6c669dfc2e70 39,41-42
+  s_69fb5a28911bb6::t_bcecc7baa3f3fd 25-26,32
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_69fb5a28911bb6::t_25819bdcd6209d 17-18,21-22
+  s_69fb5a28911bb6::t_2cf36c5eeb3b51 192-193,195-202,207
+  s_69fb5a28911bb6::t_d4b36a870f0612 30-32
+  s_69fb5a28911bb6::t_836d9a5edeec48 19-20
+module/skills/docs-organization/scripts/check-prose.test.mjs
+  s_69fb5a28911bb6::t_502a66311c9e23 155-160
+  s_69fb5a28911bb6::t_12992db8fc887b 96-154,161
+  s_69fb5a28911bb6::t_12cb6a804ee4a8 4-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f696ff743f357da1889c40cf11e424e46072fc32",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
