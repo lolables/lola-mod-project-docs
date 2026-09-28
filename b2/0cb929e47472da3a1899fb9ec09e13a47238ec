@@ -1,0 +1,25 @@
+module/skills/docs-organization/scripts/check-structure.test.sh
+  s_69fb5a28911bb6::t_79935c7de78099 33-55
+  s_69fb5a28911bb6::t_46ba2d7f7eebf5 120-128,134-173,179-180
+  s_69fb5a28911bb6::t_35b395940a93b2 174-178
+  s_69fb5a28911bb6::t_bd048cc005d9fb 129-133
+module/skills/docs-organization/scripts/check-structure.sh
+  s_69fb5a28911bb6::t_0c0c278284ff58 4-5,10-19,21-22
+  s_69fb5a28911bb6::t_b65fff14e68ad3 62-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b20cb929e47472da3a1899fb9ec09e13a47238ec",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
