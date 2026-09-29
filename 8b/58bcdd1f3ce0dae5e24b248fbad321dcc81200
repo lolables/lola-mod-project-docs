@@ -1,0 +1,20 @@
+module/commands/diagram-test.md
+  s_69fb5a28911bb6::t_42cfcc3072e51b 89-92
+  s_69fb5a28911bb6::t_fa3fa39cb94dcb 31-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8b58bcdd1f3ce0dae5e24b248fbad321dcc81200",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
