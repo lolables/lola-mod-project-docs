@@ -1,0 +1,23 @@
+module/skills/docs-organization/reference/mermaid-house-style.md
+  s_69fb5a28911bb6::t_46c8cd5398234f 186,188-199
+module/skills/docs-organization/scripts/lint-mermaid.mjs
+  s_69fb5a28911bb6::t_26f7881f8385b0 320-326
+module/skills/docs-organization/scripts/lint-mermaid.test.mjs
+  s_69fb5a28911bb6::t_e77c7e6a0cf930 438-453
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cb64139200b0518d24b1b644016b4d0e6f67bab0",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
