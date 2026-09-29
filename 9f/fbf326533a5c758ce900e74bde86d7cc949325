@@ -1,0 +1,46 @@
+module/AGENTS.md
+  s_69fb5a28911bb6::t_3c5d8a703af168 19-20
+module/skills/docs-organization/scripts/apply-palette.mjs
+  s_69fb5a28911bb6::t_bbbbe5ad9ddcda 7-11,21,116-189,191-200
+tests/scripts/docs-organization/__fixtures__/fenced-low-contrast.md
+  s_69fb5a28911bb6::t_b4688135d4c948 1-11
+tests/scripts/docs-organization/swap-palette.test.sh
+  s_69fb5a28911bb6::t_f2e67fd584ff2b 58,60,82,106
+  s_69fb5a28911bb6::t_24cbc31a0e3e6a 99
+  s_69fb5a28911bb6::t_ee2efd4ebd54df 109-110
+  s_69fb5a28911bb6::t_b4688135d4c948 44-57,59,61-81,83-98,100-105,107-108,111-123
+docs/dev/architecture.md
+  s_69fb5a28911bb6::t_3c5d8a703af168 146-150
+module/skills/docs-organization/scripts/lint-mermaid.mjs
+  s_69fb5a28911bb6::t_e2eec770edb8aa 292-295,309-311
+module/commands/diagram-test.md
+  s_69fb5a28911bb6::t_8a680d416d0d65 40-55
+module/skills/docs-organization/scripts/swap-palette.sh
+  s_69fb5a28911bb6::t_24cbc31a0e3e6a 18-19,62
+  s_69fb5a28911bb6::t_b4560331a5ead8 2-4,6-13,16,20-41,61,63-71,73
+  s_69fb5a28911bb6::t_1bbca3a8785ee4 17
+module/commands/docs-update.md
+  s_69fb5a28911bb6::t_8a680d416d0d65 54-56,84-105,264-271
+Taskfile.yml
+  s_69fb5a28911bb6::t_3c5d8a703af168 149
+README.md
+  s_69fb5a28911bb6::t_3c5d8a703af168 119-122
+module/skills/docs-organization/reference/mermaid-house-style.md
+  s_69fb5a28911bb6::t_382b02720ab12a 107-134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9ffbf326533a5c758ce900e74bde86d7cc949325",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
