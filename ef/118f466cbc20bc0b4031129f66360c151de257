@@ -1,0 +1,24 @@
+tests/scripts/docs-organization/fetch-citations.test.mjs
+  s_24900a2f1e77aa::t_3d8e042dbfa416 548-567
+  s_24900a2f1e77aa::t_a0d0447a6f94af 7
+  s_24900a2f1e77aa::t_1079638dac05eb 132,137
+module/skills/docs-organization/scripts/fetch-citations.mjs
+  s_24900a2f1e77aa::t_910e5bbf78931b 332,334,337-341,343-345
+  s_24900a2f1e77aa::t_3faaa4e984cf04 90-95,98-100,106-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ef118f466cbc20bc0b4031129f66360c151de257",
+  "prompts": {},
+  "sessions": {
+    "s_24900a2f1e77aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "81a20261-f14e-49cf-a029-d1883fbbdb05",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
