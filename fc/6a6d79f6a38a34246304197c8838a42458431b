@@ -1,0 +1,19 @@
+module/commands/docs-init.md
+  s_69fb5a28911bb6::t_c5159e554c7d64 72-80,89-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fc6a6d79f6a38a34246304197c8838a42458431b",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
