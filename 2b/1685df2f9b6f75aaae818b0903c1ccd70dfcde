@@ -1,0 +1,226 @@
+tests/scripts/docs-organization/__fixtures__/mixed-fences.md
+  s_69fb5a28911bb6::t_8db512ac6a33d8 1-16
+module/skills/docs-organization/scripts/md-files.mjs
+  s_69fb5a28911bb6::t_91bc9bee7d58fd 1-25
+module/skills/docs-organization/scripts/css-named-colors.mjs
+  s_69fb5a28911bb6::t_b01c8431902c2e 1-155
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_69fb5a28911bb6::t_093503be98ac10 6,363,367
+  s_69fb5a28911bb6::t_cd627a92a5ffca 117-244
+  s_69fb5a28911bb6::t_128be139a92912 307-308,396
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-5,7-116,245-306,309-362,364-366,368-395,397-401
+module/skills/docs-organization/scripts/vendor/LICENSES.md
+  s_69fb5a28911bb6::t_0cc25d3c8df514 6,459-485
+  s_69fb5a28911bb6::t_dd4eb2e8eedb39 7
+  s_69fb5a28911bb6::t_110fc1d03249b7 8-9
+  s_69fb5a28911bb6::t_051a154090e101 486-487
+tests/scripts/docs-organization/is-main.test.mjs
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-97
+module/skills/docs-organization/scripts/lint-mermaid.mjs
+  s_69fb5a28911bb6::t_bfb42ee06e1569 474-476
+  s_69fb5a28911bb6::t_eea716a361affe 291-322,326-332,337-340,342,345-369
+  s_69fb5a28911bb6::t_e2eec770edb8aa 325
+  s_69fb5a28911bb6::t_1a19a39d0702eb 21-22,24-27,30-38,40-48,51-56,58-66,112,162-166,171-175,177,179-218,220-224,228,230,233,248,251,261,324,442-444,446
+  s_69fb5a28911bb6::t_9575f6040128ff 481
+  s_69fb5a28911bb6::t_90c03cd6cd949e 109
+  s_69fb5a28911bb6::t_13f0f4bf899b59 28-29,39,57
+  s_69fb5a28911bb6::t_19f12b035c9e54 1,92-107,113-114,119-120,122-130,132,134,136-137,140-156,158-161,256,268-269,271-286,336
+  s_69fb5a28911bb6::t_dd2d40d898722b 5
+  s_69fb5a28911bb6::t_d26e5c44639a13 335,401,445,448
+  s_69fb5a28911bb6::t_26f7881f8385b0 417-423
+  s_69fb5a28911bb6::t_ad4e9657604903 323
+tests/scripts/adr/adr-index.test.sh
+  s_69fb5a28911bb6::t_8937476f230606 78-155
+  s_69fb5a28911bb6::t_0e837324ecd264 1-77,156-158
+module/skills/docs-organization/scripts/check-staleness.mjs
+  s_69fb5a28911bb6::t_f404878031cf76 111,115,126,150-176
+  s_69fb5a28911bb6::t_1d51ba8007a73c 87-91
+  s_69fb5a28911bb6::t_ad12943759b18b 230-235
+  s_69fb5a28911bb6::t_1bf3d7b7ac78cc 25-30,41-47,108-110,112-113
+  s_69fb5a28911bb6::t_509fa0e9c54560 241
+  s_69fb5a28911bb6::t_c87f647bb80142 37-40
+  s_69fb5a28911bb6::t_73620d6bd4ba2d 204-205,214-215,222-229
+  s_69fb5a28911bb6::t_3c859170733239 1,20-22,48-51,65-67,73-86,92-102,107,114,116-125,127,129-139,177-191,194-195,197-198,201-203,212-213,216-221,236-240,242-246
+  s_69fb5a28911bb6::t_b210a9b21ed63b 192-193,199-200,206-211
+  s_69fb5a28911bb6::t_bf4f94900ddba0 149
+  s_69fb5a28911bb6::t_10a00773bc7720 60-64
+  s_69fb5a28911bb6::t_ead75dc466d910 59
+  s_69fb5a28911bb6::t_4acb726dbacfb9 31
+  s_69fb5a28911bb6::t_c81c2ca6c71e9c 71-72
+  s_69fb5a28911bb6::t_cd77b644dcf7f6 23-24
+  s_69fb5a28911bb6::t_a714c54b679e78 68-70
+  s_69fb5a28911bb6::t_7196b6613a4e20 196
+  s_69fb5a28911bb6::t_37e75a65fdd6b1 2-19,32-36,52-58
+  s_69fb5a28911bb6::t_147fd8c3040e9d 103,106
+  s_69fb5a28911bb6::t_a2dc237d9aa9cc 104-105,128,140-148
+tests/scripts/docs-organization/check-staleness.test.mjs
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-12,15-116,118-406,409-425,427-547,597-602
+  s_69fb5a28911bb6::t_d65e48ba6b4e2c 548-596
+  s_69fb5a28911bb6::t_128be139a92912 13-14,117,407-408,426
+module/skills/docs-organization/scripts/is-main.mjs
+  s_69fb5a28911bb6::t_4859d4477b4299 17,22,24-27
+  s_69fb5a28911bb6::t_abea6d552e101e 4-15
+  s_69fb5a28911bb6::t_49a773490fa71a 1-3,16,18-21,23,28-30
+module/skills/docs-organization/scripts/check-structure.sh
+  s_69fb5a28911bb6::t_034f25d94f98cf 27-44
+  s_69fb5a28911bb6::t_30f950950acc92 10-19,212
+  s_69fb5a28911bb6::t_b65fff14e68ad3 120,130,179-180
+  s_69fb5a28911bb6::t_c68c7fbae3f4e3 199-200,202
+  s_69fb5a28911bb6::t_fa3f09563f6ab1 65-74,89
+  s_69fb5a28911bb6::t_52954aa4b235ce 119
+  s_69fb5a28911bb6::t_0df9096c8160d2 106,111-115,121-129,131-178,181-198,201,203-211
+  s_69fb5a28911bb6::t_65b1fdbd259c34 75-79,82-84
+  s_69fb5a28911bb6::t_44eb0723b5ea94 107-110,116-118
+  s_69fb5a28911bb6::t_0c0c278284ff58 4-5,20-26,45-47,49-50
+  s_69fb5a28911bb6::t_600842a0275509 213
+module/skills/docs-organization/scripts/vendor/merval.mjs
+  s_69fb5a28911bb6::t_124ee5b6abf3dc 1,420,2253,2260
+.taskfiles/scripts/build-vendor.sh
+  s_69fb5a28911bb6::t_95e7c8c5cc3214 13-14,18-19,21-22,28,32,36,38,66-67,70
+  s_69fb5a28911bb6::t_19cee1bd1f49e0 99
+  s_69fb5a28911bb6::t_0e2448795b028f 52-55,64,90-96
+  s_69fb5a28911bb6::t_becdfbcbaa95a7 88-89
+  s_69fb5a28911bb6::t_7ae28ab6ba2efc 6-9
+  s_69fb5a28911bb6::t_57998a6a1da497 65
+module/skills/docs-organization/scripts/contrast.mjs
+  s_69fb5a28911bb6::t_782e2861c6e4b2 5
+  s_69fb5a28911bb6::t_240097717516cf 6,44-52
+  s_69fb5a28911bb6::t_524dd514086ad6 53
+.github/dependabot.yml
+  s_69fb5a28911bb6::t_5d178ce49ebc6c 16-17,19
+tests/scripts/docs-organization/contrast.test.mjs
+  s_69fb5a28911bb6::t_d4eff09d05f15e 3-4,52-80,82-84
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-2,5-51
+  s_69fb5a28911bb6::t_240097717516cf 81
+.gitignore
+  s_69fb5a28911bb6::t_5d178ce49ebc6c 41,44
+tests/scripts/docs-organization/check-structure.test.sh
+  s_69fb5a28911bb6::t_0e837324ecd264 1-388
+Taskfile.yml
+  s_69fb5a28911bb6::t_551d42bd22d907 70
+  s_69fb5a28911bb6::t_3c5d8a703af168 149
+  s_69fb5a28911bb6::t_5ebaf562e2fca1 96-98
+  s_69fb5a28911bb6::t_92dbd502980416 23
+  s_69fb5a28911bb6::t_1f714bb6f8ba7e 11-12,25,49,54,56,158
+  s_69fb5a28911bb6::t_3e872f8ecc41ec 55
+.github/workflows/ci.yml
+  s_69fb5a28911bb6::t_a045bdd20ccb04 54-55
+  s_69fb5a28911bb6::t_d0bf3948b7420b 56-57
+module/skills/docs-organization/scripts/swap-palette.sh
+  s_69fb5a28911bb6::t_e7221e3fb3b72a 6-9
+  s_69fb5a28911bb6::t_3e872f8ecc41ec 73
+  s_69fb5a28911bb6::t_24cbc31a0e3e6a 19-20,63
+  s_69fb5a28911bb6::t_b4560331a5ead8 2-4,10-14,17,21-42,62,64-72,74
+  s_69fb5a28911bb6::t_f703a1009e2855 18
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_69fb5a28911bb6::t_f848cb77133aa6 29-32,35-36
+  s_69fb5a28911bb6::t_54074ede889909 93-94
+  s_69fb5a28911bb6::t_d16042996c246f 171-173
+  s_69fb5a28911bb6::t_5ea2344b5e6ab0 15-16
+  s_69fb5a28911bb6::t_a53168d3a51d26 251
+  s_69fb5a28911bb6::t_bcecc7baa3f3fd 27-28,34
+  s_69fb5a28911bb6::t_641787d2acab74 220,235-240,244-245,247
+  s_69fb5a28911bb6::t_3f6c669dfc2e70 41,43-44
+  s_69fb5a28911bb6::t_f695069f8e9ac5 45
+  s_69fb5a28911bb6::t_5bf77b5962824d 100-103
+  s_69fb5a28911bb6::t_fe4c9e9016c09e 214-219,223-234,241-243
+  s_69fb5a28911bb6::t_a741290af087bb 109-116,121,123,125-127,129,133-135,138-140,143,146
+  s_69fb5a28911bb6::t_9b4dc414be2f19 97-99,104-106
+  s_69fb5a28911bb6::t_889abc0b9f4eb7 19-20
+  s_69fb5a28911bb6::t_790afec335b866 7-8
+  s_69fb5a28911bb6::t_058019b963707b 49-87,107
+  s_69fb5a28911bb6::t_342df89568bbb4 210-213
+  s_69fb5a28911bb6::t_cccf021bfcdcb2 17
+  s_69fb5a28911bb6::t_136af1d5076a0c 18
+  s_69fb5a28911bb6::t_22d6fb57b5f97b 4-5,184,189
+  s_69fb5a28911bb6::t_05217a69b34aba 108
+tests/scripts/docs-organization/validate-palette.test.mjs
+  s_69fb5a28911bb6::t_093503be98ac10 6,103,107
+  s_69fb5a28911bb6::t_128be139a92912 95,134
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-5,7-94,96-102,104-106,108-133,135-141
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_69fb5a28911bb6::t_093503be98ac10 7,181,185
+  s_69fb5a28911bb6::t_128be139a92912 110-111,217,231
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-6,8-109,112-180,182-184,186-216,218-230,232-236
+tests/scripts/docs-organization/apply-palette.test.mjs
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-5,7-10,13-105,107-109,111-134,136-141
+  s_69fb5a28911bb6::t_093503be98ac10 6,106,110
+  s_69fb5a28911bb6::t_128be139a92912 11-12,135
+tests/e2e/docs-discipline.venom.yml
+  s_69fb5a28911bb6::t_9b3be7aa1d6fda 121
+  s_69fb5a28911bb6::t_e356f498913b44 168
+  s_69fb5a28911bb6::t_63d69b80be6cbe 135,150,164
+  s_69fb5a28911bb6::t_139b517806ee5c 155-163,165-167
+  s_69fb5a28911bb6::t_aaf9fd0a1e53e6 169
+tests/scripts/docs-organization/__fixtures__/fenced-low-contrast.md
+  s_69fb5a28911bb6::t_b4688135d4c948 1-11
+tests/lint-quoted-paths.bats
+  s_69fb5a28911bb6::t_3666705a324d62 14-20
+  s_69fb5a28911bb6::t_ec86550e6e5a4d 1-13,21-26
+tests/scripts/docs-organization/lint-mermaid.test.mjs
+  s_69fb5a28911bb6::t_05c52be6e5ede2 10,461,482,580
+  s_69fb5a28911bb6::t_d4d906a8347ad4 307-380
+  s_69fb5a28911bb6::t_66129ee0be7728 635,641
+  s_69fb5a28911bb6::t_d4cf03cf1a313c 647-684
+  s_69fb5a28911bb6::t_093503be98ac10 457
+  s_69fb5a28911bb6::t_e4b1343997ec8a 1-9,11-306,381-456,458-460,462-481,483-528,565-579,581-587
+  s_69fb5a28911bb6::t_752639a918ed99 529-564
+  s_69fb5a28911bb6::t_e6c78c4801a04c 588-634,636-640,642-646
+module/skills/docs-organization/scripts/vendor/markdown-it.mjs
+  s_69fb5a28911bb6::t_fba26066a9f589 31,33,270,291,300,383,447,465,647,658,661,664,667,670,673,676,682,688,742,1109,1118,1161,1176,1381,1389,1424,1499,1552,1717,1860,1922,1933,1943,1957,1968,2065,2127,2277,2307,2334,2491,2681,2707,2776,2901,2935,3159,3334,3400,3416,3475,3516,3578,3615,3689,3761,3807,3844,3875,3926,3971,4067,4154,4262,4375,4433,4471,4512,4576,4600,4707,4749,5136,5139,5178,5236,5313
+tests/scripts/docs-organization/swap-palette.test.sh
+  s_69fb5a28911bb6::t_72278170061d1c 81-82
+  s_69fb5a28911bb6::t_7cb766c7a48d1a 85-116
+  s_69fb5a28911bb6::t_b4688135d4c948 44-57,59,61-74,117-123,125-140,142-147,154-155,158-170
+  s_69fb5a28911bb6::t_d4cf03cf1a313c 75-80,83-84
+  s_69fb5a28911bb6::t_24cbc31a0e3e6a 141
+  s_69fb5a28911bb6::t_f2e67fd584ff2b 58,60,124,153
+  s_69fb5a28911bb6::t_194e0e2b927d65 148-152
+  s_69fb5a28911bb6::t_408a9547249a44 1-43,171-173
+  s_69fb5a28911bb6::t_ee2efd4ebd54df 156-157
+module/skills/docs-organization/scripts/apply-palette.mjs
+  s_69fb5a28911bb6::t_1be54618f54c6c 167
+  s_69fb5a28911bb6::t_bbbbe5ad9ddcda 7-11,21,116-154,161-166,168-194,196-205
+  s_69fb5a28911bb6::t_973c21424e2cf0 215
+  s_69fb5a28911bb6::t_e79ca89d5e5b26 20
+  s_69fb5a28911bb6::t_73a7cfd9252bcd 155-160
+.taskfiles/scripts/build-linguist-data.mjs
+  s_69fb5a28911bb6::t_f240034791483a 1-19,22-27,29-33,40-48,57-67,72-76,79-87,89-117
+  s_69fb5a28911bb6::t_f32a6eebae7ce5 34-39,49-56,68-71,77-78,88
+  s_69fb5a28911bb6::t_95e7c8c5cc3214 20-21
+  s_69fb5a28911bb6::t_ef24463163b26b 28
+module/skills/adr/scripts/adr-index.sh
+  s_69fb5a28911bb6::t_53690f73b51bd4 89,91,93,95-96
+  s_69fb5a28911bb6::t_a591e10aa1c42f 41-66
+module/skills/docs-organization/scripts/validate-palette.mjs
+  s_69fb5a28911bb6::t_0c9406cf51b364 17
+  s_69fb5a28911bb6::t_43e66bfadfb5ce 95
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_69fb5a28911bb6::t_ac3335256ebb1d 22
+  s_69fb5a28911bb6::t_c50509393cbde5 215
+  s_69fb5a28911bb6::t_c45f339d83251a 33
+  s_69fb5a28911bb6::t_d4b36a870f0612 30-32
+  s_69fb5a28911bb6::t_836d9a5edeec48 19-20
+  s_69fb5a28911bb6::t_2cf36c5eeb3b51 193-194,196-203,208
+  s_69fb5a28911bb6::t_25819bdcd6209d 17-18,21
+tests/scripts/docs-organization/__fixtures__/fenced-blocks.md
+  s_69fb5a28911bb6::t_6589767b032e0e 1-28
+tests/scripts/docs-organization/__fixtures__/syntax-error-unmasked.mmd
+  s_69fb5a28911bb6::t_5d5b4a9d89b722 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2b1685df2f9b6f75aaae818b0903c1ccd70dfcde",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
