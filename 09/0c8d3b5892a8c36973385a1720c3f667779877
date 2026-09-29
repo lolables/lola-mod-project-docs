@@ -1,0 +1,42 @@
+module/commands/docs-audit.md
+  s_24900a2f1e77aa::t_2ba88f5e62de25 295-297
+  s_24900a2f1e77aa::t_87bea373ee8526 695
+  s_24900a2f1e77aa::t_934cfccde8e842 301-318
+  s_24900a2f1e77aa::t_153d66f6677516 46-48
+  s_24900a2f1e77aa::t_d0355395a86356 415-416
+  s_24900a2f1e77aa::t_ea1e63d088fc63 498-499
+  s_24900a2f1e77aa::t_90bc8f4f30f661 393-395
+  s_24900a2f1e77aa::t_fee8283703359a 444-446
+  s_24900a2f1e77aa::t_0de69fa9bd957e 463-465,471-473
+  s_24900a2f1e77aa::t_3dbd21b315c57a 131-133
+  s_24900a2f1e77aa::t_0190fe7f503de9 467-470
+  s_24900a2f1e77aa::t_456d1881e82935 447
+  s_24900a2f1e77aa::t_c2266c3f4f4e97 246-258
+  s_24900a2f1e77aa::t_798c2bbf8dcec8 22-27
+  s_24900a2f1e77aa::t_b4ce772dc0a8a8 598-611
+  s_24900a2f1e77aa::t_d64a8175f53750 124
+  s_24900a2f1e77aa::t_0e7c3f0fc12121 202-211
+  s_24900a2f1e77aa::t_38e0ef62991bc8 3
+  s_24900a2f1e77aa::t_46808b94cf3c3f 76-117,121
+  s_24900a2f1e77aa::t_3501d5ffe66ca4 678-679,682-688
+module/commands/docs-update.md
+  s_24900a2f1e77aa::t_1e6a49796b5304 352-357
+  s_24900a2f1e77aa::t_11c28dd54de8f3 238-242
+  s_24900a2f1e77aa::t_df6cdd729dcf33 75-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "090c8d3b5892a8c36973385a1720c3f667779877",
+  "prompts": {},
+  "sessions": {
+    "s_24900a2f1e77aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "81a20261-f14e-49cf-a029-d1883fbbdb05",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
