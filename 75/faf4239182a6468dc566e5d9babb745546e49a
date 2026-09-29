@@ -1,0 +1,21 @@
+module/skills/docs-organization/scripts/md-lines.mjs
+  s_24900a2f1e77aa::t_511ee6e3217f6b 1-63
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_24900a2f1e77aa::t_511ee6e3217f6b 43,47,81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "75faf4239182a6468dc566e5d9babb745546e49a",
+  "prompts": {},
+  "sessions": {
+    "s_24900a2f1e77aa": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "81a20261-f14e-49cf-a029-d1883fbbdb05",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
