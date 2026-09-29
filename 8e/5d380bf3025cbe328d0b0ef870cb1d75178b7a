@@ -1,0 +1,33 @@
+tests/scripts/docs-organization/__fixtures__/mixed-fences.md
+  s_69fb5a28911bb6::t_8db512ac6a33d8 1-16
+module/skills/docs-organization/reference/mermaid-house-style.md
+  s_69fb5a28911bb6::t_af079594668baf 116-120
+tests/scripts/docs-organization/lint-mermaid.test.mjs
+  s_69fb5a28911bb6::t_752639a918ed99 529-564
+  s_69fb5a28911bb6::t_d4d906a8347ad4 307-380
+tests/scripts/docs-organization/swap-palette.test.sh
+  s_69fb5a28911bb6::t_7cb766c7a48d1a 85-116
+  s_69fb5a28911bb6::t_194e0e2b927d65 148-152
+module/skills/docs-organization/scripts/swap-palette.sh
+  s_69fb5a28911bb6::t_e7221e3fb3b72a 6-9
+module/skills/docs-organization/scripts/lint-mermaid.mjs
+  s_69fb5a28911bb6::t_eea716a361affe 291-323,326-332,337-342,345-369
+module/skills/docs-organization/scripts/apply-palette.mjs
+  s_69fb5a28911bb6::t_73a7cfd9252bcd 155-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8e5d380bf3025cbe328d0b0ef870cb1d75178b7a",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
