@@ -1,0 +1,39 @@
+module/commands/docs-audit.md
+  s_69fb5a28911bb6::t_0fbaeee523082b 466
+module/skills/docs-organization/scripts/lint-mermaid.test.mjs
+  s_69fb5a28911bb6::t_b4ad263da0ca93 4,267
+  s_69fb5a28911bb6::t_99d17774c23ef9 127-199,202-259,266,268-271
+  s_69fb5a28911bb6::t_e34b0a05164f3b 260-265
+  s_69fb5a28911bb6::t_a4f101a00f8932 33-40,59-60,64-65,69-71
+  s_69fb5a28911bb6::t_0d82a0e9b8abf4 200-201
+module/skills/docs-organization/scripts/__fixtures__/syntax-error-unmasked.mmd
+  s_69fb5a28911bb6::t_75f13c10d55b86 1-4
+module/skills/docs-organization/scripts/lint-mermaid.mjs
+  s_69fb5a28911bb6::t_13f0f4bf899b59 28-29,39,57
+  s_69fb5a28911bb6::t_1a19a39d0702eb 21-22,24-27,30-38,40-48,51-56,58-66,101-103,108-112,117-121,123-148,150-167,169-170,174,176,179,194,197,207,221,236,246,257-258,261,264,268-272,339-342
+module/commands/diagram-test.md
+  s_69fb5a28911bb6::t_0fbaeee523082b 38-39
+docs/dev/architecture.md
+  s_69fb5a28911bb6::t_0f8daa4f7cb85c 126-135
+module/skills/docs-organization/reference/mermaid-house-style.md
+  s_69fb5a28911bb6::t_275b8bce7d4009 112-128,132-135
+  s_69fb5a28911bb6::t_f7ebf2367b71f1 136
+module/skills/docs-organization/scripts/__fixtures__/fenced-blocks.md
+  s_69fb5a28911bb6::t_75f13c10d55b86 1-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9eee652a4a704007fffc18a6a0fc95f3d83a52f3",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
