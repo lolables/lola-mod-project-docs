@@ -1,0 +1,60 @@
+module/skills/docs-organization/scripts/lint-mermaid.test.mjs
+  s_69fb5a28911bb6::t_121448653ac331 3,6
+  s_69fb5a28911bb6::t_816f58181ab3f5 218-275
+  s_69fb5a28911bb6::t_e311e6162e345b 4
+module/skills/docs-organization/scripts/check-prose.test.mjs
+  s_69fb5a28911bb6::t_370e73862ae496 162-218
+  s_69fb5a28911bb6::t_58e94a509c3072 5,8
+module/skills/docs-organization/scripts/package.json
+  s_69fb5a28911bb6::t_4a73bb16b36c18 16
+module/skills/docs-organization/scripts/lint-mermaid.mjs
+  s_69fb5a28911bb6::t_dd2d40d898722b 5
+  s_69fb5a28911bb6::t_9575f6040128ff 300
+module/skills/docs-organization/scripts/is-main.test.mjs
+  s_69fb5a28911bb6::t_bd29ff24ce0512 36-44
+  s_69fb5a28911bb6::t_b5648253ee9f4d 1-35,45-97
+module/skills/docs-organization/scripts/validate-palette.mjs
+  s_69fb5a28911bb6::t_43e66bfadfb5ce 95
+  s_69fb5a28911bb6::t_0c9406cf51b364 17
+module/skills/docs-organization/scripts/apply-palette.test.mjs
+  s_69fb5a28911bb6::t_e9afb0a7efd472 3-5,7
+  s_69fb5a28911bb6::t_f0800c15dcd7c8 89-136
+module/skills/docs-organization/scripts/check-staleness.mjs
+  s_69fb5a28911bb6::t_509fa0e9c54560 159
+  s_69fb5a28911bb6::t_c81c2ca6c71e9c 39,42-43
+module/skills/docs-organization/scripts/check-refs.test.mjs
+  s_69fb5a28911bb6::t_2f56325b67eae1 154-204
+  s_69fb5a28911bb6::t_4bf983d7536481 4,7
+module/skills/docs-organization/scripts/is-main.mjs
+  s_69fb5a28911bb6::t_49a773490fa71a 1-23
+module/skills/docs-organization/scripts/apply-palette.mjs
+  s_69fb5a28911bb6::t_973c21424e2cf0 121
+  s_69fb5a28911bb6::t_e79ca89d5e5b26 15
+module/skills/docs-organization/scripts/check-staleness.test.mjs
+  s_69fb5a28911bb6::t_f683b079fbd1f2 407
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_69fb5a28911bb6::t_c45f339d83251a 33
+  s_69fb5a28911bb6::t_c50509393cbde5 215
+module/skills/docs-organization/scripts/validate-palette.test.mjs
+  s_69fb5a28911bb6::t_a5c2f12e15e225 3-7
+  s_69fb5a28911bb6::t_1c13f4b7671a27 78-136
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_69fb5a28911bb6::t_f695069f8e9ac5 43
+  s_69fb5a28911bb6::t_a53168d3a51d26 177
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7a9ddc6f1029fe3f9f013b675839f54033a46027",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
