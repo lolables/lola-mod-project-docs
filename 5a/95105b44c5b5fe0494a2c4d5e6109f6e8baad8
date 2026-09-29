@@ -1,0 +1,29 @@
+CHANGELOG.md
+  s_69fb5a28911bb6::t_c847b828c9ef87 16
+README.md
+  s_69fb5a28911bb6::t_c847b828c9ef87 115-118
+module/AGENTS.md
+  s_69fb5a28911bb6::t_c847b828c9ef87 20-21
+module/commands/docs-update.md
+  s_69fb5a28911bb6::t_c847b828c9ef87 74-77
+module/skills/docs-organization/SKILL.md
+  s_69fb5a28911bb6::t_c847b828c9ef87 161
+module/skills/docs-organization/reference/deterministic-vs-llm.md
+  s_69fb5a28911bb6::t_c847b828c9ef87 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5a95105b44c5b5fe0494a2c4d5e6109f6e8baad8",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
