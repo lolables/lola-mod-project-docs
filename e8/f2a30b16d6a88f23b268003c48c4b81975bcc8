@@ -1,0 +1,22 @@
+module/skills/adr/scripts/adr-index.sh
+  s_69fb5a28911bb6::t_a591e10aa1c42f 41-66
+  s_69fb5a28911bb6::t_53690f73b51bd4 89,91,93,95-96
+tests/scripts/adr/adr-index.test.sh
+  s_69fb5a28911bb6::t_8937476f230606 78-155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e8f2a30b16d6a88f23b268003c48c4b81975bcc8",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
