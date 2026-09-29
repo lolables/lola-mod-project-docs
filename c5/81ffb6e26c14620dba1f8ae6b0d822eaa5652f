@@ -1,0 +1,40 @@
+module/skills/docs-organization/scripts/is-main.mjs
+  s_69fb5a28911bb6::t_abea6d552e101e 4-15
+  s_69fb5a28911bb6::t_4859d4477b4299 17,22,24-27
+module/skills/docs-organization/scripts/check-prose.test.mjs
+  s_69fb5a28911bb6::t_e0266e0d707c6c 1,5,8-21
+  s_69fb5a28911bb6::t_a4100e5f0981a8 181-185,188,190,197-198,201-207,209,215,219,224-235
+module/skills/docs-organization/scripts/check-refs.test.mjs
+  s_69fb5a28911bb6::t_b4ed4f899065ec 1,4,7,10-21
+  s_69fb5a28911bb6::t_dceafbe671bef5 173-177,180,182,189-194,196,198,200,206,210
+  s_69fb5a28911bb6::t_0f364334965000 22
+module/skills/docs-organization/scripts/apply-palette.test.mjs
+  s_69fb5a28911bb6::t_2b127b300e342e 106-110,122,124,133
+  s_69fb5a28911bb6::t_8d93d6cbdded28 1,3,7,17-28
+  s_69fb5a28911bb6::t_7307835de9625f 29
+module/skills/docs-organization/scripts/validate-palette.test.mjs
+  s_69fb5a28911bb6::t_6214f0544851f7 103-107,120,122,132
+  s_69fb5a28911bb6::t_629e5604bbb1b9 1,4,7,10-21
+  s_69fb5a28911bb6::t_bcae288db8be51 22
+module/skills/docs-organization/scripts/lint-mermaid.test.mjs
+  s_69fb5a28911bb6::t_53a8856248d135 159,162-173
+  s_69fb5a28911bb6::t_44b21344a9605d 235-239,251-256,258,260,266,270,278
+  s_69fb5a28911bb6::t_9376e56061af8f 1,6
+  s_69fb5a28911bb6::t_c05a1a393d1bcb 174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c581ffb6e26c14620dba1f8ae6b0d822eaa5652f",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
