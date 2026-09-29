@@ -1,0 +1,40 @@
+module/commands/adr-review.md
+  s_69fb5a28911bb6::t_e8e1b24f2f1f07 64
+module/commands/docs-init.md
+  s_69fb5a28911bb6::t_791a3a2cc10b5a 69
+module/commands/adr-new.md
+  s_69fb5a28911bb6::t_797af0fa2458d3 46
+module/commands/docs-audit.md
+  s_69fb5a28911bb6::t_28ef0f1143bc18 58
+  s_69fb5a28911bb6::t_2b2ca469a938ce 20-24
+  s_69fb5a28911bb6::t_dc862fd80efb63 114
+  s_69fb5a28911bb6::t_aa4ec3ae99c485 74
+  s_69fb5a28911bb6::t_c4f103cc7439d3 55
+module/commands/docs-update.md
+  s_69fb5a28911bb6::t_ca7f0247ca9e3a 61
+  s_69fb5a28911bb6::t_581fdbaf373b97 70,112,229
+module/commands/diagram-test.md
+  s_69fb5a28911bb6::t_21d2a53ec746e1 33
+  s_69fb5a28911bb6::t_9d96e4e3fe7572 48
+  s_69fb5a28911bb6::t_699561a21f9dd7 55-56
+tests/lint-quoted-paths.bats
+  s_69fb5a28911bb6::t_ec86550e6e5a4d 1-27
+Taskfile.yml
+  s_69fb5a28911bb6::t_551d42bd22d907 67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c253f5663c033d750a57e4c0118a4ff1ce8c20dd",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
