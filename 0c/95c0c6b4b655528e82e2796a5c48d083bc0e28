@@ -1,0 +1,39 @@
+module/skills/docs-organization/reference/diataxis-grounding.md
+  s_69fb5a28911bb6::t_95d1b208fdd9f8 23
+  s_69fb5a28911bb6::t_6d6b9fccbd0dd3 31
+  s_69fb5a28911bb6::t_8280b3f7eb323c 43-44
+module/skills/docs-organization/SKILL.md
+  s_69fb5a28911bb6::t_4bb9c57ad16ced 193,199-203,211
+  s_69fb5a28911bb6::t_6600f72fb7a136 119
+module/commands/docs-audit.md
+  s_69fb5a28911bb6::t_955d63cf70484f 219-220
+  s_69fb5a28911bb6::t_1f6ae31724177d 276-277
+  s_69fb5a28911bb6::t_b99eb0b4078ea1 329-331
+  s_69fb5a28911bb6::t_45ec902125ff06 44-49
+  s_69fb5a28911bb6::t_90ce9a3a590984 258
+  s_69fb5a28911bb6::t_274f88a5d86a7b 318
+  s_69fb5a28911bb6::t_47fc778a710230 297
+  s_69fb5a28911bb6::t_079c34271dcd8b 16-24
+  s_69fb5a28911bb6::t_408eeca68ff551 461-464
+  s_69fb5a28911bb6::t_49b41af1dc38ef 183
+  s_69fb5a28911bb6::t_1b60d1e32ceb71 338
+  s_69fb5a28911bb6::t_6417eb0ef97234 204
+module/commands/docs-update.md
+  s_69fb5a28911bb6::t_ba8f9504f753b1 18-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0c95c0c6b4b655528e82e2796a5c48d083bc0e28",
+  "prompts": {},
+  "sessions": {
+    "s_69fb5a28911bb6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e2fdeccf-d058-4ff0-95c0-c8ca72b7867e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
