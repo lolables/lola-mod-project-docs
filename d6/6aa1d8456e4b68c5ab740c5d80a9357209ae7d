@@ -1,0 +1,27 @@
+eval/results/r14-real-baseline.json
+  s_51ed7597c650d5::t_8d69c7367392a1 109-110
+eval/fixtures/cold-read-actionable/DOC.md
+  s_51ed7597c650d5::t_704af4848efa6c 32
+eval/fixtures/real-lane-table/expected.json
+  s_51ed7597c650d5::t_bd3886b2a8b9f5 5
+eval/fixtures/cold-read-actionable/expected.json
+  s_51ed7597c650d5::t_704af4848efa6c 6
+eval/results/r14-coldread-baseline.json
+  s_51ed7597c650d5::t_191a505ce444a9 43-45,51,55-57,61-63,91-93,99,105,110-111,141,147,153,158-159,189,195,201,206-207,235-237,243,248-249,254-255
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d66aa1d8456e4b68c5ab740c5d80a9357209ae7d",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
