@@ -1,0 +1,24 @@
+README.md
+  s_2d0fce9f1f9aee::t_fdf8f4d90f2e33 195-197
+  s_2d0fce9f1f9aee::t_6dfcdb66169786 213
+  s_2d0fce9f1f9aee::t_ff969b05985b2a 148-149,151-154
+  s_2d0fce9f1f9aee::t_83127443feeb3f 92
+  s_2d0fce9f1f9aee::t_96f3a81e459b00 47-48
+  s_2d0fce9f1f9aee::t_81a546d805f4f2 167-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fd4c0dec521c1e48df1dd4635e97f3ebf43f2703",
+  "prompts": {},
+  "sessions": {
+    "s_2d0fce9f1f9aee": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0520c57e-d4bf-4838-81ba-310847414875",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
