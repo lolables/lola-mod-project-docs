@@ -1,0 +1,48 @@
+eval/fixtures/repo-drift-attribution/tests/lint.bats
+  s_51ed7597c650d5::t_8c23379c25682f 1-4
+eval/fixtures/repo-drift-attribution/docs/index.md
+  s_51ed7597c650d5::t_0740471743cd25 1-3
+eval/run_repodrift.py
+  s_51ed7597c650d5::t_33b5d98a48ea70 1-88
+eval/fixtures/repo-drift-attribution/tools/headers.sh
+  s_51ed7597c650d5::t_22c330320865ef 1-8
+eval/fixtures/repo-drift-attribution/tests/release.bats
+  s_51ed7597c650d5::t_669fbd94064584 1-5
+eval/fixtures/repo-drift-attribution/expected.json
+  s_51ed7597c650d5::t_1b48316c32a815 1-11,13-14
+  s_51ed7597c650d5::t_ad4f1116393707 12
+eval/fixtures/repo-drift-attribution/tools/lint.sh
+  s_51ed7597c650d5::t_a874b78d859d71 1-7
+eval/fixtures/repo-drift-attribution/tools/release.sh
+  s_51ed7597c650d5::t_a3bb69480b5504 1-14
+eval/prompts/repo-drift.baseline.txt
+  s_51ed7597c650d5::t_d8ed4703950174 1-7
+eval/fixtures/repo-drift-attribution/config.sh
+  s_51ed7597c650d5::t_b61a4b7c129954 1-2
+eval/fixtures/repo-drift-attribution/tools/stats.sh
+  s_51ed7597c650d5::t_787ba34c239a5f 1-4
+eval/fixtures/repo-drift-attribution/README.md
+  s_51ed7597c650d5::t_40c120c90f5554 1-34
+eval/fixtures/repo-drift-attribution/tools/deploy.sh
+  s_51ed7597c650d5::t_43f11d5dcb0571 1-12
+eval/fixtures/repo-drift-attribution/tools/fmt.sh
+  s_51ed7597c650d5::t_d7e3ea238b5793 1-4
+eval/fixtures/repo-drift-attribution/tests/headers.bats
+  s_51ed7597c650d5::t_7ea93492849b24 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c8670507b2cdbd51ce8a7955ddb695dab85cc75b",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
