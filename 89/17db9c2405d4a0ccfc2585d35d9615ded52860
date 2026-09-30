@@ -1,0 +1,21 @@
+eval/prompts/repo-drift-reportall.txt
+  s_51ed7597c650d5::t_7ab61be3ce8c87 1-7
+eval/results/r14-real-reportall.json
+  s_51ed7597c650d5::t_e9e546695ca336 1-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8917db9c2405d4a0ccfc2585d35d9615ded52860",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
