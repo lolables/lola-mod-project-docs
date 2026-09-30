@@ -1,0 +1,25 @@
+eval/fixtures/cold-read-actionable/DOC.md
+  s_51ed7597c650d5::t_b718d2a6807f52 32-33
+eval/results/r14-coldread-baseline.json
+  s_51ed7597c650d5::t_ed0e36aab3d1b0 1-260
+eval/results/r14-real-baseline.json
+  s_51ed7597c650d5::t_ac4485d6ed34bc 1-110
+eval/results/r14-repodrift-baseline.json
+  s_51ed7597c650d5::t_a90f7252bc2801 1-223
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "75e902dbf9bd8a5b38ce6761319e93f556e11060",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
