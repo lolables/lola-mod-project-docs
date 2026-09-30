@@ -1,0 +1,25 @@
+eval/fixtures/cold-read-actionable/expected.json
+  s_51ed7597c650d5::t_a716d6160acead 1-9
+eval/run_coldread_actionable.py
+  s_51ed7597c650d5::t_e58d865d88408c 1-98
+eval/fixtures/cold-read-actionable/DOC.md
+  s_51ed7597c650d5::t_2a2ba878a5beae 1-34
+eval/prompts/cold-read-shipped.baseline.txt
+  s_51ed7597c650d5::t_288d3cb037c985 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e04aa6ca721db6fa2791b878562b9b87d6f5d2c4",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
