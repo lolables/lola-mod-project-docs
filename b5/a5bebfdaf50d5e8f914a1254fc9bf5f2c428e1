@@ -1,0 +1,32 @@
+docs/dev/architecture.md
+  s_51ed7597c650d5::t_8ce596d130deb3 61,66-82
+module/commands/docs-audit.md
+  s_51ed7597c650d5::t_235b3562f6d545 319-329,348,356-361,382,390-402
+  s_51ed7597c650d5::t_3e613e53b4bb82 759-762
+  s_51ed7597c650d5::t_9ac063ad6b7f0f 752-753
+  s_51ed7597c650d5::t_ba34d7c64d42ab 330-347,349-355,362-381,383-389
+eval/README.md
+  s_51ed7597c650d5::t_8ce596d130deb3 33,36-41,43-46
+eval/REPORT.md
+  s_51ed7597c650d5::t_4db4bf8bfba9b0 816,821-910
+module/skills/docs-organization/SKILL.md
+  s_51ed7597c650d5::t_8ce596d130deb3 142
+module/commands/docs-update.md
+  s_51ed7597c650d5::t_c30257654fb97d 78-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b5a5bebfdaf50d5e8f914a1254fc9bf5f2c428e1",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
