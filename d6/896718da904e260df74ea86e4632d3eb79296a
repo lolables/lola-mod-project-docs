@@ -1,0 +1,28 @@
+module/skills/docs-organization/scripts/fetch-citations.mjs
+  s_2fe5c7579ceb59::t_80f11f3616459d 52
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_2fe5c7579ceb59::t_80f11f3616459d 54
+module/skills/docs-organization/scripts/formats/md-lines.mjs
+  s_2fe5c7579ceb59::t_e4ad4909e878ae 29-34,54-61,68
+  s_2fe5c7579ceb59::t_80f11f3616459d 1-28,35-53,62-67,69-72
+module/skills/docs-organization/scripts/formats/markdown.mjs
+  s_2fe5c7579ceb59::t_633c88b198b7a7 1-160
+tests/scripts/docs-organization/format-markdown.test.mjs
+  s_2fe5c7579ceb59::t_b54d239888b89d 1-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d6896718da904e260df74ea86e4632d3eb79296a",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
