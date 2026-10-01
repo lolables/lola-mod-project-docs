@@ -1,0 +1,21 @@
+module/skills/docs-organization/scripts/formats/text.mjs
+  s_2fe5c7579ceb59::t_3d17df90185ccf 1-25
+tests/scripts/docs-organization/format-text.test.mjs
+  s_2fe5c7579ceb59::t_49696cd7d47e3c 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5a3cc16f4d45ec7425b040538d994297865580af",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
