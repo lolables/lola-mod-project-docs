@@ -1,0 +1,29 @@
+eval/prompts/ledger-verify.v2.txt
+  s_51ed7597c650d5::t_ada14e3edc42bf 1-9
+eval/prompts/ledger-verify.txt
+  s_51ed7597c650d5::t_ada14e3edc42bf 3,9-10
+eval/prompts/ledger-extract.txt
+  s_51ed7597c650d5::t_ada14e3edc42bf 3
+eval/prompts/ledger-extract.v2.txt
+  s_51ed7597c650d5::t_ada14e3edc42bf 1-7
+eval/results/r15-ledger3-real.json
+  s_51ed7597c650d5::t_3bcd0f2820a68e 1-6729
+eval/results/r15-ledger3-fixture.json
+  s_51ed7597c650d5::t_0e2fddc4ba58ed 1-829
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "33ea73576a50434bf6f86c49fa1bab96d3cc3e63",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
