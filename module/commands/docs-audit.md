@@ -318,6 +318,13 @@ pass.
        1. **Content drift (repo sweep and repo-scoped):** "Read <file>.
           Identify any specific claims in this document that no longer match
           the code in the repository at <repo-root>.
+          Check tables and lists that say which component does what: a row
+          or sentence crediting a check, flag, or step to the wrong script,
+          command, or module is drift. A list, table, or tree that names its
+          items one by one (or states a count) claims completeness: an
+          existing item it omits, or a listed item that no longer exists, is
+          drift. Selective lists ('includes', 'e.g.', 'key …') and
+          directory-level entries are not.
           Return a list of `file:line` citations with what the doc says vs
           what the code actually does. Do not edit any file. Reply in
           under 300 words." `<repo-root>` is the group's repo root (repo
@@ -372,8 +379,11 @@ pass.
           that would not work as written; or a reference to a spec/phase/ticket
           the reader cannot resolve in this repo. Do NOT report style/tone
           preferences or code-vs-doc drift (other lanes cover those). Quote the
-          exact text for each. Return `COLD_READ` findings (severity info) with
-          the line, the quote, and why a first-time reader stumbles. Reply in
+          exact text for each. Return `COLD_READ` findings with the line, the
+          quote, why a first-time reader stumbles, and `actionable: yes` when
+          the stumble makes a command, flag, or step the reader types or runs
+          fail or do the wrong thing as written (`actionable: no` otherwise).
+          Reply in
           under 250 words; empty list if genuinely clear."
        4. **Completeness for type (Good Docs, grounded):** "This document's
           Diátaxis mode is <mode> (from grounding). Using The Good Docs Project's
@@ -534,6 +544,8 @@ pass.
          - `app sync --all`, and `--all` is a kept alias → Warning.
          - "Tasks are stored in `~/.app.json`", and the default moved →
            Warning (a fact, not an instruction).
+         - A project tree that lists `tests/*.bats` one by one and omits
+           one that exists → Warning (an omission is drift, not "Other").
          - "Retries are unbounded", and the code caps them → Warning.
          - Any diagram drift → Warning (nobody executes a diagram).
          `CONTENT_DRIFT` is
@@ -583,7 +595,13 @@ pass.
          `style` statement, replace it with a palette class.
        - `COLD_READ`: the quoted text and why a first-time reader stumbles
          (undefined term, missing step, dangling reference, contradiction,
-         terminology drift, unstated prerequisite). Info.
+         terminology drift, unstated prerequisite, broken example).
+         **Warning** when the subagent marked it `actionable: yes` — the
+         stumble makes a command, flag, or step the reader runs fail or do
+         the wrong thing (a prose claim contradicting its own example, a
+         command missing a required argument); prefix the note with
+         `actionable:`. Info otherwise. Never Blocker: Blocker stays
+         reserved for code-verified `CONTENT_DRIFT`.
        - `MODE_MIXING`: the primary Diátaxis mode, the intruding mode, and the
          section. Info. Fix is to move the intruding content to its own doc
          (e.g. a how-to's conceptual detour → an `explanation` doc, linked).
@@ -664,7 +682,9 @@ pass.
          subagent; immediately for a deterministic script. Warning — it means
          "unknown", not "clean".
    - If a finding doesn't fit the schema, list it under a separate
-     "Other" subsection rather than mangling the table. "Other" also lists
+     "Other" subsection rather than mangling the table. A doc-vs-code gap —
+     including an item missing from a list that names its items one by
+     one — is `CONTENT_DRIFT`, never "Other". "Other" also lists
      stated suppressions (`suppressed: <code> — <file> (<mode>); not for
      /docs-update`), which `/docs-update` skips.
    - Once every table is built, count each table's rows and print the
@@ -680,7 +700,7 @@ pass.
 
 A run against a small project part-way through cleanup might report:
 
-`3 blockers, 4 warnings, 11 info`
+`3 blockers, 5 warnings, 11 info`
 
 ### Blockers
 
@@ -698,6 +718,7 @@ A run against a small project part-way through cleanup might report:
 | `REF_BROKEN` | `docs/dev/architecture.md` | 84 | link to `internal/gone.go` — no such file; repoint or link real target |
 | `REF_NOT_IN_GIT` | `README.md` | 30 | link to `docs/private/spec.md` — exists but gitignored; commit or mark external |
 | `CONTENT_DRIFT` | `docs/dev/architecture.md` | 57 | says retries are unbounded; `internal/queue/retry.go:12` caps them at 5 |
+| `COLD_READ` | `README.md` | 48 | actionable: "`app export --since 7d`" — line 45 says every command needs `--profile`, so the example fails as written |
 
 ### Info
 

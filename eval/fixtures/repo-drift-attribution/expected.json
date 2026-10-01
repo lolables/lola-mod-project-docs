@@ -1,0 +1,14 @@
+{
+  "lane": "repo-drift",
+  "planted": [
+    {"id": "attr-table", "desc": "lint.sh row claims SPDX checks; headers.sh does them", "groups": [["lint.sh"], ["spdx", "license"]]},
+    {"id": "attr-flag", "desc": "--dry-run credited to deploy.sh; it is release.sh's flag and deploy.sh rejects it", "groups": [["dry-run"], ["deploy.sh"]]},
+    {"id": "numeric", "desc": "500 pages vs MAX_PAGES=200", "groups": [["500"], ["200"]]},
+    {"id": "omission", "desc": "tree lists tests/*.bats one by one but omits release.bats", "groups": [["release.bats"], ["tree", "structure", "not listed", "omit", "missing", "lists"]]}
+  ],
+  "controls": [
+    {"id": "selective-list", "desc": "'Key scripts include' is selective; stats.sh/headers.sh omitted on purpose", "groups": [["key scripts", "stats.sh"]]},
+    {"id": "dir-entry", "desc": "docs/ is a directory-level tree entry", "groups": [["docs/index.md"]]},
+    {"id": "correct-row", "desc": "fmt.sh row matches the code", "groups": [["fmt.sh"], ["marker"]]}
+  ]
+}

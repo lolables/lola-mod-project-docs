@@ -301,7 +301,9 @@ present, skip the `adr` activation.
        leave it for the user rather than guessing.
      - For `COLD_READ`: a first-time-reader comprehension gap (undefined term,
        missing step, dangling reference, contradiction, terminology drift,
-       unstated prerequisite). The fix is content the author must supply — show
+       unstated prerequisite, an example that would not work as written).
+       Present `actionable:` (Warning) ones before Info ones — a reader who
+       copies the example hits them. The fix is content the author must supply — show
        the quoted stumble and the reader's confusion, propose a concrete
        addition/correction, but treat it as author-owned; do not invent facts.
      - For `SYNTAX_ERROR` / `INLINE_CLASS_NOT_SUPPORTED`: the diagram source

@@ -1,0 +1,120 @@
+{
+  "prompt": "prompts/repo-drift-enumerate.txt",
+  "runs": 5,
+  "chunk_lines": null,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.0,
+    "ipv6-count": 0.6,
+    "docs-init-adr": 0.0,
+    "merval-shapes": 0.0,
+    "license-mit": 0.0,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.2,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 190,
+          "doc_says": "'Three IPv6 ranges get handling beyond that' \u2014 listing only ::/96 + fec0::/10 (bullet 1), 64:ff9b:1::/48 (bullet 2), and 64:ff9b::/96 NAT64 (bullet 3).",
+          "code_says": "The outright-block ipv6 subnet list has six entries: ['::',96], ['fc00::',7], ['fec0::',10], ['fe80::',10], ['ff00::',8], ['64:ff9b:1::',48] \u2014 fc00::/7 (unique-local), fe80::/10 (link-local), and ff00::/8 (multicast) are blocked but never mentioned.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-145"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 1,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 58,
+          "doc_says": "Lane 6's Finds column lists: content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots",
+          "source": "module/commands/docs-audit.md:394-411"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 188,
+          "doc_says": "Three IPv6 ranges get handling beyond BlockList's own IPv4-mapped matching: ::/96, the deprecated site-local range fec0::/10, and the NAT64 prefix 64:ff9b:1::/48 (all blocked outright), plus 64:ff9b::/96 judged by its embedded IPv4 address.",
+          "code_says": "The ipv6 blocklist loop adds six ranges, not three: ::/96, fc00::/7 (unique local addresses), fec0::/10, fe80::/10 (link-local), ff00::/8 (multicast), and 64:ff9b:1::/48. fc00::/7, fe80::/10, and ff00::/8 are omitted from the doc entirely.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "net.BlockList matches IPv4-mapped IPv6 addresses on its own, and 'Three IPv6 ranges get handling beyond that': ::/96, fec0::/10, 64:ff9b:1::/48, and 64:ff9b::/96.",
+          "code_says": "fetch-citations.mjs:143 blocks six IPv6 ranges outright (::/96, fc00::/7, fec0::/10, fe80::/10, ff00::/8, 64:ff9b:1::/48), plus a separate NAT64 64:ff9b::/96 check \u2014 fc00::/7 (unique local), fe80::/10 (link-local), and ff00::/8 (multicast) are omitted from the doc's list.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    }
+  ],
+  "rescored": "offline against the six-item real-lane-table ground truth"
+}

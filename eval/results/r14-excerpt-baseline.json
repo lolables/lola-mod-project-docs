@@ -1,0 +1,104 @@
+{
+  "prompt": "prompts/repo-drift.baseline.txt",
+  "runs": 5,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.0,
+    "ipv6-count": 0.0,
+    "docs-init-adr": 0.0,
+    "merval-shapes": 0.4,
+    "license-mit": 0.0,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": true,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 40,
+          "doc_says": "merval's flowchart grammar knows four bracket shapes ([], (), (()), {})",
+          "code_says": "merval knows only [] () (()) {} *and the slash-delimited forms* \u2014 a fifth shape category the doc omits",
+          "source": "module/skills/docs-organization/scripts/lint-mermaid.mjs:25"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": true,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 40,
+          "doc_says": "merval's flowchart grammar knows four bracket shapes ([], (), (()), {}), so it rejects valid shapes such as the cylinder [(\u2026)]",
+          "code_says": "merval knows only [] () (()) {} and the slash-delimited forms \u2014 the doc's 'four bracket shapes' list omits that merval also accepts slash-delimited shapes (e.g. trapezoid/parallelogram)",
+          "source": "module/skills/docs-organization/scripts/lint-mermaid.mjs:25"
+        }
+      ]
+    }
+  ],
+  "rescored": "offline against the six-item real-lane-table ground truth"
+}

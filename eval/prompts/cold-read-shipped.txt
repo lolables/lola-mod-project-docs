@@ -1,0 +1,7 @@
+Read-only: verify claims by reading source and git history only; never run the project's code, tests, builds, installers, package managers, or any command this doc describes.
+
+You are the intended audience from the grounding above, reading {file} for the first time to accomplish its stated purpose. Flag every place a real reader would get stuck, confused, or misled: a term/acronym used before it is defined; a missing or out-of-order step; a cross-reference ('see X below/above') whose target does not exist; prose that contradicts its own example or command; the same thing called by two different names; an unstated prerequisite; an example that would not work as written; or a reference to a spec/phase/ticket the reader cannot resolve in this repo. Do NOT report style/tone preferences or code-vs-doc drift (other lanes cover those). Quote the exact text for each. Return `COLD_READ` findings with the line, the quote, why a first-time reader stumbles, and `actionable: yes` when the stumble makes a command, flag, or step the reader types or runs fail or do the wrong thing as written (`actionable: no` otherwise). Reply in under 250 words; empty list if genuinely clear.
+
+Output ONLY a single JSON object and nothing else:
+{"findings":[{"code":"COLD_READ","line":0,"quote":"...","why":"...","actionable":"yes|no"}]}
+If there are no findings, output {"findings":[]}.

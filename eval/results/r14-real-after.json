@@ -1,0 +1,119 @@
+{
+  "prompt": "prompts/repo-drift.txt",
+  "runs": 5,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.2,
+    "ipv6-count": 0.6,
+    "docs-init-adr": 0.0,
+    "merval-shapes": 0.0,
+    "license-mit": 0.0,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 190,
+          "doc_says": "docs/dev/architecture.md:189-197 says 'Three IPv6 ranges get handling beyond that' net.BlockList's own IPv4-mapped matching, enumerating only ::/96 (with fec0::/10), 64:ff9b:1::/48, and 64:ff9b::/96.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-151"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "\"Three IPv6 ranges get handling beyond that\" \u2014 lists only ::/96, fec0::/10, 64:ff9b:1::/48 (blocked outright) and 64:ff9b::/96 (NAT64 special-cased).",
+          "code_says": "BLOCKED.addSubnet is called for six IPv6 ranges \u2014 ::/96, fc00::/7, fec0::/10, fe80::/10, ff00::/8, 64:ff9b:1::/48 \u2014 plus the separate NAT64 64:ff9b::/96 check. fc00::/7 (unique-local), fe80::/10 (link-local), and ff00::/8 (multicast) also get explicit handling beyond BlockList's automatic IPv4-mapped matching but are omitted from the doc's enumerated list and count.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:138-151"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": true,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 58,
+          "doc_says": "Lane 6 Finds: content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots",
+          "code_says": "module/commands/docs-audit.md defines six Lane 6 prompts, including prompt 5 'Structure for procedures' which emits NEEDS_STRUCTURE findings (also listed in the command's own findings enumeration, docs-audit.md:501) \u2014 the architecture.md table omits this check entirely",
+          "source": "module/commands/docs-audit.md:392-412"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond that: ::/96, fec0::/10, 64:ff9b:1::/48, 64:ff9b::/96 (docs/dev/architecture.md:188-197)",
+          "code_says": "addSubnet also blocks fc00::/7 (unique local) and fe80::/10 (link-local) and ff00::/8 (multicast), none named in the doc's enumerated list",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-146"
+        }
+      ]
+    }
+  ],
+  "rescored": "offline against the six-item real-lane-table ground truth"
+}

@@ -1,0 +1,260 @@
+{
+  "prompt": "prompts/cold-read-shipped.baseline.txt",
+  "runs": 5,
+  "failed_runs": 0,
+  "recall": {
+    "broken-example": 1.0,
+    "bare-path": 1.0,
+    "undefined-term": 1.0,
+    "dangling-ref": 1.0
+  },
+  "tag_accuracy": {
+    "broken-example": null,
+    "bare-path": null,
+    "undefined-term": null,
+    "dangling-ref": null
+  },
+  "mean_other_findings": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "per": {
+        "broken-example": [
+          true,
+          null
+        ],
+        "bare-path": [
+          true,
+          null
+        ],
+        "undefined-term": [
+          true,
+          null
+        ],
+        "dangling-ref": [
+          true,
+          null
+        ]
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "COLD_READ",
+          "line": 20,
+          "quote": "recolor prints the recolored file to stdout and never modifies its input.",
+          "why": "Directly contradicts line 14 ('recolor rewrites the file in place') and the preceding example, which shows no output redirection \u2014 reader can't tell whether their file gets overwritten or left untouched."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 27,
+          "quote": "recolor --only 2 --theme dark",
+          "why": "Omits the Markdown file argument, contradicting line 4's stated rule that 'Every recolor command takes the Markdown file as its last argument' \u2014 reader doesn't know what file this would act on."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 33,
+          "quote": "To make your own theme, see \"Writing a theme\" below.",
+          "why": "Points 'below' to a section called 'Writing a theme' that doesn't exist anywhere in this document \u2014 the doc ends at line 34."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 32,
+          "quote": "both pass the WCV check",
+          "why": "'WCV' is never defined or expanded anywhere in the doc, leaving a first-time reader unable to know what standard is being referenced."
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "per": {
+        "broken-example": [
+          true,
+          null
+        ],
+        "bare-path": [
+          true,
+          null
+        ],
+        "undefined-term": [
+          true,
+          null
+        ],
+        "dangling-ref": [
+          true,
+          null
+        ]
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "COLD_READ",
+          "line": 20,
+          "quote": "recolor prints the recolored file to stdout and never modifies its input.",
+          "why": "Directly contradicts the preceding line 14, 'recolor rewrites the file in place,' for the same command \u2014 the reader cannot tell whether running the example modifies docs/guide.md or leaves it untouched."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 27,
+          "quote": "recolor --only 2 --theme dark",
+          "why": "Line 4 states every recolor command takes the Markdown file as its last argument, but this example omits the file argument entirely, so a reader copying it as written has no target file and the command cannot work."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 33,
+          "quote": "To make your own theme, see \"Writing a theme\" below.",
+          "why": "No 'Writing a theme' section exists anywhere in this document \u2014 the cross-reference target is missing, leaving the reader stuck with nowhere to go."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 32,
+          "quote": "both pass the WCV check",
+          "why": "'WCV' is never defined or expanded anywhere in the doc, so a first-time reader has no way to know what check is being referenced."
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "per": {
+        "broken-example": [
+          true,
+          null
+        ],
+        "bare-path": [
+          true,
+          null
+        ],
+        "undefined-term": [
+          true,
+          null
+        ],
+        "dangling-ref": [
+          true,
+          null
+        ]
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "COLD_READ",
+          "line": 20,
+          "quote": "recolor prints the recolored file to stdout and never modifies its input.",
+          "why": "Directly contradicts line 14 ('recolor rewrites the file in place') using the identical example command shown above it \u2014 a first-time reader can't tell whether running the Install/Recolor example will overwrite docs/guide.md or leave it untouched and print to stdout."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 27,
+          "quote": "recolor --only 2 --theme dark",
+          "why": "Line 4 states every recolor command takes the Markdown file as its last argument, but this example omits the file entirely, so a reader copying it as written gets an unclear or failing invocation and doesn't know which file would be affected."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 33,
+          "quote": "To make your own theme, see \"Writing a theme\" below.",
+          "why": "No section titled 'Writing a theme' exists anywhere in this document, so the reader has nowhere to go for the referenced instructions."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 32,
+          "quote": "both pass the WCV check",
+          "why": "'WCV' is never defined or expanded anywhere in the document, leaving a first-time reader unable to tell what property the themes satisfy."
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "per": {
+        "broken-example": [
+          true,
+          null
+        ],
+        "bare-path": [
+          true,
+          null
+        ],
+        "undefined-term": [
+          true,
+          null
+        ],
+        "dangling-ref": [
+          true,
+          null
+        ]
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "COLD_READ",
+          "line": 20,
+          "quote": "recolor prints the recolored file to stdout and never modifies its input.",
+          "why": "Directly contradicts line 14 ('recolor rewrites the file in place') and the in-place example just above it \u2014 the reader can't tell whether running the line-17 command will overwrite docs/guide.md or leave it untouched."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 27,
+          "quote": "recolor --only 2 --theme dark",
+          "why": "Line 4 states every recolor command takes the Markdown file as its last argument, but this example omits the file entirely, so a reader copying it as written can't produce a working command."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 33,
+          "quote": "To make your own theme, see \"Writing a theme\" below.",
+          "why": "The document ends at line 34 \u2014 no 'Writing a theme' section exists below (or anywhere) in this file, so the cross-reference target is unresolvable."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 32,
+          "quote": "both pass the WCV check",
+          "why": "'WCV' is never defined or expanded anywhere in the doc, leaving a first-time reader unable to know what check is being referenced."
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "per": {
+        "broken-example": [
+          true,
+          null
+        ],
+        "bare-path": [
+          true,
+          null
+        ],
+        "undefined-term": [
+          true,
+          null
+        ],
+        "dangling-ref": [
+          true,
+          null
+        ]
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "COLD_READ",
+          "line": 14,
+          "quote": "recolor rewrites the file in place:",
+          "why": "Directly contradicted six lines later by 'recolor prints the recolored file to stdout and never modifies its input' (line 20) \u2014 a first-time user can't tell which behavior actually happens."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 27,
+          "quote": "recolor --only 2 --theme dark",
+          "why": "Line 4 states every recolor command takes the Markdown file as its last argument, but this example omits the file, so copy-pasting it would not work as written."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 32,
+          "quote": "both pass the WCV check",
+          "why": "\"WCV\" is never defined anywhere in the doc, leaving a first-time reader unable to understand what claim is being made about the themes."
+        },
+        {
+          "code": "COLD_READ",
+          "line": 33,
+          "quote": "see \"Writing a theme\" below",
+          "why": "No section titled 'Writing a theme' exists anywhere in the document \u2014 the cross-reference points nowhere."
+        }
+      ]
+    }
+  ]
+}

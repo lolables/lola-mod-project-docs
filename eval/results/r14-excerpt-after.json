@@ -1,0 +1,120 @@
+{
+  "prompt": "prompts/repo-drift.txt",
+  "runs": 5,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.8,
+    "ipv6-count": 0.0,
+    "docs-init-adr": 0.0,
+    "merval-shapes": 0.0,
+    "license-mit": 0.0,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": true,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 18,
+          "doc_says": "Lane 6 finds: content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots",
+          "code_says": "module/commands/docs-audit.md:500-503 lists Lane 6's full finding-code set as MISSING_DIAGRAM, CONTENT_DRIFT, COLD_READ, MODE_MIXING, INCOMPLETE_FOR_TYPE, NEEDS_STRUCTURE, MISSING_DEMO (plus document-mode-only codes) \u2014 the excerpt's list omits NEEDS_STRUCTURE ('structure for procedures')",
+          "source": "module/commands/docs-audit.md:500"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": true,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 18,
+          "doc_says": "Lane 6 finds: content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots",
+          "code_says": "Lane 6 also emits NEEDS_STRUCTURE ('structure for procedures'), a distinct category named alongside the others but absent from the doc's list",
+          "source": "module/commands/docs-audit.md:55-56,501"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": true,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 18,
+          "doc_says": "Lane 6 finds: content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots",
+          "code_says": "Lane 6 also emits NEEDS_STRUCTURE ('structure for procedures'), listed as its own row in the lane table and finding-code list, which the excerpt's enumeration omits",
+          "source": "module/commands/docs-audit.md:120,397,501"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": true,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 18,
+          "doc_says": "Lane 6 finds: content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots",
+          "code_says": "module/commands/docs-audit.md documents six Lane 6 subagent prompts and finding codes: Content drift (CONTENT_DRIFT), Missing diagrams (MISSING_DIAGRAM), Cold read (COLD_READ), Completeness for type (INCOMPLETE_FOR_TYPE), Structure for procedures (NEEDS_STRUCTURE), and Hero demo (MISSING_DEMO), plus MODE_MIXING from grounding \u2014 the doc's list omits Structure for procedures / NEEDS_STRUCTURE entirely",
+          "source": "module/commands/docs-audit.md:397-416,500-501"
+        }
+      ]
+    }
+  ],
+  "rescored": "offline against the six-item real-lane-table ground truth"
+}

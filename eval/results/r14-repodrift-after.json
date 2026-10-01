@@ -1,0 +1,244 @@
+{
+  "prompt": "prompts/repo-drift.txt",
+  "runs": 5,
+  "failed_runs": 0,
+  "recall": {
+    "attr-table": 1.0,
+    "attr-flag": 1.0,
+    "numeric": 1.0,
+    "omission": 0.8
+  },
+  "control_flag_rate": {
+    "selective-list": 0.0,
+    "dir-entry": 0.0,
+    "correct-row": 0.0
+  },
+  "mean_fp": 0.2,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": true
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 9,
+          "doc_says": "tools/lint.sh checks trailing whitespace and missing SPDX license headers",
+          "code_says": "tools/lint.sh only checks trailing whitespace (tools/lint.sh:4); the SPDX header check is implemented in tools/headers.sh (tools/headers.sh:6)",
+          "source": "README.md:9"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 19,
+          "doc_says": "Preview a release without tagging/uploading by running `tools/deploy.sh --dry-run`",
+          "code_says": "tools/deploy.sh has no --dry-run flag and exits 2 with \"unknown option\" for it (tools/deploy.sh:8); --dry-run is implemented in tools/release.sh (tools/release.sh:6)",
+          "source": "README.md:19"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 24,
+          "doc_says": "A site may hold at most 500 pages (MAX_PAGES in config.sh)",
+          "code_says": "config.sh sets MAX_PAGES=200",
+          "source": "config.sh:2"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 33,
+          "doc_says": "Project structure tree lists tests/lint.bats and tests/headers.bats as the test files",
+          "code_says": "tests/release.bats also exists (tests release --dry-run behavior) and is omitted from the itemized tree",
+          "source": "tests/release.bats:1"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": true
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 9,
+          "doc_says": "`tools/lint.sh` checks trailing whitespace and missing SPDX license headers",
+          "code_says": "tools/lint.sh only checks trailing whitespace; SPDX header checks are implemented separately in tools/headers.sh:6",
+          "source": "tools/lint.sh:4"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 19,
+          "doc_says": "`tools/deploy.sh --dry-run` previews a release without tagging or uploading",
+          "code_says": "tools/deploy.sh accepts only --target and exits with 'unknown option' on any other argument; --dry-run is implemented in tools/release.sh:6",
+          "source": "tools/deploy.sh:6-9"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 24,
+          "doc_says": "a site may hold at most 500 pages (MAX_PAGES in config.sh)",
+          "code_says": "MAX_PAGES is set to 200",
+          "source": "config.sh:2"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 33,
+          "doc_says": "project structure tree lists tests/lint.bats and tests/headers.bats as the test files",
+          "code_says": "tests/ also contains tests/release.bats, which is omitted from the tree",
+          "source": "tests/release.bats:1"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": true
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 9,
+          "doc_says": "tools/lint.sh checks trailing whitespace and missing SPDX license headers",
+          "code_says": "tools/lint.sh only checks trailing whitespace (grep for trailing spaces); the SPDX header check is implemented in tools/headers.sh",
+          "source": "tools/lint.sh:4;tools/headers.sh:6"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 19,
+          "doc_says": "tools/deploy.sh --dry-run previews a release without tagging or uploading",
+          "code_says": "tools/deploy.sh only accepts --target and errors with 'unknown option' on any other flag; --dry-run is implemented in tools/release.sh",
+          "source": "tools/deploy.sh:6-9;tools/release.sh:6"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 24,
+          "doc_says": "A site may hold at most 500 pages (MAX_PAGES in config.sh)",
+          "code_says": "config.sh sets MAX_PAGES=200",
+          "source": "config.sh:2"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 33,
+          "doc_says": "Project structure lists tests/lint.bats and tests/headers.bats as the test files",
+          "code_says": "tests/release.bats also exists in the repo but is omitted from the listed test files",
+          "source": "tests/release.bats:1"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": true
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 9,
+          "doc_says": "tools/lint.sh checks trailing whitespace and missing SPDX license headers",
+          "code_says": "tools/lint.sh only checks trailing whitespace (tools/lint.sh:4); the SPDX header check is implemented separately in tools/headers.sh:6, which isn't listed in the table",
+          "source": "tools/lint.sh:4"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 19,
+          "doc_says": "`tools/deploy.sh --dry-run` previews a release without tagging or uploading",
+          "code_says": "tools/deploy.sh takes only --target and exits with 'unknown option' on --dry-run (tools/deploy.sh:6-8); --dry-run is a flag on tools/release.sh (tools/release.sh:6,9-11)",
+          "source": "tools/deploy.sh:6-8"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 24,
+          "doc_says": "a site may hold at most 500 pages (MAX_PAGES in config.sh)",
+          "code_says": "config.sh sets MAX_PAGES=200",
+          "source": "config.sh:2"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 33,
+          "doc_says": "project structure lists only tests/lint.bats and tests/headers.bats as the test files",
+          "code_says": "tests/ also contains tests/release.bats, omitted from the listed tree",
+          "source": "tests/release.bats:1"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": false
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 1,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 9,
+          "doc_says": "tools/lint.sh checks trailing whitespace and missing SPDX license headers",
+          "code_says": "tools/lint.sh only checks trailing whitespace; SPDX header checks are implemented separately in tools/headers.sh",
+          "source": "tools/lint.sh:1-7"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 19,
+          "doc_says": "`tools/deploy.sh --dry-run` previews a release without tagging or uploading",
+          "code_says": "tools/deploy.sh only accepts --target and exits 2 on an unrecognized --dry-run flag; --dry-run is implemented in tools/release.sh",
+          "source": "tools/deploy.sh:4-9"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 24,
+          "doc_says": "a site may hold at most 500 pages (MAX_PAGES in config.sh)",
+          "code_says": "MAX_PAGES=200",
+          "source": "config.sh:2"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 34,
+          "doc_says": "tests/ listed as containing only lint.bats and headers.bats",
+          "code_says": "tests/ also contains release.bats",
+          "source": "tests/release.bats:1"
+        }
+      ]
+    }
+  ]
+}

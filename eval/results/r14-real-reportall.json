@@ -1,0 +1,128 @@
+{
+  "prompt": "prompts/repo-drift-reportall.txt",
+  "runs": 5,
+  "chunk_lines": null,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.2,
+    "ipv6-count": 0.8,
+    "docs-init-adr": 0.0,
+    "merval-shapes": 0.0,
+    "license-mit": 0.0,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 188,
+          "doc_says": "'Three IPv6 ranges get handling beyond that' \u2014 lists only ::/96, fec0::/10, and the two NAT64 prefixes (64:ff9b:1::/48, 64:ff9b::/96) as the extra IPv6 blocking beyond net.BlockList's automatic IPv4-mapped matching.",
+          "code_says": "The BLOCKED IPv6 subnet list in fetch-citations.mjs also adds fc00::/7 (unique-local), fe80::/10 (link-local), and ff00::/8 (multicast) \u2014 three additional ranges never mentioned in the doc.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 188,
+          "doc_says": "'Three IPv6 ranges get handling beyond that' \u2014 naming only ::/96, fec0::/10, 64:ff9b:1::/48 (blocked outright) and 64:ff9b::/96 (judged by embedded IPv4)",
+          "code_says": "fetch-citations.mjs:143 adds six ranges to the IPv6 BlockList \u2014 ::/96, fc00::/7, fec0::/10, fe80::/10, ff00::/8, 64:ff9b:1::/48 \u2014 plus a separate NAT64 BlockList for 64:ff9b::/96; the doc omits fc00::/7 (unique-local), fe80::/10 (link-local), and ff00::/8 (multicast)",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond BlockList's own IPv4-mapped matching: ::/96 + fec0::/10 (blocked outright), 64:ff9b:1::/48 (blocked outright), and 64:ff9b::/96 (judged by embedded IPv4).",
+          "code_says": "The IPv6 BlockList loop also hardcodes fc00::/7 (unique-local), fe80::/10 (link-local), and ff00::/8 (multicast) as additional blocked-outright subnets not mentioned in the doc.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": true,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 58,
+          "doc_says": "Lane 6 Finds: content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots",
+          "code_says": "module/commands/docs-audit.md:318-424 dispatches six distinct per-file prompts \u2014 Content drift, Missing diagrams, Cold read, Completeness for type, Structure for procedures, and Hero demo (README/landing only) \u2014 plus a separate grounding-stage mode_mixing check. The doc's list omits 'Structure for procedures' entirely and collapses 'Missing diagrams' and 'Hero demo' into one 'missing diagrams/demo' item, undercounting the six prompts as five.",
+          "source": "module/commands/docs-audit.md:318-424"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond that: ::/96, fec0::/10, and the NAT64 prefix 64:ff9b:1::/48 (plus 64:ff9b::/96 judged separately).",
+          "code_says": "Six IPv6 subnets are explicitly blocked in fetch-citations.mjs:132-145 \u2014 ::/96, fc00::/7, fec0::/10, fe80::/10, ff00::/8, and 64:ff9b:1::/48 \u2014 plus 64:ff9b::/96 handled separately via NAT64 check. The doc omits fc00::/7 (unique local addresses), fe80::/10 (link-local), and ff00::/8 (multicast).",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-145"
+        }
+      ]
+    }
+  ]
+}
