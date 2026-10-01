@@ -1,0 +1,22 @@
+tests/scripts/docs-organization/apply-palette.test.mjs
+  s_2fe5c7579ceb59::t_d0f824d3e737f0 142-167
+  s_2fe5c7579ceb59::t_cdfab65f6e54b6 8
+module/skills/docs-organization/scripts/apply-palette.mjs
+  s_2fe5c7579ceb59::t_d4fa47acd77a8f 177,179-182
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "73bf713d30cfd35bc247c96ff0e4376b744b53c5",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
