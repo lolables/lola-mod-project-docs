@@ -1,0 +1,14 @@
+.github/workflows/ci.yml
+  h_4db53f42b9be42 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7bf1160ec4ea92606a9300d1bd579f35ffcb6972",
+  "prompts": {},
+  "humans": {
+    "h_4db53f42b9be42": {
+      "author": "Trevor Vaughan <peiriannydd@gmail.com>"
+    }
+  }
+}
