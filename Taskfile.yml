@@ -8,6 +8,8 @@ vars:
   MODULE: docs-discipline
   MODE: '{{.MODE | default "human"}}'
   SCRIPTS_DIR: module/skills/docs-organization/scripts
+  # npm toolchain for `task vendor` only; kept outside module/ so it never ships.
+  TOOLCHAIN_DIR: .taskfiles/vendor
   CONTAINER_ENGINE:
     sh: command -v podman >/dev/null 2>&1 && echo podman || { command -v docker >/dev/null 2>&1 && echo docker || echo ""; }
   IMAGE: docs-discipline-cleanroom
@@ -18,9 +20,9 @@ tasks:
     cmd: task --list
 
   vendor:
-    desc: Rebuild the vendored dependency bundles the skill ships (needs network for npm install)
+    desc: Rebuild the vendored dependency bundles the skill ships (needs network for npm install and fetching Linguist data)
     cmds:
-      - cd {{.SCRIPTS_DIR}} && npm install
+      - cd {{.TOOLCHAIN_DIR}} && npm install
       - bash "{{.ROOT_DIR}}/.taskfiles/scripts/build-vendor.sh"
 
   lint:
@@ -44,14 +46,14 @@ tasks:
 
   test:unit:
     desc: Run node:test unit tests for the docs-organization scripts
-    cmd: cd {{.SCRIPTS_DIR}} && npm test
+    cmd: node --test --test-reporter=spec tests/scripts/docs-organization/*.test.mjs
 
   test:bash:
     desc: Run the bash script tests
     cmds:
-      - bash {{.SCRIPTS_DIR}}/check-structure.test.sh
-      - bash {{.SCRIPTS_DIR}}/check-staleness.test.sh
-      - bash module/skills/adr/scripts/adr-index.test.sh
+      - bash tests/scripts/docs-organization/check-structure.test.sh
+      - bash tests/scripts/docs-organization/swap-palette.test.sh
+      - bash tests/scripts/adr/adr-index.test.sh
 
   test:gates:
     desc: Run the bats suites covering the shared lint and verify scripts
@@ -65,7 +67,7 @@ tasks:
       # does not prepend it, which is how this surfaced.
       - sh: command -v lola
         msg: 'lola is required by tests/verify-oracle.bats. Install it: uv tool install --force git+https://github.com/LobsterTrap/lola@v0.7.0'
-    cmd: bats tests/lint-structure.bats tests/verify-oracle.bats
+    cmd: bats tests/lint-structure.bats tests/lint-quoted-paths.bats tests/verify-oracle.bats
 
   test:install:
     desc: 'Sandboxed install verify across both scopes and both assistants. MODE=llm for errors-only.'
@@ -91,7 +93,9 @@ tasks:
     desc: Lint and render every mermaid fixture under tests/diagrams/ (light + dark, output in .test-output/diagrams/)
     cmds:
       - mkdir -p .test-output/diagrams
-      - node {{.SCRIPTS_DIR}}/lint-mermaid.mjs tests/diagrams/ > .test-output/diagrams/lint.json || true
+      # Record-only: several fixture diagram types are outside merval's grammar,
+      # so findings (exit 1) are expected and saved; an internal error (exit 2) fails.
+      - node {{.SCRIPTS_DIR}}/lint-mermaid.mjs --json tests/diagrams/ > .test-output/diagrams/lint.json || [ $? -eq 1 ]
       - bash {{.ROOT_DIR}}/.taskfiles/scripts/render-diagrams.sh {{.ROOT_DIR}}/tests/diagrams {{.ROOT_DIR}}/.test-output/diagrams {{.ROOT_DIR}}/module/skills/docs-organization/reference/palettes/er-overrides.css
       - cat .test-output/diagrams/manifest.txt
 
@@ -142,7 +146,7 @@ tasks:
       - 'echo "Rendered to .test-output/render/"'
 
   palette:
-    desc: 'Swap the palette on an existing .mmd. Usage: task palette -- <solar|federation|citrus|parchment> path/to/diagram.mmd. Writes to stdout.'
+    desc: 'Swap the palette on an existing .mmd, or the mermaid fences of a .md. Usage: task palette -- [--block N] <solar|federation|citrus|parchment> path/to/file. Writes to stdout.'
     cmd: bash {{.ROOT_DIR}}/{{.SCRIPTS_DIR}}/swap-palette.sh {{.CLI_ARGS}}
 
   clean:
@@ -151,4 +155,4 @@ tasks:
       # vendor/ is committed source of record that ships to users, not scratch.
       # `task vendor` regenerates it deliberately; clean must not remove it.
       - rm -rf .test-output
-      - rm -rf {{.SCRIPTS_DIR}}/node_modules
+      - rm -rf {{.TOOLCHAIN_DIR}}/node_modules

@@ -1,0 +1,127 @@
+{
+  "prompt": "../../tmp/r14-repo-drift-600.txt",
+  "runs": 5,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.0,
+    "ipv6-count": 0.8,
+    "docs-init-adr": 0.0,
+    "merval-shapes": 0.2,
+    "license-mit": 0.0,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond [BlockList's IPv4-mapped matching]: ::/96 and fec0::/10 blocked outright; 64:ff9b:1::/48 blocked outright; 64:ff9b::/96 judged by embedded IPv4.",
+          "code_says": "The BLOCKED IPv6 subnet list hardcodes six ranges \u2014 ::/96, fc00::/7 (unique-local), fec0::/10, fe80::/10 (link-local), ff00::/8 (multicast), and 64:ff9b:1::/48 \u2014 plus the separate NAT64 well-known prefix 64:ff9b::/96 in the NAT64 BlockList.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 188,
+          "doc_says": "docs/dev/architecture.md:188-197 \u2014 'net.BlockList matches IPv4-mapped IPv6 addresses against the IPv4 ranges on its own. Three IPv6 ranges get handling beyond that: `::/96` ... and the deprecated site-local range `fec0::/10` are blocked outright. The RFC 8215 local-use NAT64 prefix `64:ff9b:1::/48` is blocked outright too... The well-known NAT64 prefix `64:ff9b::/96` is judged by the IPv4 address in its last 32 bits...'",
+          "code_says": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-151 blocks six IPv6 ranges outright \u2014 `::/96`, `fc00::/7`, `fec0::/10`, `fe80::/10`, `ff00::/8`, `64:ff9b:1::/48` \u2014 plus a separate NAT64 BlockList for `64:ff9b::/96` judged by its embedded IPv4 address. The doc omits `fc00::/7` (unique local addresses), `fe80::/10` (link-local), and `ff00::/8` (multicast) from its enumerated list entirely.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-151"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "docs/dev/architecture.md:188-197 states 'Three IPv6 ranges get handling beyond that' and enumerates only ::/96 (+fec0::/10), 64:ff9b:1::/48, and 64:ff9b::/96",
+          "code_says": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-146 blocks six IPv6 subnets outright: '::' /96, 'fc00::' /7 (unique-local), 'fec0::' /10, 'fe80::' /10 (link-local), 'ff00::' /8 (multicast), and '64:ff9b:1::' /48 \u2014 fc00::/7, fe80::/10, and ff00::/8 are not mentioned in the doc",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-146"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": true,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond that: ::/96, fec0::/10, and 64:ff9b:1::/48 (64:ff9b::/96 is handled separately via NAT64 lookup).",
+          "code_says": "BLOCKED.addSubnet is called for six IPv6 ranges: ::/96, fc00::/7, fec0::/10, fe80::/10, ff00::/8, and 64:ff9b:1::/48 \u2014 three (fc00::/7 unique-local, fe80::/10 link-local, ff00::/8 multicast) are never mentioned.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 234,
+          "doc_says": "merval's flowchart grammar knows four bracket shapes ([], (), (()), {}).",
+          "code_says": "The code's own comment says merval knows only [] () (()) {} and the slash-delimited forms \u2014 a fifth supported category the doc omits.",
+          "source": "module/skills/docs-organization/scripts/lint-mermaid.mjs:25"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    }
+  ],
+  "rescored": "offline against the six-item real-lane-table ground truth"
+}

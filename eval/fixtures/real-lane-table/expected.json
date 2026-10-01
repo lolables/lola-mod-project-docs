@@ -1,0 +1,13 @@
+{
+  "lane": "repo-drift",
+  "source": "docs/dev/architecture.md at d3b2c96^ (before the self-audit fix); ipv6/docs-init/merval/license are real drift found by Round 14 runs and fixed in e85dccd and 0b46617; block-flag is ambiguous (the paragraph introduces both scripts together); run with --repo <worktree at d3b2c96^> --doc docs/dev/architecture.md",
+  "planted": [
+    {"id": "lane3-procedures", "desc": "lane table credits 'unscannable procedures' to Lane 3 / check-prose.mjs; check-prose emits only WALL_OF_TEXT, DENSE_BULLET, SPLIT_CANDIDATE — the check is Lane 6's; either row may be reported (Lane 3 over-claims it, Lane 6 omits it)", "groups": [["check-prose", "lane 3", "lane 6"], ["procedure", "scannab", "needs_structure"]]},
+    {"id": "ipv6-count", "desc": "'Three IPv6 ranges' — the code blocks six outright (fc00::/7, fe80::/10, ff00::/8 omitted) and decodes one more", "groups": [["ipv6"], ["three", "six", "fc00", "fe80", "ff00"]]},
+    {"id": "docs-init-adr", "desc": "only /docs-update said to reach both skills; /docs-init also activates adr when it creates docs/dev/README.md", "groups": [["docs-init"], ["adr"]]},
+    {"id": "merval-shapes", "desc": "'four bracket shapes' omits the slash-delimited forms merval also accepts", "groups": [["merval", "bracket"], ["slash"]]},
+    {"id": "license-mit", "desc": "'MIT texts for all eight packages' — argparse is Python-2.0, entities BSD-2-Clause", "groups": [["mit"], ["argparse", "python-2.0", "bsd", "entities"]]},
+    {"id": "block-flag", "desc": "--block N credited to apply-palette.mjs; it is swap-palette.sh's flag (apply-palette takes a positional block)", "groups": [["--block"], ["apply-palette"]]}
+  ],
+  "controls": []
+}

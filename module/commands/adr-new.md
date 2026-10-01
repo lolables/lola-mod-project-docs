@@ -43,7 +43,7 @@ hardcode `.claude/skills/...` or search candidate paths.
    - Verify "Decision Outcome" has a "because" clause that ties to a
      listed driver.
    - If any check fails, fix inline before writing.
-6. Write the file. Run `bash $SKILL_DIR/scripts/adr-index.sh <adr-dir>`
+6. Write the file. Run `bash "$SKILL_DIR/scripts/adr-index.sh" <adr-dir>`
    to regenerate the index.
 7. Commit: `docs(adr): NNNN <title> (proposed)`.
 

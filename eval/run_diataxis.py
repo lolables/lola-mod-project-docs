@@ -23,6 +23,8 @@ def run(fix,K):
     mix=[bool(r.get("mode_mixing")) for r in res]
     exp_mix=exp["expect_mode_mixing"]
     correct=sum(1 for m in mix if m==exp_mix)
-    print(f"{fix:22} expect_mix={exp_mix!s:5} | modes={modes} | mixing={mix} | correct={correct}/{len(res)}")
-for fix in ["diataxis-mixed","diataxis-clean","diataxis-landing"]:
+    mode_ok=sum(1 for m in modes if m==exp["primary"])
+    print(f"{fix:22} expect={exp['primary']}/mix={exp_mix!s:5} | modes={modes} | mixing={mix} | mode={mode_ok}/{len(res)} mix={correct}/{len(res)}")
+DEFAULT=["diataxis-mixed","diataxis-clean","diataxis-landing","diataxis-glossary","diataxis-punchlist"]
+for fix in (sys.argv[1:] or DEFAULT):
     run(fix,5)

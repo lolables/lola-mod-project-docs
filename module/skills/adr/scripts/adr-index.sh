@@ -38,6 +38,32 @@ read_title() {
   ' "$file"
 }
 
+# Make a front-matter or heading value safe as a markdown table cell: drop a
+# CRLF file's trailing \r (awk's default record separator is \n, so a CRLF
+# line leaves \r stuck to the last field), strip one matching pair of
+# surrounding quotes from a quoted YAML scalar (`status: "accepted"`), then
+# escape any literal `|` so it can't be read as a column separator.
+sanitize_cell() {
+  local val="$1"
+  val="${val%$'\r'}"
+  local len=${#val}
+  if [ "$len" -ge 2 ]; then
+    local first="${val:0:1}" last="${val: -1}"
+    if { [ "$first" = '"' ] && [ "$last" = '"' ]; } || { [ "$first" = "'" ] && [ "$last" = "'" ]; }; then
+      val="${val:1:len-2}"
+    fi
+  fi
+  printf '%s' "${val//|/\\|}"
+}
+
+# Percent-encode spaces in a link target so a filename containing one
+# produces a valid markdown link destination (CommonMark forbids a literal
+# space in an unbracketed destination) that check-refs.mjs's decodeTarget()
+# resolves back to the real file.
+encode_link_target() {
+  printf '%s' "${1// /%20}"
+}
+
 shopt -s nullglob
 adr_glob=("$dir"/[0-9][0-9][0-9][0-9]-*.md)
 shopt -u nullglob
@@ -60,12 +86,13 @@ fi
   for f in "${files[@]}"; do
     base=$(basename "$f")
     id="${base:0:4}"
-    title=$(read_title "$f")
+    title=$(sanitize_cell "$(read_title "$f")")
     [ -z "$title" ] && title="(no title)"
-    status=$(read_field "$f" status)
+    status=$(sanitize_cell "$(read_field "$f" status)")
     [ -z "$status" ] && status="unknown"
-    date=$(read_field "$f" date)
+    date=$(sanitize_cell "$(read_field "$f" date)")
     [ -z "$date" ] && date="unknown"
-    echo "| [$id]($base) | $title | $status | $date |"
+    link=$(encode_link_target "$base")
+    echo "| [$id]($link) | $title | $status | $date |"
   done
 } > "$out"

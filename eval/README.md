@@ -19,15 +19,31 @@ by hand when a lane's prompt changes.
 
 ## Running a lane
 
-Requires the `claude` CLI on `PATH` and the script deps installed once
-(`cd ../module/skills/docs-organization/scripts && npm install`).
+Requires the `claude` CLI on `PATH`. The skill's scripts need no install step;
+their dependencies ship pre-bundled under `scripts/vendor/`.
 
 ```bash
 python3 run_needsstructure.py     # scannability of procedures (NEEDS_STRUCTURE)
 python3 run_missingdemo.py        # hero-demo encouragement (MISSING_DEMO)
+python3 run_citeddrift.py         # document-mode drift vs cited sources (CONTENT_DRIFT / NOT_VERIFIABLE)
 python3 run_gooddocs.py           # completeness-for-type (INCOMPLETE_FOR_TYPE)
 python3 run_coldread.py fixtures/cold-read grounded 5
+python3 run_repodrift.py --out results/r14-repodrift-after.json          # repo-mode drift: attribution, omission
+python3 run_coldread_actionable.py --out results/r14-coldread-after.json # cold read + actionable tag
+python3 run_ledger.py --out results/r15-ledger3-fixture.json              # repo-mode drift as shipped: claim ledger
 ```
+
+`run_ledger.py` reproduces the shipped claim ledger (extract per range, verify
+in batches, coverage check) and always runs under an isolated
+`CLAUDE_CONFIG_DIR` holding only a copy of your credentials, so user-level
+plugins and `CLAUDE.md` cannot leak into the measurement. Pass `--isolated` to
+`run_repodrift.py` for the same isolation.
+
+`run_repodrift.py --repo <checkout> --doc <path> --fixture fixtures/real-lane-table`
+(and the same `--repo`/`--doc` on `run_ledger.py`) audits a real document in
+place instead of a fixture copy; `--chunked` with `--prompt
+prompts/repo-drift-chunk.txt` reproduces Round 14's chunked runs. REPORT
+Round 14 shows how the real-document snapshot is built.
 
 The discipline: a new LLM lane is validated here (recall on docs that should
 flag, anti-nag on docs that should stay silent) **before** it is wired into the

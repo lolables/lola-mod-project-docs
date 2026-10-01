@@ -14,9 +14,12 @@
 //   DENSE_BULLET    a flat list item (no sub-list) whose body is over threshold
 //   SPLIT_CANDIDATE the whole file, or one H2 section, over the size threshold
 //
-// Output: JSON {status, findings:[{code, severity, file, line, message}]} on
-// stdout. Exit 0 = no findings, 1 = findings, 2 = internal error. Matches the
-// contract of check-structure.sh / check-staleness.sh.
+// Output: JSON {status, scanned, findings:[{code, severity, file, line, message}]}
+// on stdout. `scanned` is the number of distinct documents read, so an empty
+// result can be told apart from a run that read nothing. A symlinked file and
+// its target are one document, reported at the target's path. Exit 0 = no
+// findings, 1 = findings, 2 = internal error. Matches the contract of
+// check-structure.sh / check-staleness.mjs.
 //
 // Markdown structure is read from the markdown-it token stream, never from
 // per-line regexes: fenced code, tables, blockquotes, and nested lists are
@@ -24,8 +27,10 @@
 // masquerade as paragraphs (the false-positive class a hand-rolled scanner hits).
 
 import MarkdownIt from './vendor/markdown-it.mjs';
-import { readFileSync, statSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, realpathSync, lstatSync } from 'node:fs';
+import { relative } from 'node:path';
+import { walkMarkdown } from './md-files.mjs';
+import { isMain } from './is-main.mjs';
 
 // Thresholds. Word count and line span are the only *unambiguous* size metrics,
 // so those are all this deterministic pass triggers on. A paragraph gets more
@@ -178,19 +183,6 @@ export function analyzeMarkdown(content) {
   return findings;
 }
 
-function walkMarkdownFiles(target) {
-  const st = statSync(target);
-  if (st.isFile()) return target.endsWith('.md') ? [target] : [];
-  const out = [];
-  for (const entry of readdirSync(target, { withFileTypes: true })) {
-    if (entry.name.startsWith('.')) continue; // skip dot-dirs (agent runtime spaces)
-    const p = join(target, entry.name);
-    if (entry.isDirectory()) out.push(...walkMarkdownFiles(p));
-    else if (entry.isFile() && entry.name.endsWith('.md')) out.push(p);
-  }
-  return out;
-}
-
 function main(argv) {
   const targets = argv.slice(2);
   if (targets.length === 0) {
@@ -198,21 +190,29 @@ function main(argv) {
     process.exit(2);
   }
   const findings = [];
+  const seen = new Set();
+  const cwd = realpathSync(process.cwd());
   for (const target of targets) {
-    for (const file of walkMarkdownFiles(target)) {
-      const content = readFileSync(file, 'utf8');
-      for (const f of analyzeMarkdown(content)) findings.push({ ...f, file });
+    for (const file of walkMarkdown(target)) {
+      const real = realpathSync(file);
+      if (seen.has(real)) continue; // a symlink and its target are one document
+      seen.add(real);
+      // Keep the caller's spelling for ordinary files; name the target for symlinks.
+      const shown = lstatSync(file).isSymbolicLink() ? relative(cwd, real) : file;
+      const content = readFileSync(real, 'utf8');
+      for (const f of analyzeMarkdown(content)) findings.push({ ...f, file: shown });
     }
   }
   const payload = {
     status: findings.length === 0 ? 'ok' : 'findings',
+    scanned: seen.size,
     findings,
   };
   process.stdout.write(JSON.stringify(payload, null, 2) + '\n');
   process.exit(findings.length === 0 ? 0 : 1);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   try {
     main(process.argv);
   } catch (e) {

@@ -63,12 +63,28 @@ describes the project itself. When enumerating documentation files (in
   with prompt-engineering iteration rather than with code, so auditing
   them for code drift produces noise.
 
+**Explicit paths override these rules:** `/docs-audit <path>...` audits
+exactly what the user names.
+
+**Symlinks:** a doc tree can be a directory of symlinks into a canonical copy.
+Content judgments (Lanes 3 and 6) run once per real file and report the
+canonical path — editing a symlink writes through to its target anyway;
+`check-prose.mjs` does this dedupe itself. Reference integrity (Lane 4) is the
+exception: a relative link resolves from the path a reader opened, and an
+installed module is read from the symlink's location, so Lane 4 gets every
+path. A tracked regular file sitting among at least two symlinks into a
+directory that has a diverged, tracked same-named twin is flagged by
+`check-structure.sh` as `FORKED_COPY` (`README.md`/`index.md` exempt).
+
 **Tooling preference:** when enumerating files, prefer the agent host's
-built-in glob/search tools (e.g., Claude Code's `Glob` and `Grep`) over
-shell `find` / `grep`. Built-ins are faster, portable across platforms,
-and return structured output without shell-escaping concerns. Shell
-tools are still appropriate for the deterministic scripts under
-`scripts/`, which run outside the agent.
+built-in glob/search tools (e.g., Claude Code's `Glob` and `Grep`) over shell
+`find` / `grep`. Built-ins are faster, portable across platforms, and return
+structured output without shell-escaping concerns. When the host has none,
+use `git -c core.quotePath=false ls-files --cached --others
+--exclude-standard` (drop deleted paths) — tracked plus
+untracked-not-ignored, i.e., Glob minus `.gitignore` — and apply the
+remaining exclusions to its output. Shell tools are still appropriate for
+the deterministic scripts under `scripts/`, which run outside the agent.
 
 ## When a diagram earns its place
 
@@ -104,38 +120,50 @@ screencast) — never for a library (its demo is a code snippet), a spec, or a
 maintainer doc, and at most once per repo (the hero slot). Because an LLM cannot
 record a screencast, `/docs-update` drops an **HTML-comment spec** at the hero
 slot — the command sequence to record, what the viewer should see, and a suggested
-tool (asciinema / VHS) — never a fabricated artifact. (Validated 25/25 on eval
-fixtures.)
+tool (asciinema / VHS) — never a fabricated artifact.
 
 ## Tools this skill uses
 
-All scripts return JSON to stdout. Each script's exit code:
+Scripts print JSON (lint-mermaid: with `--json`). Exit code:
 0 = no findings, 1 = findings, 2 = internal error.
 
-- `scripts/check-structure.sh` — file presence, `.gitignore`, ADR index.
-- `scripts/check-staleness.sh` — git log delta between docs and source.
+- `scripts/check-structure.sh` — file presence, `.gitignore`, ADR index,
+  forked copies in symlinked doc trees (`FORKED_COPY`).
+- `scripts/check-staleness.mjs` — git log delta between docs and source;
+  source is classified with GitHub Linguist's vendored language data, and
+  `STALENESS_NOT_ASSESSED` reports when no commit ever touched source.
 - `scripts/check-prose.mjs` — readability and size over a markdown AST:
   `WALL_OF_TEXT` (dense top-level paragraph), `DENSE_BULLET` (fat flat list
   item with no sub-bullets), `SPLIT_CANDIDATE` (oversized file or H2 section).
-- `scripts/check-refs.mjs` — reference integrity: `REF_BROKEN` /
-  `REF_NOT_IN_GIT` (a markdown link to a path that does not resolve to a
-  git-tracked file) and `UNLINKED_REF` (a `§` section citation with no link).
+- `scripts/check-refs.mjs` — `REF_NOT_IN_GIT`, `REF_BROKEN` (untracked docs:
+  checked on disk), `UNLINKED_REF` (bare `§`).
 - `scripts/lint-mermaid.mjs` — merval parse, init header, palette,
   contrast.
+- `scripts/md-files.mjs`, `md-chunks.mjs` — path expansion; drift ranges.
+- `scripts/fetch-citations.mjs` — document-mode URLs, local sources; only
+  network actor (`--fetch`; else `--offline`).
 
-Requires Node.js ≥20 and two npm deps (`@aj-archipelago/merval`,
-`markdown-it`).
+`check-prose.mjs` and `check-refs.mjs` also report `scanned`, so an empty
+result can be told apart from a lane that read nothing: `check-prose.mjs`
+counts distinct documents read (a symlink and its target count once);
+`check-refs.mjs` counts doc paths checked (a symlink and its target
+count separately).
+
+Requires Node.js ≥20. The npm deps (`@aj-archipelago/merval`, `markdown-it`)
+and Linguist data (`linguist.json`) ship pre-bundled under `scripts/vendor/`;
+nothing to install.
 
 ### Deterministic where it's unambiguous, LLM where it's fuzzy
 
 Size is mechanical, so `check-prose.mjs` owns enumeration (`WALL_OF_TEXT`,
-`DENSE_BULLET`, `SPLIT_CANDIDATE`) and repeats it identically every run; an LLM
-asked to enumerate under-reports on long files. The LLM lane adjudicates only
-the candidates the script surfaces: choppy rhythm, and dense-prose *genres*
-(academic, legal, formal spec) where `WALL_OF_TEXT` should be suppressed. A
-procedure spread across many small blocks trips no size check but is
-absence-of-structure, so it belongs to the grounded `NEEDS_STRUCTURE` sub-check
-in Lane 5.
+`DENSE_BULLET`, `SPLIT_CANDIDATE`) and repeats it identically every run; an
+LLM asked to enumerate under-reports on long files. The LLM lane adjudicates
+only the candidates the script surfaces: choppy rhythm, and dense-prose
+*genres* (academic, legal, formal spec) where `WALL_OF_TEXT` should be
+suppressed, and `reference` enumerations (glossaries, changelogs, punch
+lists) where `SPLIT_CANDIDATE` may be. A procedure spread across many small
+blocks trips no size check but is absence-of-structure, so it belongs to the
+grounded `NEEDS_STRUCTURE` sub-check in Lane 6.
 
 Why each signal sits where it does:
 `$SKILL_DIR/reference/deterministic-vs-llm.md`.
@@ -168,19 +196,17 @@ stuck. The **completeness** check (`INCOMPLETE_FOR_TYPE`) asks whether a reader
 of that type would be blocked by something the doc omits. All three are
 info-level: the framework guides, it does not dictate.
 
-Why each lane is shaped that way, what it measured on the eval fixtures, and
-the guards that keep it from nagging:
+Why each lane is shaped that way and the guards that keep it from nagging:
 `$SKILL_DIR/reference/diataxis-grounding.md`.
 
 ### Never read an empty LLM lane as "clean"
 
 The content-drift and missing-diagram lanes are irreducibly LLM-driven. Their
-main consistency risk is not partial recall — measured with a headless harness,
-whole-file content-drift finds every planted drift through several hundred lines
-— but a *transient empty reply* (~1 run in 5) that reads as a spurious all-clear.
-The command procedure therefore validates every subagent reply, retries an
-empty/errored one up to twice, and records a `LANE_FAILED` **Warning** if it
-still yields nothing. An unaudited file is "unknown", never "clean".
+main consistency risk is not partial recall but a *transient empty reply*
+(~1 run in 5) that reads as a spurious all-clear. The command procedure
+therefore validates every subagent reply, retries an empty/errored one up to
+twice, and records a `LANE_FAILED` **Warning** if it still yields nothing.
+An unaudited file is "unknown", never "clean".
 
 ## References
 
@@ -188,7 +214,7 @@ still yields nothing. An unaudited file is "unknown", never "clean".
   and **merval syntax constraints** (the strict-subset gotchas every
   diagram in this project must follow; consult before scaffolding).
 - `reference/diataxis-grounding.md` — why the grounding, cold-read, and
-  completeness lanes are shaped as they are, and what each measured.
+  completeness lanes are shaped as they are.
 - `reference/deterministic-vs-llm.md` — why each readability signal is owned
   by `check-prose.mjs` or by an LLM lane, and the guards on each.
 - `reference/readme-template.md` — minimum acceptable README structure.

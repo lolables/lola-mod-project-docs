@@ -1,7 +1,8 @@
-import { contrastRatio } from './contrast.mjs';
+import { contrastRatio, resolveColor } from './contrast.mjs';
 import { validateMermaid } from './vendor/merval.mjs';
 import { readFileSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { isMain } from './is-main.mjs';
 
 const LIGHT_BG = '#ffffff';
 const DARK_BG = '#1e1e1e';
@@ -17,10 +18,52 @@ const LLM_CONFIG_BASENAMES = new Set([
 ]);
 const CONTRAST_TEXT = 4.5;   // WCAG AA for text
 const CONTRAST_BG = 3.0;     // WCAG threshold for non-text graphical objects
+// Relative to the skill root, so the path resolves in an installed skill.
+const HOUSE_STYLE_REF = 'reference/mermaid-house-style.md';
 
+// Valid mermaid flowchart shapes the vendored merval grammar does not parse
+// (it knows only [] () (()) {} and the slash-delimited forms). merval reports
+// them as an unclosed bracket, which points away from the cause. The capture
+// in UNSUPPORTED_SHAPE_RE maps to an entry here; '(((' precedes the others so
+// it wins at the same position. The node id must not follow `<` or `/`, so an
+// HTML tag in a label (`<b>`, `</b>`) is not read as the asymmetric `>`.
+const UNSUPPORTED_SHAPES = {
+  '(((': { name: 'double circle', syntax: '(((…)))' },
+  '([': { name: 'stadium', syntax: '([…])' },
+  '[[': { name: 'subroutine', syntax: '[[…]]' },
+  '[(': { name: 'cylinder', syntax: '[(…)]' },
+  '{{': { name: 'hexagon', syntax: '{{…}}' },
+  '@{': { name: 'expanded-syntax', syntax: '@{ shape: … }' },
+  '>': { name: 'asymmetric', syntax: '>…]' },
+};
+const UNSUPPORTED_SHAPE_RE = /(?<![\w<\/])\w+(\(\(\(|\(\[|\[\[|\[\(|\{\{|@\{|>)/;
+
+// 1-based line number of character offset `index` in `text`.
+function lineAt(text, index) {
+  let line = 1;
+  for (let i = 0; i < index; i++) if (text[i] === '\n') line++;
+  return line;
+}
+
+// Returns the %%{init}%% header and its 1-based line, or null.
 export function extractInitBlock(source) {
   const m = /%%\{\s*init\s*:\s*([\s\S]*?)\}%%/.exec(source);
-  return m ? m[0] : null;
+  return m ? { text: m[0], line: lineAt(source, m.index) } : null;
+}
+
+// When merval rejects `lineNo` of a flowchart and that line puts an
+// unsupported shape opener right after a node id, return the shape. Quoted
+// labels and |edge labels| are blanked first so their text cannot match.
+function findUnsupportedShape(source, lineNo) {
+  const init = extractInitBlock(source);
+  const body = init ? source.replace(init.text, '') : source;
+  const kind = body.split('\n').map((l) => l.trim()).find((l) => l && !l.startsWith('%%'));
+  if (!kind || !/^(flowchart|graph)\b/.test(kind)) return null;
+  const line = source.split('\n')[lineNo - 1];
+  if (line === undefined) return null;
+  const bare = line.replace(/"[^"]*"/g, '""').replace(/\|[^|]*\|/g, '||');
+  const m = UNSUPPORTED_SHAPE_RE.exec(bare);
+  return m ? UNSUPPORTED_SHAPES[m[1]] : null;
 }
 
 // Detect `node["label"]:::className` — inline class assignment on a node
@@ -46,74 +89,148 @@ export function findInlineClassUse(source) {
   return null;
 }
 
-export function extractClassDefs(source) {
+// The color properties of a classDef/style body (`fill:#fff,color:white,…`),
+// each as { value, hex } — `hex` is null when the value cannot be resolved.
+function colorProps(body) {
+  const props = new Map();
+  for (const part of body.split(',')) {
+    const m = /^\s*([\w-]+)\s*:\s*(.*?)\s*;?\s*$/.exec(part);
+    if (m) props.set(m[1].toLowerCase(), m[2]);
+  }
+  const prop = (key) => (props.has(key)
+    ? { value: props.get(key), hex: resolveColor(props.get(key)) }
+    : null);
+  return { fill: prop('fill'), color: prop('color'), stroke: prop('stroke') };
+}
+
+// `keyword` is `classDef` or `style`; both are `<keyword> <name> <props>`.
+function extractColorRules(source, keyword) {
   const out = [];
-  const re = /^\s*classDef\s+(\w+)[ \t]+(.+)$/gm;
+  const re = new RegExp(`^\\s*${keyword}\\s+([^\\s,]+)[ \\t]+(.+)$`, 'gm');
   let m;
   while ((m = re.exec(source)) !== null) {
-    const name = m[1];
-    const body = m[2];
-    const fill = /fill:\s*(#[0-9a-fA-F]+)/.exec(body)?.[1] ?? null;
-    const color = /color:\s*(#[0-9a-fA-F]+)/.exec(body)?.[1] ?? null;
-    out.push({ name, fill, color });
+    // `^\s*` can span blank lines, so locate the keyword, not the match start.
+    const line = lineAt(source, m.index + m[0].indexOf(keyword));
+    out.push({ name: m[1], ...colorProps(m[2]), line });
   }
   return out;
 }
 
-export async function lintDiagram(source) {
-  const findings = [];
+// `yellow (#ffff00)` for a named color, the hex alone otherwise.
+const describe = (c) => (c.value === c.hex ? c.hex : `${c.value} (${c.hex})`);
 
-  const v = validateMermaid(source);
-  if (!v.isValid) {
-    const err = v.errors?.[0];
-    // Specialized detection: inline `:::sysX` on a node with an explicit
-    // shape is a common gotcha — merval rejects it but the error message
-    // ("Adjacent nodes 'web' and 'sysA'…") doesn't hint at the cause.
-    // Surface a dedicated finding pointing at the fix.
-    const inlineClass = findInlineClassUse(source);
-    if (inlineClass) {
+// LOW_CONTRAST_* findings for one classDef or style rule. `label` names the
+// rule in the message (`classDef "sysA"`, `style "A"`).
+function contrastFindings(label, rule) {
+  const findings = [];
+  const fill = rule.fill?.hex ? rule.fill : null;
+  const color = rule.color?.hex ? rule.color : null;
+  if (fill && color) {
+    const textVsFill = contrastRatio(fill.hex, color.hex);
+    if (textVsFill < CONTRAST_TEXT) {
       findings.push({
-        code: 'INLINE_CLASS_NOT_SUPPORTED',
+        code: 'LOW_CONTRAST_TEXT',
         severity: 'blocker',
-        line: inlineClass.line,
-        column: inlineClass.column,
+        line: rule.line,
         message:
-          `Inline class assignment on a node with an explicit shape ` +
-          `(${inlineClass.match}) is rejected by the linter. Declare the ` +
-          `node first, then assign with a separate \`class\` statement: ` +
-          `\`class ${inlineClass.nodeId} ${inlineClass.className}\`.`,
+          `${label}: text ${describe(color)} on fill ${describe(fill)} ` +
+          `is ${textVsFill.toFixed(2)}:1 — needs >= ${CONTRAST_TEXT}:1 (AA).`,
       });
-      return findings;
     }
-    if (!err) {
-      findings.push({
-        code: 'SYNTAX_ERROR',
-        severity: 'blocker',
-        message: 'Diagram failed validation (no error details available).',
-      });
-      return findings;
+  }
+  if (fill) {
+    for (const [code, name, bg] of [
+      ['LOW_CONTRAST_LIGHT_BG', 'light', LIGHT_BG],
+      ['LOW_CONTRAST_DARK_BG', 'dark', DARK_BG],
+    ]) {
+      const ratio = contrastRatio(fill.hex, bg);
+      if (ratio < CONTRAST_BG) {
+        findings.push({
+          code,
+          severity: 'blocker',
+          line: rule.line,
+          message:
+            `${label}: fill ${describe(fill)} vs ${name} bg ${bg} ` +
+            `is ${ratio.toFixed(2)}:1 — needs >= ${CONTRAST_BG}:1.`,
+        });
+      }
     }
-    findings.push({
+  }
+  return findings;
+}
+
+// merval's verdict as a single finding. Lines are 1-based within `source`.
+function syntaxFinding(source, err) {
+  const shape = err?.line ? findUnsupportedShape(source, err.line) : null;
+  if (shape) {
+    return {
       code: 'SYNTAX_ERROR',
       severity: 'blocker',
       line: err.line,
       column: err.column,
-      message: err.message,
+      message:
+        `${err.message} — likely cause: merval does not support the ` +
+        `${shape.name} shape \`${shape.syntax}\` (valid mermaid, but outside ` +
+        `the linter's grammar). Use [text], (text), ((text)) or {text}; see ` +
+        `${HOUSE_STYLE_REF} "Syntax constraints".`,
       suggestion: err.suggestion,
-    });
-    return findings;
+    };
   }
+  // Inline `:::sysX` on a node with an explicit shape is a common gotcha —
+  // merval rejects it but the error message ("Adjacent nodes 'web' and
+  // 'sysA'…") doesn't hint at the cause. Surface a finding pointing at the fix.
+  const inlineClass = findInlineClassUse(source);
+  if (inlineClass) {
+    return {
+      code: 'INLINE_CLASS_NOT_SUPPORTED',
+      severity: 'blocker',
+      line: inlineClass.line,
+      column: inlineClass.column,
+      message:
+        `Inline class assignment on a node with an explicit shape ` +
+        `(${inlineClass.match}) is rejected by the linter. Declare the ` +
+        `node first, then assign with a separate \`class\` statement: ` +
+        `\`class ${inlineClass.nodeId} ${inlineClass.className}\`.`,
+    };
+  }
+  if (!err) {
+    return {
+      code: 'SYNTAX_ERROR',
+      severity: 'blocker',
+      line: 1,
+      message: 'Diagram failed validation (no error details available).',
+    };
+  }
+  return {
+    code: 'SYNTAX_ERROR',
+    severity: 'blocker',
+    line: err.line ?? 1,
+    column: err.column,
+    message: err.message,
+    suggestion: err.suggestion,
+  };
+}
 
-  const initBlock = extractInitBlock(source);
-  if (!initBlock) {
+// Findings carry a 1-based `line` within `source`. The header, class-name and
+// contrast checks read the raw text, not merval's parse, so they run even
+// when merval rejects the diagram — one syntax error never hides them.
+export async function lintDiagram(source) {
+  const findings = [];
+
+  const v = validateMermaid(source);
+  if (!v.isValid) findings.push(syntaxFinding(source, v.errors?.[0]));
+
+  const init = extractInitBlock(source);
+  if (!init) {
     findings.push({
       code: 'MISSING_HOUSE_STYLE_HEADER',
       severity: 'blocker',
+      line: 1,
       message:
-        'Diagram is missing the %%{init}%% house-style header. See ' +
-        'module/skills/docs-organization/reference/mermaid-house-style.md.',
+        `Diagram is missing the %%{init}%% house-style header. See ${HOUSE_STYLE_REF}.`,
     });
   } else {
+    const initBlock = init.text;
     // Warn if the header looks like a pre-palette-update legacy header.
     // Required signals (in any one of the 4 current palettes): clusterBkg
     // and primaryTextColor set to a non-white value. The legacy header set
@@ -128,75 +245,128 @@ export async function lintDiagram(source) {
       findings.push({
         code: 'LEGACY_HOUSE_STYLE_HEADER',
         severity: 'warning',
+        line: init.line,
         message:
           'Init header is the legacy form (' + reasons.join('; ') +
-          '). Replace with one of the four palette headers — see ' +
-          'reference/mermaid-house-style.md.',
+          `). Replace with one of the four palette headers — see ${HOUSE_STYLE_REF}.`,
       });
     }
   }
 
-  for (const def of extractClassDefs(source)) {
+  for (const def of extractColorRules(source, 'classDef')) {
     if (!APPROVED_CLASSNAMES.has(def.name)) {
       findings.push({
         code: 'UNAPPROVED_CLASSNAME',
         severity: 'warning',
+        line: def.line,
         message:
           `classDef "${def.name}" is not in the approved set. ` +
           `Use one of: ${[...APPROVED_CLASSNAMES].join(', ')}.`,
       });
       continue;
     }
+    findings.push(...contrastFindings(`classDef "${def.name}"`, def));
+  }
 
-    if (def.fill && def.color) {
-      const textVsFill = contrastRatio(def.fill, def.color);
-      if (textVsFill < CONTRAST_TEXT) {
-        findings.push({
-          code: 'LOW_CONTRAST_TEXT',
-          severity: 'blocker',
-          message:
-            `classDef "${def.name}": text ${def.color} on fill ${def.fill} ` +
-            `is ${textVsFill.toFixed(2)}:1 — needs >= ${CONTRAST_TEXT}:1 (AA).`,
-        });
-      }
-    }
-
-    if (def.fill) {
-      const fillVsLight = contrastRatio(def.fill, LIGHT_BG);
-      const fillVsDark = contrastRatio(def.fill, DARK_BG);
-      if (fillVsLight < CONTRAST_BG) {
-        findings.push({
-          code: 'LOW_CONTRAST_LIGHT_BG',
-          severity: 'blocker',
-          message:
-            `classDef "${def.name}": fill ${def.fill} vs light bg ${LIGHT_BG} ` +
-            `is ${fillVsLight.toFixed(2)}:1 — needs >= ${CONTRAST_BG}:1.`,
-        });
-      }
-      if (fillVsDark < CONTRAST_BG) {
-        findings.push({
-          code: 'LOW_CONTRAST_DARK_BG',
-          severity: 'blocker',
-          message:
-            `classDef "${def.name}": fill ${def.fill} vs dark bg ${DARK_BG} ` +
-            `is ${fillVsDark.toFixed(2)}:1 — needs >= ${CONTRAST_BG}:1.`,
-        });
-      }
-    }
+  // A `style` statement colors one node outside the palette, so it is the
+  // per-node form of an unapproved classDef: a warning. Unlike an unapproved
+  // classDef its colors are still contrast-checked — the statement names the
+  // exact colors the node renders with.
+  for (const rule of extractColorRules(source, 'style')) {
+    if (!rule.fill && !rule.color && !rule.stroke) continue;
+    findings.push({
+      code: 'UNAPPROVED_STYLE',
+      severity: 'warning',
+      line: rule.line,
+      message:
+        `style "${rule.name}" sets colors outside the palette. Assign an ` +
+        `approved class instead, e.g. \`class ${rule.name} sysA\` ` +
+        `(one of: ${[...APPROVED_CLASSNAMES].join(', ')}). See ${HOUSE_STYLE_REF}.`,
+    });
+    findings.push(...contrastFindings(`style "${rule.name}"`, rule));
   }
   return findings;
 }
 
+// CommonMark fenced code block delimiters: a run of 3+ backticks or 3+
+// tildes, indented at most 3 spaces. A backtick-fenced info string may not
+// itself contain a backtick (that would be ambiguous with inline code); a
+// tilde-fenced one has no such restriction. `lang` is the info string's
+// first whitespace-delimited word — the fence is a mermaid fence iff
+// `lang === 'mermaid'`.
+const FENCE_OPEN_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+
+function matchFenceOpen(line) {
+  const m = FENCE_OPEN_RE.exec(line);
+  if (!m) return null;
+  const [, run, rest] = m;
+  const char = run[0];
+  if (char === '`' && rest.includes('`')) return null;
+  const trimmed = rest.trim();
+  return {
+    char,
+    len: run.length,
+    lang: trimmed ? trimmed.split(/\s+/)[0] : '',
+    indentLen: m[0].length - run.length - rest.length,
+  };
+}
+
+// A closing fence is a line holding only (up to 3 spaces indent, then) a
+// run of the *same* character as the opener, at least as long, then
+// optional trailing whitespace — no info string.
+const FENCE_CLOSE_RE = /^ {0,3}(`+|~+)[ \t]*$/;
+
+function matchFenceClose(line, char, minLen) {
+  const m = FENCE_CLOSE_RE.exec(line);
+  return !!m && m[1][0] === char && m[1].length >= minLen;
+}
+
+// `startLine` is the 1-based file line of the block's first diagram line
+// (blank lines after the opening fence are skipped by `\s*`). For a .md,
+// `fenceStart` is the offset of the opening fence and [bodyStart, bodyEnd)
+// the untrimmed diagram text — swap-palette.sh splices by these offsets, so
+// it numbers blocks exactly as the findings do. `block` is the 1-based
+// fence number `swap-palette.sh --block` takes; null for a .mmd (one
+// diagram). Fences are scanned line-by-line (not with a single regex) so a
+// non-mermaid fence's body — including any ```/~~~-looking text inside it —
+// is skipped wholesale rather than matched as a nested mermaid fence.
 export function extractMermaidBlocks(content, filename) {
   if (filename.endsWith('.mmd')) {
-    return [{ source: content, blockIndex: 0 }];
+    return [{ source: content, blockIndex: 0, block: null, startLine: 1 }];
   }
+  const lines = content.split('\n');
+  const offsets = [0];
+  for (let k = 0; k < content.length; k++) {
+    if (content[k] === '\n') offsets.push(k + 1);
+  }
+
   const blocks = [];
-  const re = /```mermaid\s*\n([\s\S]*?)```/g;
-  let m;
   let idx = 0;
-  while ((m = re.exec(content)) !== null) {
-    blocks.push({ source: m[1].trimEnd(), blockIndex: idx++ });
+  let i = 0;
+  while (i < lines.length) {
+    const open = matchFenceOpen(lines[i]);
+    if (!open) {
+      i++;
+      continue;
+    }
+    let j = i + 1;
+    while (j < lines.length && !matchFenceClose(lines[j], open.char, open.len)) j++;
+    const closed = j < lines.length;
+    if (open.lang === 'mermaid') {
+      const bodyStartLineIdx = i + 1;
+      const bodyStart = bodyStartLineIdx < lines.length ? offsets[bodyStartLineIdx] : content.length;
+      const bodyEnd = closed ? offsets[j] : content.length;
+      blocks.push({
+        source: content.slice(bodyStart, bodyEnd).trimEnd(),
+        blockIndex: idx,
+        block: ++idx,
+        startLine: bodyStartLineIdx + 1,
+        fenceStart: offsets[i] + open.indentLen,
+        bodyStart,
+        bodyEnd,
+      });
+    }
+    i = closed ? j + 1 : lines.length;
   }
   return blocks;
 }
@@ -228,7 +398,7 @@ function formatHuman(results, blockerCount) {
   }
   const lines = [];
   for (const r of results) {
-    lines.push(`${r.file}${r.blockIndex > 0 ? ` (block ${r.blockIndex})` : ''}:`);
+    lines.push(`${r.file}${r.block ? ` (block ${r.block})` : ''}:`);
     for (const f of r.findings) {
       const where = f.line ? ` line ${f.line}${f.column ? `:${f.column}` : ''}` : '';
       const tag = f.severity === 'blocker' ? '✖' : '⚠';
@@ -244,7 +414,13 @@ function formatHuman(results, blockerCount) {
   const parts = [];
   if (blockerCount) parts.push(`${blockerCount} blocker${blockerCount === 1 ? '' : 's'}`);
   if (warningCount) parts.push(`${warningCount} warning${warningCount === 1 ? '' : 's'}`);
-  lines.push(`lint-mermaid: ${parts.join(', ')} across ${results.length} file${results.length === 1 ? '' : 's'}.`);
+  // `results` has one entry per block with findings; a .md can hold several.
+  const blocks = results.length;
+  const files = new Set(results.map((r) => r.file)).size;
+  lines.push(
+    `lint-mermaid: ${parts.join(', ')} in ${blocks} block${blocks === 1 ? '' : 's'} ` +
+    `across ${files} file${files === 1 ? '' : 's'}.`,
+  );
   return lines.join('\n') + '\n';
 }
 
@@ -263,9 +439,13 @@ async function main(argv) {
       const content = readFileSync(file, 'utf8');
       const blocks = extractMermaidBlocks(content, file);
       for (const block of blocks) {
-        const findings = await lintDiagram(block.source);
+        const findings = (await lintDiagram(block.source)).map((f) => ({
+          ...f,
+          line: block.startLine + f.line - 1,
+          block: block.block,
+        }));
         if (findings.length > 0) {
-          results.push({ file, blockIndex: block.blockIndex, findings });
+          results.push({ file, blockIndex: block.blockIndex, block: block.block, findings });
         }
       }
     }
@@ -291,12 +471,14 @@ async function main(argv) {
   } else {
     process.stdout.write(formatHuman(results, blockerCount));
   }
-  process.exit(blockerCount > 0 ? 1 : 0);
+  // Any finding, warnings included, is exit 1 (SKILL.md contract). A gate
+  // that should fail only on blockers reads `blockerCount` from --json.
+  process.exit(results.length > 0 ? 1 : 0);
 }
 
 export { formatHuman };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   main(process.argv).catch((e) => {
     console.error('lint-mermaid: unexpected error:', e);
     process.exit(2);

@@ -1,0 +1,9 @@
+{
+  "lane": "cold-read-actionable",
+  "planted": [
+    {"id": "broken-example", "actionable": true, "desc": "'in place' vs 'prints to stdout'; the example saves nothing", "groups": [["in place", "stdout"]]},
+    {"id": "bare-path", "actionable": true, "desc": "--only example omits the required file argument", "groups": [["--only"]]},
+    {"id": "undefined-term", "actionable": false, "desc": "acronym 'WCV' never defined; the reader needs nothing from it to recolor", "groups": [["wcv"]]},
+    {"id": "dangling-ref", "actionable": false, "desc": "'Writing a theme' section does not exist", "groups": [["writing a theme"]]}
+  ]
+}

@@ -1,0 +1,7 @@
+Read-only: verify claims by reading source and git history only; never run the project's code, tests, builds, installers, package managers, or any command this doc describes.
+
+Read lines {start}-{end} of {file}. List every specific, checkable claim those lines make about the repository at {repo_root}: names, paths, commands, flags, config keys, counts, values, versions, which script, command, or module does what, and each list, table, or tree that names its items one by one (one claim for the whole list, quoting its first line). Skip opinions, plans, rationale, and claims about things outside the repository. Do not verify anything yet. For each claim give its line, its exact text (at most 120 characters), and the file or symbol it is about (`?` if unclear). Do not edit any file.
+
+Output ONLY a single JSON object and nothing else:
+{"claims":[{"line":0,"quote":"...","target":"..."}]}
+If the lines make no checkable claim, output {"claims":[]}.

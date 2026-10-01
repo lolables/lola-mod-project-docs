@@ -14,6 +14,7 @@
 
 import { contrastRatio } from './contrast.mjs';
 import { readFileSync } from 'node:fs';
+import { isMain } from './is-main.mjs';
 
 const LIGHT = '#ffffff';
 const DARK = '#1e1e1e';
@@ -91,4 +92,4 @@ function main() {
   if (fails.length) process.exit(1);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) main();
+if (isMain(import.meta.url)) main();

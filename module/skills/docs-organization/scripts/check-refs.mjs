@@ -1,69 +1,115 @@
 #!/usr/bin/env node
 // Reference integrity: a reference should be *followable*.
 //
-//   REF_BROKEN     a markdown link to a local path that resolves to nothing
-//   REF_NOT_IN_GIT a markdown link to a file that exists but git does not track
+//   REF_BROKEN     a markdown link or image to a local path that resolves to nothing
+//   REF_NOT_IN_GIT a markdown link or image to a file that exists but git does not track
 //                  (gitignored/unstaged) — dangling for anyone who clones
-//   UNLINKED_REF   a "§" section citation in prose with no accompanying link —
+//   UNLINKED_REF   a "§" section citation in prose with no link in the same
+//                  inline block (paragraph, heading, or table cell) —
 //                  a cheap, deterministic tell for a reference that points at
 //                  something (often an external/internal spec) the reader can't
 //                  follow. Info only: the fix is to LINK it (or confirm the
 //                  target ships), never to strip the citation.
 //
 // Design notes:
-//   - Only *markdown links* are resolved. Link targets are unambiguously
-//     doc-relative and express intent ("follow this"). Inline-code mentions of
-//     source paths are deliberately NOT resolved — they are repo-root-relative,
-//     riddled with placeholders (`<dir>/x.yaml`, `pool/<blake3>.tar.zst`), and
-//     resolving them heuristically produces mostly false positives. Stale
+//   - Only *markdown links and images* are resolved. Their targets are
+//     unambiguously doc-relative and express intent ("follow this"). Inline-code
+//     mentions of source paths are deliberately NOT resolved — they are
+//     repo-root-relative, riddled with placeholders (`<dir>/x.yaml`,
+//     `pool/<blake3>.tar.zst`), and resolving them heuristically produces
+//     mostly false positives. Stale
 //     source citations are the content-drift lane's job.
-//   - Only *git-tracked* docs are scanned. A gitignored working doc (e.g. under
-//     docs/superpowers/) is not a project deliverable and is out of audit scope.
+//   - Each doc is checked in one of two modes, chosen per file from the git
+//     work tree that contains it (if any):
+//       git mode      the doc is tracked. Links resolve against the tracked
+//                     file set; REF_NOT_IN_GIT applies.
+//       on-disk mode  the doc is outside any git repo, or it was named as an
+//                     explicit file argument and is untracked (a gitignored
+//                     draft). Links resolve against the filesystem, anywhere
+//                     on disk; REF_NOT_IN_GIT never fires, because a doc that
+//                     isn't in git can't dangle for someone who clones.
+//     An untracked doc found by *walking a directory* inside a repo is skipped:
+//     a gitignored working doc (e.g. under docs/superpowers/) reached that way
+//     is not a project deliverable and is out of audit scope.
 //   - This does NOT demand every reference be committed — some are legitimately
 //     private/external. It surfaces dangling references for the author to
 //     resolve in /docs-update (link, commit, or mark external). Never auto-fixes.
+//   - A symlinked doc is checked from *every* path it is reached by: a relative
+//     link resolves from the path a reader opened, and an installed module is
+//     read from the symlink's location. A broken/untracked-link finding on a
+//     symlinked path names the canonical file. Content-only findings
+//     (UNLINKED_REF) don't depend on which path they're read from, so they are
+//     attributed to the canonical path (when it's in scope) and reported once.
 //
-// Output: JSON {status, findings:[{code, severity, file, line, message}]}.
+// Output: JSON {status, scanned, findings:[{code, severity, file, line, message}]}.
+// `scanned` counts doc *paths* checked — a symlink and its target count
+// separately. `file` is relative to the doc's repo root, or absolute for a
+// doc outside any repo.
 // Exit 0 = no findings, 1 = findings, 2 = internal error. Uses execFileSync
 // (no shell) with fixed git arguments.
 
-import MarkdownIt from './vendor/markdown-it.mjs';
-import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, lstatSync, realpathSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { dirname, resolve, relative, join } from 'node:path';
+import { basename, dirname, join, resolve, relative } from 'node:path';
+import { lineAwareMarkdown } from './md-lines.mjs';
+import { walkMarkdown } from './md-files.mjs';
+import { isMain } from './is-main.mjs';
 
-const md = new MarkdownIt();
+const { inlineBlocks } = lineAwareMarkdown();
 
 function git(args, cwd) {
   return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 }
 
 function isExternal(t) {
-  return /^[a-z]+:\/\//i.test(t) || t.startsWith('mailto:') || t.startsWith('#') || t.startsWith('tel:');
+  return /^[a-z]+:\/\//i.test(t) || t.startsWith('mailto:') || t.startsWith('#') || t.startsWith('tel:')
+    || /^data:/i.test(t);
 }
 
-// Pull markdown-link targets and unlinked "§" citations from a file. `§` inside
-// link text is skipped (it is already followable).
+// markdown-it percent-encodes every href before we ever see it — a literal
+// space written inside `<...>`, or a non-ASCII byte written bare, comes out
+// as `%20` / `%C3%A9` — so the target must be decoded before it can match a
+// tracked filesystem path, and the decoded form is what findings report
+// (closer to what the author actually wrote than the re-encoded href). A
+// malformed escape (not a valid UTF-8 percent sequence) falls back to the
+// raw string rather than throwing.
+function decodeTarget(t) {
+  try { return decodeURIComponent(t); }
+  catch { return t; }
+}
+
+// Pull link and image targets and unlinked "§" citations from a file, each
+// with its exact 1-based line. Reference-style links/images report the line
+// they are *used* on (where the reader meets them), not the definition line.
+//
+// A "§" is skipped when it sits inside link text, or when the same inline
+// block (one paragraph, heading, list-item paragraph, or table cell) contains
+// any link — "§3.2 of [spec](spec.md)" already tells the reader where to go.
+// A link in a different paragraph or a sibling table cell does not count.
 function extract(content) {
-  const tokens = md.parse(content, {});
   const links = [];
   const sections = [];
-  for (const b of tokens) {
-    if (b.type !== 'inline' || !b.children) continue;
-    const line = b.map ? b.map[0] + 1 : null;
+  for (const { block: b, lineOf } of inlineBlocks(content)) {
+    const blockSections = [];
     let linkDepth = 0;
+    let hasLink = false;
     for (const c of b.children) {
       if (c.type === 'link_open') {
         linkDepth++;
-        const href = (c.attrs || []).find((a) => a[0] === 'href');
-        if (href) links.push({ target: href[1], line });
+        hasLink = true;
+        const href = c.attrGet('href');
+        if (href) links.push({ kind: 'link', target: href, line: lineOf(c) });
       } else if (c.type === 'link_close') {
         linkDepth = Math.max(0, linkDepth - 1);
+      } else if (c.type === 'image') {
+        const src = c.attrGet('src');
+        if (src) links.push({ kind: 'image', target: src, line: lineOf(c) });
       } else if (c.type === 'text' && linkDepth === 0 && c.content.includes('§')) {
         const m = c.content.match(/§\s*[\w.\-]*/);
-        sections.push({ line, snippet: (m ? m[0] : '§').slice(0, 24) });
+        blockSections.push({ line: lineOf(c), snippet: (m ? m[0] : '§').slice(0, 24) });
       }
     }
+    if (!hasLink) sections.push(...blockSections);
   }
   return { links, sections };
 }
@@ -79,33 +125,41 @@ function trackedDirsOf(tracked) {
   return dirs;
 }
 
+// `tracked` is the repo's tracked-path set (git mode), or null (on-disk mode,
+// where `root` is unused).
 export function analyzeFile(file, root, tracked) {
   const content = readFileSync(file, 'utf8');
   const findings = [];
   const seen = new Set();
-  const trackedDirs = trackedDirsOf(tracked);
+  const trackedDirs = tracked ? trackedDirsOf(tracked) : null;
   const { links, sections } = extract(content);
   for (const ref of links) {
     const target = ref.target;
     if (!target || isExternal(target)) continue;
-    const cleaned = target.replace(/[#].*$/, '');
-    if (!cleaned) continue; // pure anchor
+    const stripped = target.replace(/[#].*$/, '');
+    if (!stripped) continue; // pure anchor
+    const cleaned = decodeTarget(stripped);
     const abs = resolve(dirname(file), cleaned);
-    const rel = relative(root, abs);
-    if (rel.startsWith('..')) continue;
-    const key = 'L' + rel + '@' + ref.line;
-    // A tracked file, or a directory that contains tracked files, is followable.
-    if (seen.has(key) || tracked.has(rel) || trackedDirs.has(rel)) continue;
+    let where = abs;
+    if (tracked) {
+      where = relative(root, abs);
+      if (where.startsWith('..')) continue;
+      // A tracked file, or a directory that contains tracked files, is followable.
+      if (tracked.has(where) || trackedDirs.has(where)) continue;
+    } else if (existsSync(abs)) continue;
+    const key = 'L' + where + '@' + ref.line;
+    if (seen.has(key)) continue;
     seen.add(key);
-    if (existsSync(abs)) {
+    const what = `${ref.kind === 'image' ? 'image' : 'link to'} \`${cleaned}\``;
+    if (tracked && existsSync(abs)) {
       findings.push({
         code: 'REF_NOT_IN_GIT', severity: 'warning', line: ref.line,
-        message: `link to \`${cleaned}\` — exists but is NOT git-tracked (gitignored/unstaged); commit it, or make it an explicit external link if intentionally private`,
+        message: `${what} — exists but is NOT git-tracked (gitignored/unstaged); commit it, or make it an explicit external link if intentionally private`,
       });
     } else {
       findings.push({
         code: 'REF_BROKEN', severity: 'warning', line: ref.line,
-        message: `link to \`${cleaned}\` — no such file in the repo; fix the path or link the real target`,
+        message: `${what} — no such file ${tracked ? 'in the repo' : 'on disk'}; fix the path or link the real target`,
       });
     }
   }
@@ -119,17 +173,23 @@ export function analyzeFile(file, root, tracked) {
   return findings;
 }
 
-function walkMd(target) {
-  const st = statSync(target);
-  if (st.isFile()) return target.endsWith('.md') ? [target] : [];
-  const out = [];
-  for (const e of readdirSync(target, { withFileTypes: true })) {
-    if (e.name.startsWith('.')) continue;
-    const p = join(target, e.name);
-    if (e.isDirectory()) out.push(...walkMd(p));
-    else if (e.isFile() && e.name.endsWith('.md')) out.push(p);
+// The git work tree containing `dir`, or null when git itself says `dir` is
+// not inside a repository — docs there are checked on disk. Any other git
+// failure (corrupt config, a safe.directory refusal, git not installed) is
+// not "outside git" and propagates so the caller exits 2 with git's message.
+function repoRootOf(dir) {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: dir,
+      env: { ...process.env, LC_ALL: 'C' },
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  } catch (e) {
+    if (typeof e.status === 'number' && /not a git repository/.test(e.stderr || '')) return null;
+    if (typeof e.status === 'number') throw new Error(`git rev-parse --show-toplevel: ${(e.stderr || '').trim()}`);
+    throw e;
   }
-  return out;
 }
 
 function main(argv) {
@@ -138,19 +198,66 @@ function main(argv) {
     process.stderr.write('usage: check-refs.mjs <file-or-dir>...\n');
     process.exit(2);
   }
-  const root = git(['rev-parse', '--show-toplevel']).trim();
-  const tracked = new Set(git(['ls-files'], root).split('\n').filter(Boolean));
-  const findings = [];
-  for (const t of targets) for (const f of walkMd(t)) {
-    const rel = relative(root, f);
-    if (!tracked.has(rel)) continue; // only audit tracked docs (skips gitignored)
-    for (const x of analyzeFile(f, root, tracked)) findings.push({ ...x, file: rel });
+  const rootOfDir = new Map();
+  const trackedOf = new Map();
+  const repoOf = (f) => {
+    const dir = dirname(resolve(f));
+    if (!rootOfDir.has(dir)) rootOfDir.set(dir, repoRootOf(dir));
+    const root = rootOfDir.get(dir);
+    // -z: git quotes non-ASCII/special filenames in plain `ls-files` output
+    // (core.quotePath default) — NUL-delimited output is unquoted, matching
+    // what decodeTarget() produces from a percent-encoded link target.
+    if (root && !trackedOf.has(root)) {
+      trackedOf.set(root, new Set(git(['ls-files', '-z'], root).split('\0').filter(Boolean)));
+    }
+    return root;
+  };
+
+  // Collect every doc to check first, then process non-symlink paths before
+  // symlink paths (stable order within each group). That way a content-only
+  // finding lands on the canonical path whenever it's in scope, regardless of
+  // the order targets were given on the command line.
+  const docs = [];
+  for (const t of targets) {
+    const explicitFile = statSync(t).isFile();
+    for (const f of walkMarkdown(t)) {
+      const root = repoOf(f);
+      const tracked = root ? trackedOf.get(root) : null;
+      // git reports the physical root, so match against the doc's physical
+      // directory; the basename stays unresolved so a symlinked doc keeps
+      // being judged from the path it was reached by.
+      const phys = join(realpathSync(dirname(resolve(f))), basename(f));
+      if (tracked && tracked.has(relative(root, phys))) docs.push({ f, phys, root, tracked });
+      else if (!root || explicitFile) docs.push({ f, phys, root, tracked: null });
+    }
   }
-  process.stdout.write(JSON.stringify({ status: findings.length ? 'findings' : 'ok', findings }, null, 2) + '\n');
+  const scanned = docs.length;
+  const ordered = [
+    ...docs.filter((d) => !lstatSync(d.f).isSymbolicLink()),
+    ...docs.filter((d) => lstatSync(d.f).isSymbolicLink()),
+  ];
+  const shown = (root, p) => (root ? relative(root, p) : resolve(p));
+
+  const findings = [];
+  const seenReal = new Set();
+  for (const { f, phys, root, tracked } of ordered) {
+    const real = realpathSync(f);
+    const firstVisit = !seenReal.has(real);
+    seenReal.add(real);
+    const canonical = lstatSync(f).isSymbolicLink() ? shown(root, real) : null;
+    for (const x of analyzeFile(tracked ? phys : f, root, tracked)) {
+      if (x.code === 'UNLINKED_REF' && !firstVisit) continue; // same text, already reported
+      if (canonical && x.code !== 'UNLINKED_REF') {
+        x.message += ` (this path is a symlink to \`${canonical}\`; the link must work from both locations)`;
+      }
+      findings.push({ ...x, file: shown(root, root ? phys : f) });
+    }
+  }
+  process.stdout.write(JSON.stringify({ status: findings.length ? 'findings' : 'ok', scanned, findings }, null, 2) + '\n');
   process.exit(findings.length ? 1 : 0);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   try { main(process.argv); }
   catch (e) { process.stderr.write('check-refs: internal error: ' + (e && e.stack ? e.stack : e) + '\n'); process.exit(2); }
 }

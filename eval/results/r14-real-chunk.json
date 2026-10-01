@@ -1,0 +1,151 @@
+{
+  "prompt": "prompts/repo-drift-chunk.txt",
+  "runs": 5,
+  "chunk_lines": 100,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.0,
+    "ipv6-count": 0.8,
+    "docs-init-adr": 0.2,
+    "merval-shapes": 0.4,
+    "license-mit": 0.2,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 188,
+          "doc_says": "\"Three IPv6 ranges get handling beyond that\" \u2014 lists only ::/96, fec0::/10, and the two NAT64 prefixes (64:ff9b:1::/48, 64:ff9b::/96) as blocked.",
+          "code_says": "fetch-citations.mjs:143 also blocks fc00::/7 (unique local), fe80::/10 (link-local), and ff00::/8 (multicast) outright \u2014 ranges never mentioned in the doc.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 188,
+          "doc_says": "\"Three IPv6 ranges get handling beyond that\": ::/96 (with ::, ::1, IPv4-compatible) + fec0::/10 blocked outright; 64:ff9b:1::/48 blocked outright; 64:ff9b::/96 judged by embedded IPv4.",
+          "code_says": "fetch-citations.mjs blocks six explicit IPv6 ranges plus one NAT64 special case: '::' /96, 'fc00::' /7 (unique-local), 'fec0::' /10, 'fe80::' /10 (link-local), 'ff00::' /8 (multicast), '64:ff9b:1::' /48 \u2014 plus '64:ff9b::' /96 judged by embedded IPv4. fc00::/7, fe80::/10, and ff00::/8 are not mentioned in the doc, and the stated count of three ranges is wrong.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:132-151"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": true,
+        "merval-shapes": true,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 33,
+          "doc_says": "`/docs-init`, `/docs-audit`, `/docs-update`, and `/diagram-test` all front `docs-organization`; `/adr-new` and `/adr-review` front `adr`; `/docs-update` reaches both.",
+          "code_says": "module/commands/docs-init.md:26-31 also conditionally activates the `adr` skill and binds `$ADR_DIR` whenever it creates docs/dev/README.md from the template \u2014 docs-init reaches both skills too, not only docs-update.",
+          "source": "module/commands/docs-init.md:26-31"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 188,
+          "doc_says": "\"Three IPv6 ranges get handling beyond that\": lists only ::/96 (grouped with fec0::/10), fec0::/10, and 64:ff9b:1::/48 as blocked outright, plus 64:ff9b::/96 as specially judged.",
+          "code_says": "The code blocks six IPv6 subnets outright: ::/96, fc00::/7 (unique local), fec0::/10, fe80::/10 (link-local), ff00::/8 (multicast), and 64:ff9b:1::/48 \u2014 fc00::/7, fe80::/10, and ff00::/8 are never mentioned in the doc's enumeration.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-151"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 234,
+          "doc_says": "merval's flowchart grammar knows four bracket shapes ([], (), (()), {})",
+          "code_says": "lint-mermaid.mjs:25 comment: merval 'knows only [] () (()) {} and the slash-delimited forms' \u2014 five grammar elements, not four",
+          "source": "module/skills/docs-organization/scripts/lint-mermaid.mjs:25"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": true,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 234,
+          "doc_says": "merval's flowchart grammar knows four bracket shapes ([], (), (()), {})",
+          "code_says": "comment in lint-mermaid.mjs:25 states merval 'knows only [] () (()) {} and the slash-delimited forms' \u2014 the doc's four-item list omits the slash-delimited shape merval also accepts",
+          "source": "module/skills/docs-organization/scripts/lint-mermaid.mjs:25"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": true,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "'Three IPv6 ranges get handling beyond that' (BlockList's automatic IPv4-mapped matching): ::/96 + fec0::/10 blocked outright, 64:ff9b:1::/48 blocked outright, 64:ff9b::/96 judged by embedded IPv4.",
+          "code_says": "fetch-citations.mjs:142-143 adds six IPv6 subnets to BLOCKED \u2014 ::/96, fc00::/7 (unique local), fec0::/10, fe80::/10 (link-local), ff00::/8 (multicast), and 64:ff9b:1::/48 \u2014 plus the separate NAT64 /96 check. The doc's enumerated list omits fc00::/7, fe80::/10, and ff00::/8 entirely.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-151"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 307,
+          "doc_says": "scripts/vendor/LICENSES.md ... \"MIT texts for all eight packages plus Linguist\"",
+          "source": "module/skills/docs-organization/scripts/vendor/LICENSES.md:1-25",
+          "doc_says_detail": "claims all eight vendored package license texts are MIT",
+          "code_says": "LICENSES.md lists `argparse 2.0.1` under `License: Python-2.0`, not MIT; only 7 of the 8 packages plus Linguist are actually MIT"
+        }
+      ]
+    }
+  ],
+  "rescored": "offline against the six-item real-lane-table ground truth"
+}

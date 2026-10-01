@@ -1,0 +1,135 @@
+{
+  "prompt": "prompts/repo-drift.baseline.txt",
+  "runs": 5,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.0,
+    "ipv6-count": 0.6,
+    "docs-init-adr": 0.0,
+    "merval-shapes": 0.0,
+    "license-mit": 0.0,
+    "block-flag": 0.0
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.6,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 1,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 224,
+          "doc_says": "validate-palette.mjs asserts every palette meets text-on-fill >= 4.5:1 and fill-on-background >= 3.0:1 against both light and dark reference backgrounds",
+          "code_says": "validate-palette.mjs reads a palette.mode field ('both' | 'light' | 'dark') and skips the dark-background checks when mode !== 'dark' and mode !== 'both'; parchment.json sets \"mode\": \"light\", so Parchment is only checked against the light background, never the dark one",
+          "source": "module/skills/docs-organization/scripts/validate-palette.mjs:34-36,45-46 and module/skills/docs-organization/reference/palettes/parchment.json:3"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond that: ::/96 and fec0::/10 blocked outright, 64:ff9b:1::/48 blocked outright, and 64:ff9b::/96 judged by its embedded IPv4.",
+          "code_says": "fetch-citations.mjs:143 blocks six IPv6 ranges outright via BlockList.addSubnet: ::/96, fc00::/7 (unique local), fec0::/10 (site-local), fe80::/10 (link-local), ff00::/8 (multicast), and 64:ff9b:1::/48 \u2014 fc00::/7, fe80::/10, and ff00::/8 are undocumented.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 2,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 305,
+          "doc_says": "scripts/vendor/markdown-it.mjs  240K",
+          "code_says": "module/skills/docs-organization/scripts/vendor/markdown-it.mjs is 238K (243521 bytes)",
+          "source": "module/skills/docs-organization/scripts/vendor/markdown-it.mjs"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 306,
+          "doc_says": "scripts/vendor/linguist.json     19K",
+          "code_says": "module/skills/docs-organization/scripts/vendor/linguist.json is 20K (19935 bytes)",
+          "source": "module/skills/docs-organization/scripts/vendor/linguist.json"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond BlockList's automatic IPv4-mapped matching: ::/96, the deprecated site-local fec0::/10, and the RFC 8215 NAT64 prefix 64:ff9b:1::/48 (plus 64:ff9b::/96 handled separately by embedded IPv4).",
+          "code_says": "The outright-blocked IPv6 RANGES array contains six entries, not three: ::/96, fc00::/7 (unique local), fec0::/10, fe80::/10 (link-local), ff00::/8 (multicast), and 64:ff9b:1::/48.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "'Three IPv6 ranges get handling beyond that' \u2014 lists only ::/96, fec0::/10, and the RFC 8215 NAT64 prefix 64:ff9b:1::/48 as blocked outright, plus 64:ff9b::/96 handled separately.",
+          "code_says": "Six IPv6 ranges are explicitly added to BLOCKED: ::/96, fc00::/7 (unique-local), fec0::/10, fe80::/10 (link-local), ff00::/8 (multicast), and 64:ff9b:1::/48 \u2014 plus 64:ff9b::/96 in a separate NAT64 BlockList. fc00::/7, fe80::/10, and ff00::/8 are undocumented.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:143"
+        }
+      ]
+    }
+  ],
+  "rescored": "offline against the six-item real-lane-table ground truth"
+}

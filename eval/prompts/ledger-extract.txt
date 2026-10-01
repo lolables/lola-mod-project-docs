@@ -1,0 +1,7 @@
+Read-only: verify claims by reading source and git history only; never run the project's code, tests, builds, installers, package managers, or any command this doc describes.
+
+Read lines {start}-{end} of {file}. List every specific, checkable claim those lines make about the repository at {repo_root}, including lines inside code blocks such as file trees and listings. A claim is one of two kinds. A `fact` names one thing: a name, path, command, flag, config key, value, version, or which script, command, or module does what. A `set` speaks for a whole group: a count ("three ranges", "four shapes"), a word like only, both, all, or every, or a list, table, or tree that names its items one by one — record a set as ONE claim covering all its lines, never as one claim per item. When unsure whether a claim is a fact or a set, call it a set. Skip opinions, plans, rationale, and claims about things outside the repository. Do not verify anything yet. For each claim give its kind, its line (a range like 40-47 for a set), its exact text (at most 120 characters; for a set, its first line), and the file or symbol it is about (`?` if unclear). Do not edit any file.
+
+Output ONLY a single JSON object and nothing else:
+{"claims":[{"kind":"fact|set","line":"12 or 40-47","quote":"...","target":"..."}]}
+If the lines make no checkable claim, output {"claims":[]}.

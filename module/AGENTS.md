@@ -14,9 +14,12 @@ every behavior is reached through an explicit slash command.
 - **Authoring diagrams:** `/diagram-test` validates every mermaid diagram
   against the house style (syntax, init header, palette, contrast). Four
   contrast-validated palettes ship with the skill — Solar (default),
-  Federation, Citrus, Parchment. `task render -- file.mmd` renders any
-  diagram with the skill's CSS overrides applied; `task palette -- name
-  file.mmd` swaps a diagram to a different palette.
+  Federation, Citrus, Parchment. To swap an existing diagram to a
+  different palette, run `scripts/swap-palette.sh <name> <file>` from the
+  installed skill directory (for a `.md` it swaps each mermaid fence in
+  place; `--block N` picks one) — it prints the result to stdout, so
+  redirect it to a new file and move that over the original (redirecting
+  onto the input file empties it first).
 - **Recording decisions:** `/adr-new <title>` drafts an MADR-format
   Architectural Decision Record. `/adr-review <NNNN>` runs an
   independent rubric pass via a context-isolated subagent.
@@ -35,7 +38,8 @@ The skills are independent. Use one without the other if you prefer.
 1. Top-level `README.md` is always self-sufficient for basic user
    onboarding.
 2. Developer documentation lives under `docs/dev/`.
-3. `docs/superpowers/` is in `.gitignore` and never committed.
+3. `docs/superpowers/` is in `.gitignore` and never committed (checked
+   once a `docs/` tree exists; a repo without one isn't using it yet).
 4. ADRs live in `docs/dev/adr/` (or `docs/adr/` for legacy layouts).
 5. Every mermaid diagram begins with the required `%%{init}%%` header
    from one of the four shipped palettes (Solar is the default) and uses
@@ -45,8 +49,10 @@ The skills are independent. Use one without the other if you prefer.
 ## Requirements
 
 - Git (the module assumes you are operating in a git repository).
-- Node.js ≥20 for the mermaid linter.
-- Bash for the structure/staleness/index scripts.
+- Node.js ≥20 for the staleness, prose, reference, mermaid, and palette scripts.
+- Bash ≥ 4 for the structure, palette-swap, and ADR-index scripts. macOS
+  ships bash 3.2, which is not supported; install a current one with
+  `brew install bash`.
 
 ## Notes for AI assistants
 
@@ -64,51 +70,3 @@ helpers are always next to the loaded `SKILL.md`.
 When `/docs-update` triggers a `MISSING_ADR_INDEX` finding, it
 additionally activates the `adr` skill and binds `$ADR_DIR` from its
 loaded `SKILL.md` location the same way.
-
-## House voice (for maintainers and AI assistants editing these docs)
-
-These docs are edited by AI assistants. Left unchecked, generated prose drifts
-toward a recognizable register. Hold the line on the following.
-
-**Show, don't tell.** A worked example beats a description. If a command
-produces output, show a realistic sample of it. If a template gets filled in,
-ship one filled-in example, not just the blank.
-
-**Readability — the "four ideas" test.** A paragraph that enumerates several
-mechanisms or rules forces the reader to hold them all at once. Break it into
-sub-bullets, or add vertical whitespace at the topic seams, so the eye lands on
-one beat at a time. This is broader than whitespace-only reflow — restructuring
-into bullets is expected when a paragraph lists several distinct points.
-
-**Cut the tells.** Prefer plain verbs and concrete nouns. Watch for and remove:
-
-- Booster adverbs and brochure verbs: "actively", "simply", "seamlessly",
-  "leverage", "robust", "comprehensive", "powerful", "effortlessly".
-- Formulaic scaffolds: "It's worth noting that…", "In order to…" (use "to"),
-  "X — but only when Y" as a section title.
-- Uniform rhythm: several same-length sentences in a row, or an em-dash in
-  every sentence. Vary it.
-
-**Never touch on a voice edit:** technical claims, code blocks, commands, file
-paths, exact finding codes, and error strings. Voice work changes register and
-rhythm, not facts. When in doubt, preserve verbatim.
-
-## Exemplars & references
-
-Reference material for future refinement — patterns worth borrowing, not text
-worth copying. Cite the idea in your own words. External links rot; re-check
-them when you touch this section.
-
-- [MADR](https://adr.github.io/madr/) — the decision-record template `/adr-new`
-  instantiates; the canonical shape for "Considered Options" and "Consequences".
-- [Nygard, "Documenting Architecture Decisions"](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
-  — why lightweight, per-decision records beat a monolithic design doc.
-- [Diátaxis](https://diataxis.fr/) — the four-mode model (tutorial / how-to /
-  reference / explanation) behind keeping the README task-focused and pushing
-  architecture into `docs/dev/`.
-- [Write the Docs](https://www.writethedocs.org/) — a working community's
-  conventions for docs that stay maintained.
-- [Mermaid](https://mermaid.js.org/) — full diagram grammar; the house style is
-  a strict subset (see the mermaid house-style reference).
-- [lola](https://lobstertrap.org/lola/) — the cross-host module format this
-  ships as.
