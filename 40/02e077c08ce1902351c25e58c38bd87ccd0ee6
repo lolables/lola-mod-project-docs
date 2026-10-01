@@ -1,0 +1,24 @@
+tests/scripts/docs-organization/format-asciidoc.test.mjs
+  s_2fe5c7579ceb59::t_dcba829b9bebe4 225-261
+module/skills/docs-organization/scripts/formats/asciidoc.mjs
+  s_2fe5c7579ceb59::t_f4f866149dd962 127-134
+  s_2fe5c7579ceb59::t_2f61176eb3188a 38-63
+  s_2fe5c7579ceb59::t_c324be3b7aac89 64-73,76-83
+  s_2fe5c7579ceb59::t_c1509f840e8bdc 74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4002e077c08ce1902351c25e58c38bd87ccd0ee6",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
