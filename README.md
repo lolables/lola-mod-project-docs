@@ -29,18 +29,35 @@ Behavior reaches the agent only through six explicit slash commands:
 
 ## Install
 
-Install [lola](https://lobstertrap.org/lola/) once:
+1. Install [lola](https://lobstertrap.org/lola/) once:
 
-```bash
-uv tool install git+https://github.com/LobsterTrap/lola@v0.7.0
-```
+   ```bash
+   uv tool install git+https://github.com/LobsterTrap/lola@v0.7.0
+   ```
 
-Register and install this module:
+2. Register and install this module:
 
-```bash
-lola mod add -n docs-discipline https://github.com/lolables/lola-mod-project-docs.git
-lola install docs-discipline -a claude-code --scope user
-```
+   ```bash
+   lola mod add -n docs-discipline https://github.com/lolables/lola-mod-project-docs.git
+   lola install docs-discipline -a claude-code --scope user
+   ```
+
+That is the whole install. The skill's two npm dependencies
+(`@aj-archipelago/merval` for mermaid validation, `markdown-it` for the
+`/docs-audit` prose and link checks) and GitHub Linguist's vendored
+language data (used by its staleness check) ship pre-bundled inside the
+module, so there is no `npm install`, no network access needed after `lola
+install`, and no follow-up step.
+
+Requirements: git, Node.js ≥ 20, bash ≥ 4, lola ≥ 0.7.0 (matching the
+pinned install line above).
+
+On macOS, the system bash is 3.2, which is not supported. Install a
+current one with `brew install bash`, and check that `bash --version`
+reports 5.x. If it still reports 3.2, Homebrew's `bin` directory is
+behind `/bin` on your `PATH`.
+
+### Non-interactive install
 
 `lola install` prompts for assistant and scope when you omit them. Scripted:
 
@@ -48,6 +65,8 @@ lola install docs-discipline -a claude-code --scope user
 lola install docs-discipline -a opencode --scope user -f
 lola install docs-discipline -a claude-code --scope project -f
 ```
+
+### Uninstall
 
 Uninstall mirrors it, for whichever scope you installed. For `--scope
 project`, name the project path — omitting it uninstalls from every
@@ -60,21 +79,6 @@ lola uninstall docs-discipline -a claude-code --scope project -f .
 lola mod rm -f docs-discipline
 ```
 
-That is the whole install. The skill's two npm dependencies
-(`@aj-archipelago/merval` for mermaid validation, `markdown-it` for the
-`/docs-audit` prose and reference lanes) and GitHub Linguist's vendored
-language data (used by the staleness lane) ship pre-bundled inside the
-module, so there is no `npm install`, no network access needed after `lola
-install`, and no follow-up step.
-
-Requirements: git, Node.js ≥ 20, bash ≥ 4, lola ≥ 0.7.0 (matching the
-pinned install line above).
-
-On macOS, the system bash is 3.2, which is not supported. Install a
-current one with `brew install bash`, and check that `bash --version`
-reports 5.x. If it still reports 3.2, Homebrew's `bin` directory is
-behind `/bin` on your `PATH`.
-
 ## Quickstart
 
 In a project with the module installed:
@@ -85,10 +89,49 @@ In a project with the module installed:
 /docs-update                                      # apply fixes interactively
 /diagram-test                                     # lint every mermaid diagram
 /adr-new "Use Postgres for primary storage"       # draft an ADR with inline self-review
-/adr-review 0001                                  # independent rubric review via subagent
+/adr-review 0001                                  # independent rubric review of ADR 0001 (the number /adr-new assigned)
 ```
 
 ### Auditing a specific document
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#2f6dab',
+  'primaryTextColor': '#1e1e1e',
+  'primaryBorderColor': '#7c8ba1',
+  'lineColor': '#7c8ba1',
+  'edgeLabelBackground': '#eef2f8',
+  'tertiaryColor': 'transparent',
+  'tertiaryTextColor': '#7c8ba1',
+  'tertiaryBorderColor': '#7c8ba1',
+  'clusterBkg': 'transparent',
+  'clusterBorder': '#7c8ba1',
+  'titleColor': '#7c8ba1',
+  'noteBkgColor': '#eef2f8',
+  'noteTextColor': '#1e1e1e',
+  'fontFamily': 'system-ui, sans-serif'
+}, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
+flowchart TD
+  Start["/docs-audit"] --> Args{"paths given?"}
+  Args -->|no| Sweep["repo sweep: project docs vs this repo's code"]
+  Args -->|yes| Kind{"file type?"}
+  Kind -->|mmd| DT["left to /diagram-test"]
+  Kind -->|md| Git{"inside a git work tree?"}
+  Git -->|yes| Repo["repo-scoped: vs that repo's code"]
+  Git -->|no| Doc["document mode: vs the sources it cites"]
+  Doc --> Local{"local link inside the passed path, outside dot-directories?"}
+  Local -->|yes| Read["read as a source"]
+  Local -->|no| Unread["reported unread, never opened"]
+  Doc --> Url{"https URL and --fetch given?"}
+  Url -->|yes| Fetch["fetched within the limits below"]
+  Url -->|no| NF["CITATIONS_NOT_FETCHED"]
+  classDef sysA fill:#2f6dab,color:#ffffff,stroke:#7c8ba1
+  classDef sysB fill:#1d7848,color:#ffffff,stroke:#7c8ba1
+  classDef sysF fill:#5c6a82,color:#ffffff,stroke:#7c8ba1
+  class Sweep,Repo,Doc sysA
+  class Read,Fetch sysB
+  class DT,Unread,NF sysF
+```
 
 `/docs-audit` with no arguments sweeps the repository's project docs. Name
 one or more files or directories to audit exactly those, including drafts
@@ -141,11 +184,13 @@ Every palette covers every mermaid diagram type (flowchart, sequence,
 class, state, ER, journey, gantt, pie, sankey, gitgraph, mindmap,
 timeline, xychart, block, kanban, packet, quadrant, requirement, C4,
 architecture, radar). See
-`module/skills/docs-organization/reference/mermaid-house-style.md` for
-templates and the deltas table for switching between them.
+[`mermaid-house-style.md`](module/skills/docs-organization/reference/mermaid-house-style.md)
+for templates and its "Switching palette" section for moving between them.
 
-After install, `/diagram-test` lints every diagram against the active
-palette. To swap an existing diagram to a different palette, run the
+There is no project-wide palette setting: each diagram carries its palette
+in its own `%%{init}%%` header. After install, `/diagram-test` lints every
+diagram for syntax, a current palette header, approved class names, and
+contrast. To swap an existing diagram to a different palette, run the
 skill's `swap-palette.sh` directly — it prints the swapped diagram to
 stdout, so redirect it:
 
@@ -158,9 +203,15 @@ That path is for a project-scope install; a user-scope install lives under
 `~/.claude/skills/`. Write to a new file and move it into place — redirecting
 straight onto the input empties it before the script reads it.
 
-Given a `.md`, the script swaps every ` ```mermaid ` fence in place and leaves
-the rest of the file byte-for-byte unchanged; `--block N` swaps only the
-N-th fence (1-based), e.g. `swap-palette.sh --block 2 citrus docs/guide.md`.
+Given a `.md`, the script prints the whole document with every
+` ```mermaid ` fence swapped and every byte outside the fences unchanged, so
+use the same write-then-move. `--block N` swaps only the N-th fence
+(1-based):
+
+```bash
+bash .claude/skills/docs-organization/scripts/swap-palette.sh --block 2 citrus docs/guide.md > docs/guide.md.new
+mv docs/guide.md.new docs/guide.md
+```
 
 (Path shown is a Claude Code project-scope install; other hosts and scopes
 use different directories, chosen by `lola` — see `lola install --help` for
@@ -180,8 +231,9 @@ repo root; both are `task`-only, so they require the full dev checkout.
 3. `docs/superpowers/` is in `.gitignore` and never committed (checked
    once a `docs/` tree exists; a repo without one isn't using it yet).
 4. ADRs in `docs/dev/adr/` (or `docs/adr/` for legacy layouts).
-5. Every mermaid diagram begins with the house-style init header and uses
-   palette classes with WCAG-verified contrast.
+5. Every mermaid diagram begins with the house-style init header (the
+   `%%{init}%%` block for one of the four palettes above) and uses palette
+   classes with WCAG-verified contrast.
 
 ## Project structure
 
@@ -197,12 +249,13 @@ module/skills/adr/reference/                MADR 4.0 template + review rubric
 module/commands/                            the six slash commands
 Taskfile.yml                                developer workflow
 .taskfiles/scripts/                         shared quality-gate scripts
-.taskfiles/vendor/                          npm toolchain that `task vendor` builds vendor/ with
+.taskfiles/vendor/                          npm toolchain that `task vendor` builds scripts/vendor/ with
 tests/diagrams/                             mermaid fixtures, one per diagram type
 tests/scripts/                              unit tests + fixtures for each skill's scripts/
 tests/e2e/                                  Venom end-to-end suite
 tests/fixtures/                             deliberately-broken modules for the structural linter
 tests/lint-structure.bats                   tests for the structural linter
+tests/lint-quoted-paths.bats                checks that $SKILL_DIR/$ADR_DIR expansions in module/ prompts are quoted
 tests/verify-oracle.bats                    tests for the install oracle
 eval/                                       /docs-audit lane evaluation (maintainer research)
 .github/workflows/                          CI and release

@@ -25,20 +25,23 @@ The structural linter enforces this: any skill shipping helper files must
 contain a `SKILL_DIR` anchor instruction, or `task lint` fails.
 
 When `/docs-update` hits a `MISSING_ADR_INDEX` finding, it activates the `adr`
-skill as well and binds `$ADR_DIR` from that skill's loaded location the same
-way.
+skill as well and binds `$ADR_DIR` — the `adr` skill's counterpart to
+`$SKILL_DIR`, used to run `adr-index.sh` — from that skill's loaded location
+the same way.
 
 ## Six commands, two skills
 
 The commands are not one-per-skill. `/docs-init`, `/docs-audit`,
 `/docs-update`, and `/diagram-test` all front `docs-organization`; `/adr-new`
-and `/adr-review` front `adr`; `/docs-update` reaches both.
+and `/adr-review` front `adr`. `/docs-update` reaches both, and so does
+`/docs-init` when it creates `docs/dev/README.md`, which links the ADR index.
 
 This is why the shared structural linter binds commands to skills **by
 reference** rather than by filename. A command is valid if its filename matches
 a skill directory or its body names one; an explicit skill is valid if any
-command names it. The template's original linter required a one-to-one
-filename match and rejected this module outright.
+command names it. The original linter in `lola-mod-template`, the shared
+template these gate scripts come from, required a one-to-one filename match and
+rejected this module outright.
 
 ## The `/docs-audit` lanes
 
@@ -52,10 +55,10 @@ would be faster.
 | --- | --- | --- |
 | 1 structural | `check-structure.sh` | missing or empty README, ungitignored `docs/superpowers/`, superpowers drafts tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`) |
 | 2 staleness | `check-staleness.mjs` | docs older than the code they describe; reports `STALENESS_NOT_ASSESSED` when no commit ever touched a file Linguist classifies as source |
-| 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, unscannable procedures |
+| 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven); `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots |
+| 6 LLM | — (subagent-driven); `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures; cited-source snapshots |
 
 Lane 6 is the model-owned exception: a grounding subagent classifies each
 file's Diátaxis mode first, then a separate subagent runs each applicable
@@ -125,7 +128,8 @@ its source of truth from where it lives:
   the named files.
 - **Outside any work tree (document).** There is no code, so content drift
   compares the doc against the sources it cites. Diagram drift and the hero
-  demo prompt are skipped.
+  demo prompt (the Lane 6 check that suggests a recorded demo for a runnable
+  tool's README, `MISSING_DEMO`) are skipped.
 
 `check-refs.mjs` makes the same choice per file rather than once per run. A
 tracked doc is checked against the tracked set, as before. A doc outside
@@ -133,7 +137,8 @@ git, or an untracked doc named explicitly, is checked on disk. `REF_NOT_IN_GIT`
 exists to catch links that dangle for someone who clones, and a doc that
 isn't in git has no cloner. Since `check-refs.mjs` audits every file it is
 given, untracked ones on disk, a repo sweep's gitignore and dot-directory
-exclusions rely entirely on the Lane 3 enumeration that builds its list.
+exclusions rely entirely on the in-scope file list the audit builds and passes
+to Lanes 3 and 4 alike.
 
 `fetch-citations.mjs --root <root>` resolves a document's local links the
 same way: it finds each target's realpath and checks whether that realpath
@@ -151,11 +156,52 @@ Two checks apply at different points, on purpose:
   point outside `--root` and still pass.
 
 `/docs-update` re-derives a finding's local sources the same way before
-re-reading any file — it runs `fetch-citations.mjs --offline --root <root>`,
-with `<root>` taken from the audit's `Mode:` line, and never `--out`, so it
-never fetches.
+re-reading any file — it runs `fetch-citations.mjs --offline --root <root>`
+and never `--out`, so it never fetches. `<root>` comes from the audit's
+`Mode:` line, which the punch list prints per group in path mode and which
+names every root the audit passed to `fetch-citations.mjs`, e.g.
+``Mode: document; root: `/home/me/drafts` — 2 file(s); skipped: …``.
 
 ### Why fetching is a script
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#2f6dab',
+  'primaryTextColor': '#1e1e1e',
+  'primaryBorderColor': '#7c8ba1',
+  'lineColor': '#7c8ba1',
+  'edgeLabelBackground': '#eef2f8',
+  'tertiaryColor': 'transparent',
+  'tertiaryTextColor': '#7c8ba1',
+  'tertiaryBorderColor': '#7c8ba1',
+  'clusterBkg': 'transparent',
+  'clusterBorder': '#7c8ba1',
+  'titleColor': '#7c8ba1',
+  'noteBkgColor': '#eef2f8',
+  'noteTextColor': '#1e1e1e',
+  'fontFamily': 'system-ui, sans-serif'
+}, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
+flowchart TD
+  Hop["cited URL or redirect hop"] --> Filter{"https, no credentials, port 443, IP literal allowed?"}
+  Filter -->|no| Blocked["CITATION_BLOCKED"]
+  Filter -->|yes| Deadline{"90 s run deadline passed?"}
+  Deadline -->|yes| Failed["CITATION_FETCH_FAILED"]
+  Deadline -->|no| Lookup{"lookup hook: every resolved address allowed?"}
+  Lookup -->|no| Blocked
+  Lookup -->|yes| Get["GET, 10 s timeout, no redirect following"]
+  Get -->|"error, timeout, compressed, over 2 MB, non-text"| Failed
+  Get -->|non-2xx| Failed
+  Get -->|3xx| Redir{"more than 3 redirects?"}
+  Redir -->|yes| Failed
+  Redir -->|no| Hop
+  Get -->|2xx| Snap["snapshot written"]
+  classDef sysA fill:#2f6dab,color:#ffffff,stroke:#7c8ba1
+  classDef sysB fill:#1d7848,color:#ffffff,stroke:#7c8ba1
+  classDef sysF fill:#5c6a82,color:#ffffff,stroke:#7c8ba1
+  class Hop,Get sysA
+  class Snap sysB
+  class Blocked,Failed sysF
+```
 
 Document mode can check claims against the `https` pages a doc cites, which
 makes the audit a network client driven by an untrusted document. A draft can
@@ -186,8 +232,11 @@ literals are checked before the request. Redirects are followed by hand, at
 most three, and every hop goes through the same filter.
 
 `net.BlockList` matches IPv4-mapped IPv6 addresses against the IPv4 ranges on
-its own. Three IPv6 ranges get handling beyond that:
+its own. Beyond that, six IPv6 ranges are blocked outright and one more is
+decoded:
 
+- Unique-local `fc00::/7`, link-local `fe80::/10`, and multicast `ff00::/8`
+  are blocked outright.
 - `::/96` (covering `::`, `::1`, and IPv4-compatible addresses) and the
   deprecated site-local range `fec0::/10` are blocked outright.
 - The RFC 8215 local-use NAT64 prefix `64:ff9b:1::/48` is blocked outright
@@ -221,18 +270,21 @@ palettes never leaves a diagram type unstyled.
 
 Contrast is verified, not assumed. `contrast.mjs` computes WCAG ratios and
 `validate-palette.mjs` asserts every palette meets text-on-fill ≥ 4.5:1 and
-fill-on-background ≥ 3.0:1 against both light and dark reference backgrounds.
+fill-on-background ≥ 3.0:1 against the reference backgrounds its `mode`
+names: light and dark by default, light only for Parchment (`"mode": "light"`).
 `lint-mermaid.mjs` enforces that every diagram carries the house-style
 `%%{init}%%` header and uses palette classes (`sysA`…`sysF`, `edgeLabel`)
 rather than inline colours. It contrast-checks approved `classDef`s and
 `style` statements; `resolveColor` in `contrast.mjs` accepts hex and the 148
-CSS named colors, whose table (`css-named-colors.mjs`) is extracted from CSS
-Color Module Level 4 §6.1 rather than typed by hand.
+CSS named colors, whose table (`css-named-colors.mjs`) is extracted from
+[CSS Color Module Level 4 §6.1](https://www.w3.org/TR/css-color-4/#named-colors)
+rather than typed by hand.
 
 Only the syntax verdict comes from merval's parse. The header, class-name and
 contrast checks are regexes over the diagram text, so they run even when
-merval rejects the block. merval's flowchart grammar knows four bracket shapes
-(`[]`, `()`, `(())`, `{}`), so it rejects valid shapes such as the cylinder
+merval rejects the block. merval's flowchart grammar knows only four bracket
+shapes (`[]`, `()`, `(())`, `{}`) plus the slash-delimited forms such as
+`[/…/]`, so it rejects valid shapes such as the cylinder
 `[(…)]` with a misleading bracket error. `lint-mermaid.mjs` recognises those
 shapes on the error line and names them in the `SYNTAX_ERROR` message. The
 fixture tests pin merval's accept/reject set, so a merval bump that widens the
@@ -242,8 +294,9 @@ stale.
 `apply-palette.mjs` and `swap-palette.sh` rewrite an existing diagram to a
 different palette. For a `.md`, `apply-palette.mjs --swap` finds fences with
 `lint-mermaid.mjs`'s own `extractMermaidBlocks` and splices by its offsets, so
-`--block N` addresses exactly the block a finding's 1-based `block` field
-names and no byte outside a swapped fence changes. Indented fences are
+its optional block argument (`swap-palette.sh --block N`) addresses exactly the
+block a finding's 1-based `block` field names and no byte outside a swapped
+fence changes. Indented fences are
 refused: re-indenting generated lines is where a silent corruption would hide.
 ER diagrams need a CSS override that mermaid's init block cannot express,
 which is why `er-overrides.css` exists and why `task render` passes it to
@@ -281,10 +334,55 @@ and force prompts, and wrapping those in Task means shadowing a flag surface
 that drifts the moment lola adds a flag. The README documents the `lola`
 commands directly.
 
-There is nothing left to wrap. Install is two `lola` commands with no
-prerequisites — see the next section.
+There is nothing left to wrap. Install is two `lola` commands (see the
+README's Install section) with no prerequisites, because the dependencies ship
+vendored — see the next section.
 
 ## Vendored dependencies
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#2f6dab',
+  'primaryTextColor': '#1e1e1e',
+  'primaryBorderColor': '#7c8ba1',
+  'lineColor': '#7c8ba1',
+  'edgeLabelBackground': '#eef2f8',
+  'tertiaryColor': 'transparent',
+  'tertiaryTextColor': '#7c8ba1',
+  'tertiaryBorderColor': '#7c8ba1',
+  'clusterBkg': 'transparent',
+  'clusterBorder': '#7c8ba1',
+  'titleColor': '#7c8ba1',
+  'noteBkgColor': '#eef2f8',
+  'noteTextColor': '#1e1e1e',
+  'fontFamily': 'system-ui, sans-serif'
+}, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
+flowchart LR
+  subgraph npmpath["npm packages"]
+    Bot["Dependabot bump"] --> Pkg["package.json pins merval, markdown-it"]
+    Pkg --> Esb["esbuild bundles"]
+  end
+  subgraph lingpath["GitHub Linguist data"]
+    Hand["maintainer edits by hand, no bump bot"] --> Pin["TAG and PINNED hashes"]
+    Pin --> Raw["fetch from raw.githubusercontent.com"]
+    Raw --> Yaml["js-yaml converts, trimmed to JSON"]
+  end
+  List["build-vendor.sh package list"] --> Lic["LICENSES.md"]
+  Esb --> Vendor["scripts/vendor/"]
+  Yaml --> Vendor
+  Lic --> Vendor
+  Vendor --> CI{"CI: git diff clean after task vendor?"}
+  CI -->|yes| Ship["lola ships vendor/ verbatim"]
+  CI -->|no| Red["build fails until rebuilt"]
+  classDef sysA fill:#2f6dab,color:#ffffff,stroke:#7c8ba1
+  classDef sysB fill:#1d7848,color:#ffffff,stroke:#7c8ba1
+  classDef sysC fill:#7457b8,color:#ffffff,stroke:#7c8ba1
+  classDef sysF fill:#5c6a82,color:#ffffff,stroke:#7c8ba1
+  class Bot,Pkg,Esb sysA
+  class Hand,Pin,Raw,Yaml sysC
+  class Vendor,Ship sysB
+  class Red sysF
+```
 
 The skill shells out to two npm packages: `@aj-archipelago/merval` for mermaid
 validation, and `markdown-it` for the `/docs-audit` prose and reference lanes.
@@ -292,27 +390,29 @@ Neither would survive an install as npm packages — lola strips any directory
 named `node_modules` from the copy it ships. The staleness lane also needs
 GitHub Linguist's language, vendor, and documentation data; that isn't an npm
 package but a build-time fetch, trimmed to what `check-staleness.mjs` needs.
-Both land in `vendor/`, which lola ships verbatim.
+All three land in `scripts/vendor/`, which lola ships verbatim.
 
-The name is the entire constraint. `ALWAYS_IGNORE` matches that one directory
-name, not dependencies in general, so a `vendor/` directory ships verbatim at
-any depth. The npm packages are MIT and bundle cleanly, and Linguist's data
-(also MIT) is trimmed to what `check-staleness.mjs` needs, so all three ship
-pre-built:
+The name is the entire constraint. lola's `ALWAYS_IGNORE` is a fixed set of
+directory names (`node_modules` among them, `vendor` not), not a rule about
+dependencies in general, so a `vendor/` directory ships verbatim at any depth.
+The npm packages are MIT and bundle cleanly, and Linguist's data (also MIT) is
+trimmed to what `check-staleness.mjs` needs, so all three ship pre-built,
+alongside the licence file that covers them:
 
 ```text
 scripts/vendor/merval.mjs        90K   @aj-archipelago/merval, no deps
 scripts/vendor/markdown-it.mjs  240K   markdown-it + 6 transitive deps
 scripts/vendor/linguist.json     19K   extensions, filenames, exclude patterns from GitHub Linguist
-scripts/vendor/LICENSES.md             MIT texts for all eight packages plus Linguist
+scripts/vendor/LICENSES.md             license texts for all eight packages plus Linguist (MIT, except argparse: Python-2.0, entities: BSD-2-Clause)
 ```
 
 `.taskfiles/vendor/package.json` keeps the two npm packages as
 `devDependencies` — they are
 build inputs, not runtime imports — alongside a pinned `esbuild` and `js-yaml`
 (used only to convert Linguist's YAML sources to JSON at build time).
-`task vendor` installs that toolchain and regenerates all four files. CI
-reruns it and fails on a non-empty `git diff vendor/`, so a committed bundle
+`task vendor` installs that toolchain and regenerates all four files in
+`scripts/vendor/`. CI reruns it and fails on a non-empty `git diff` of that
+directory, so a committed bundle
 can never drift from the version `package.json` pins. A Dependabot bump
 therefore arrives red until the bundles are rebuilt, which is the intended
 signal.
@@ -328,12 +428,16 @@ relative to the repo root (`.taskfiles/vendor/node_modules/...`), so moving the
 toolchain again means rerunning `task vendor` and committing the result.
 
 GitHub Linguist's data is pinned separately: `.taskfiles/scripts/build-linguist-data.mjs`
-hardcodes the fetched tag (`TAG`) and a SHA-256 per file (`PINNED`). Bumping
-it means editing `TAG` and every hash in `PINNED`, then running `task vendor`
-— Dependabot's `npm` entry only covers the two npm packages, so it never
-opens a bump PR for the Linguist fetch. `task vendor`, which CI also runs,
-now needs network access to `raw.githubusercontent.com`, not just the npm
-registry.
+hardcodes the fetched tag (`TAG`) and a SHA-256 per file (`PINNED`).
+Dependabot's `npm` entry covers the vendor toolchain's `package.json` (the two
+shipped packages plus esbuild and js-yaml), so it never opens a bump PR for the
+Linguist fetch. `task vendor`, which CI also runs, needs
+network access to `raw.githubusercontent.com`, not just the npm registry. To
+bump it:
+
+1. Edit `TAG`.
+2. Update every hash in `PINNED` to match the files at the new tag.
+3. Run `task vendor`.
 
 `LICENSES.md` is assembled by `build-vendor.sh` from the installed packages'
 own metadata and licence files, because esbuild only preserves `/*! */` legal
