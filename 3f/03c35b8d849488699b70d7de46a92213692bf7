@@ -1,0 +1,69 @@
+AGENTS.md
+  s_51ed7597c650d5::t_66e5822cacc631 18
+CHANGELOG.md
+  s_51ed7597c650d5::t_9da485123909f1 11-16,37-39,66-77
+docs/dev/architecture.md
+  s_51ed7597c650d5::t_42e47d371a3d90 61,68-83
+eval/README.md
+  s_51ed7597c650d5::t_af21326e2783a5 31-33,36-47
+eval/REPORT.md
+  s_51ed7597c650d5::t_11eafca2754c96 57-62,716-912
+eval/prompts/ledger-extract.txt
+  s_51ed7597c650d5::t_2f90a7a50eb2d5 1-7
+eval/prompts/ledger-extract.v1.txt
+  s_51ed7597c650d5::t_d9b30f8ac61b01 1-7
+eval/prompts/ledger-extract.v2.txt
+  s_51ed7597c650d5::t_2d2fa803900512 1-7
+eval/prompts/ledger-verify.txt
+  s_51ed7597c650d5::t_044059d734116c 1-10
+eval/prompts/ledger-verify.v1.txt
+  s_51ed7597c650d5::t_200a7e880b460d 1-9
+eval/prompts/ledger-verify.v2.txt
+  s_51ed7597c650d5::t_e550d9ae026a56 1-9
+eval/results/r15-chunked-real-isolated.json
+  s_51ed7597c650d5::t_c0b257cf8f53d8 1-134
+eval/results/r15-ledger-fixture.json
+  s_51ed7597c650d5::t_7695aff4816348 1-818
+eval/results/r15-ledger-real.json
+  s_51ed7597c650d5::t_305a4a87545a7a 1-6931
+eval/results/r15-ledger2-fixture.json
+  s_51ed7597c650d5::t_c7f1c0b24edf30 1-709
+eval/results/r15-ledger2-real.json
+  s_51ed7597c650d5::t_abcf85286b15f0 1-5716
+eval/results/r15-ledger3-fixture.json
+  s_51ed7597c650d5::t_527f1175eb3033 1-829
+eval/results/r15-ledger3-real.json
+  s_51ed7597c650d5::t_c92f2e6dabf671 1-6729
+eval/run_citeddrift.py
+  s_51ed7597c650d5::t_979746d5ba3888 25-27,43,46
+eval/run_ledger.py
+  s_51ed7597c650d5::t_7e0b55f1b1815b 1-130
+eval/run_repodrift.py
+  s_51ed7597c650d5::t_abf638f1293895 16-22,24,29-30,36-66,88-94,96,98-103,107,111-112,114,116-120,123,126-140,145-151,153-154,156-157,183-186,190-193,205-206
+module/commands/docs-audit.md
+  s_51ed7597c650d5::t_b7eaa53f16020f 48,319-404,541-543,672-673,750-751,757-760,826-827,848-850
+module/commands/docs-update.md
+  s_51ed7597c650d5::t_49e960452eae0e 78-79
+module/skills/docs-organization/SKILL.md
+  s_51ed7597c650d5::t_7e13ce5e88f3b0 142,152-154
+module/skills/docs-organization/scripts/md-chunks.mjs
+  s_51ed7597c650d5::t_9908b07913cf9a 1-112
+tests/scripts/docs-organization/md-chunks.test.mjs
+  s_51ed7597c650d5::t_6a4911c3b134b0 1-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3f03c35b8d849488699b70d7de46a92213692bf7",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
