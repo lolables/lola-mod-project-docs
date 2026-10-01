@@ -1,0 +1,24 @@
+.taskfiles/scripts/build-vendor.sh
+  s_2fe5c7579ceb59::t_dcf217b57dca01 88
+  s_2fe5c7579ceb59::t_da1458741c9acb 87,94,98-111
+.taskfiles/vendor/licenses/@asciidoctor__core.LICENSE
+  s_2fe5c7579ceb59::t_b75edb6c198c4c 1-21
+module/skills/docs-organization/scripts/vendor/LICENSES.md
+  s_2fe5c7579ceb59::t_fa5517e5f37f79 162-185,550-572
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "80b8e0659605deb3d585a0a74b913083193ae4ce",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
