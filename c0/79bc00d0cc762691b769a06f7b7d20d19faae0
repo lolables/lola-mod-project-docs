@@ -1,0 +1,95 @@
+eval/fixtures/cold-read-actionable/DOC.md
+  s_51ed7597c650d5::t_03433ad4234bcb 1-33
+eval/fixtures/cold-read-actionable/expected.json
+  s_51ed7597c650d5::t_f44dafd223b620 1-9
+eval/fixtures/real-lane-table/expected.json
+  s_51ed7597c650d5::t_7e0f7a2d539783 1-13
+eval/fixtures/repo-drift-attribution/README.md
+  s_51ed7597c650d5::t_b432125ac1a0bc 1-35
+eval/fixtures/repo-drift-attribution/config.sh
+  s_51ed7597c650d5::t_3e5b2b7047b443 1-2
+eval/fixtures/repo-drift-attribution/docs/index.md
+  s_51ed7597c650d5::t_400c60415230db 1-3
+eval/fixtures/repo-drift-attribution/expected.json
+  s_51ed7597c650d5::t_e007ab8f1a71d5 1-14
+eval/fixtures/repo-drift-attribution/tests/headers.bats
+  s_51ed7597c650d5::t_5049d376f5236b 1-4
+eval/fixtures/repo-drift-attribution/tests/lint.bats
+  s_51ed7597c650d5::t_0b067630fdd20b 1-4
+eval/fixtures/repo-drift-attribution/tests/release.bats
+  s_51ed7597c650d5::t_ee62de36a0c980 1-5
+eval/fixtures/repo-drift-attribution/tools/deploy.sh
+  s_51ed7597c650d5::t_e20e8ecb9f2d64 1-12
+eval/fixtures/repo-drift-attribution/tools/fmt.sh
+  s_51ed7597c650d5::t_f54e59474c965a 1-4
+eval/fixtures/repo-drift-attribution/tools/headers.sh
+  s_51ed7597c650d5::t_5cc91d75339ea1 1-8
+eval/fixtures/repo-drift-attribution/tools/lint.sh
+  s_51ed7597c650d5::t_19730160e5ad96 1-7
+eval/fixtures/repo-drift-attribution/tools/release.sh
+  s_51ed7597c650d5::t_775e470586983f 1-14
+eval/fixtures/repo-drift-attribution/tools/stats.sh
+  s_51ed7597c650d5::t_9708371237839c 1-4
+eval/prompts/cold-read-shipped.baseline.txt
+  s_51ed7597c650d5::t_80e05929aaf575 1-7
+eval/prompts/cold-read-shipped.txt
+  s_51ed7597c650d5::t_2e54d046f62deb 1-7
+eval/prompts/repo-drift-chunk.txt
+  s_51ed7597c650d5::t_4203847f2b9591 1-7
+eval/prompts/repo-drift-enumerate.txt
+  s_51ed7597c650d5::t_2b339297118649 1-7
+eval/prompts/repo-drift-reportall.txt
+  s_51ed7597c650d5::t_3883a53b80fc70 1-7
+eval/prompts/repo-drift.baseline.txt
+  s_51ed7597c650d5::t_f74c3f3b798bf0 1-7
+eval/prompts/repo-drift.txt
+  s_51ed7597c650d5::t_40b8e45b24afd7 1-7
+eval/results/r14-coldread-after.json
+  s_51ed7597c650d5::t_4b24973966deaf 1-273
+eval/results/r14-coldread-baseline.json
+  s_51ed7597c650d5::t_f14908fda777b8 1-260
+eval/results/r14-excerpt-after.json
+  s_51ed7597c650d5::t_6b46d860ea5d8f 1-120
+eval/results/r14-excerpt-baseline.json
+  s_51ed7597c650d5::t_fa08e87d2167ed 1-104
+eval/results/r14-real-after.json
+  s_51ed7597c650d5::t_a746733d8f71e8 1-119
+eval/results/r14-real-baseline.json
+  s_51ed7597c650d5::t_976a2d6fabcf81 1-135
+eval/results/r14-real-cap600.json
+  s_51ed7597c650d5::t_7f271be5f48a5a 1-127
+eval/results/r14-real-chunk.json
+  s_51ed7597c650d5::t_c1184fd4b8d02a 1-151
+eval/results/r14-real-enumerate.json
+  s_51ed7597c650d5::t_5797f36cfa49cf 1-120
+eval/results/r14-real-reportall.json
+  s_51ed7597c650d5::t_3860efc51f561b 1-128
+eval/results/r14-repodrift-after.json
+  s_51ed7597c650d5::t_4bff7c38213194 1-244
+eval/results/r14-repodrift-baseline.json
+  s_51ed7597c650d5::t_2096f4f9702750 1-223
+eval/run_coldread_actionable.py
+  s_51ed7597c650d5::t_7b2b34bf45a212 1-116
+eval/run_repodrift.py
+  s_51ed7597c650d5::t_50658d493e9b21 1-171
+module/commands/docs-audit.md
+  s_51ed7597c650d5::t_05cede78cd5eb5 321-327,382-386,547-548,598-604,685-687,703,721
+module/commands/docs-update.md
+  s_51ed7597c650d5::t_c65add52dc5802 304-306
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c079bc00d0cc762691b769a06f7b7d20d19faae0",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
