@@ -4,6 +4,11 @@
 // classDefs filled in for the chosen palette.
 //
 // Usage: node apply-palette.mjs <palette.json> <body.mmd> > <output.mmd>
+//        node apply-palette.mjs --swap <palette.json> <file.mmd|file.md> [block]
+//
+// --swap is swap-palette.sh's engine: it strips the existing palette from a
+// whole diagram, or from each (or the 1-based `block`) mermaid fence of a .md,
+// and re-applies. Refusals print a reason on stderr and exit 2.
 //
 // The body should reference sysA..sysF via the standard classDef names
 // (`:::sysX` or `class X sysY`). The script appends classDef lines only
@@ -12,6 +17,8 @@
 // appended and stay parseable.
 
 import { readFileSync } from 'node:fs';
+import { isMain } from './is-main.mjs';
+import { extractMermaidBlocks } from './lint-mermaid.mjs';
 
 export function initHeader(palette) {
   // primaryTextColor is the EDGE-LABEL / CHART-TITLE color. Setting it to
@@ -106,8 +113,96 @@ export function applyPalette(palette, body) {
   return defs ? `${initHeader(palette)}\n${trimmed}\n${defs}\n` : `${initHeader(palette)}\n${trimmed}\n`;
 }
 
+// Drop the %%{init}%% header (its opening line through the line holding
+// `}%%`) and the classDefs of this palette's own classes. Custom classDefs
+// stay: applyPalette re-adds only palette classes, so stripping them would
+// silently lose their colors.
+export function stripPalette(palette, source) {
+  const own = new Set(Object.keys(palette.nodes));
+  const out = [];
+  let inHeader = false;
+  for (const line of source.split('\n')) {
+    if (!inHeader && /^\s*%%\{\s*init\s*:/.test(line)) inHeader = true;
+    if (inHeader) {
+      if (line.includes('}%%')) inHeader = false;
+      continue;
+    }
+    const def = /^\s*classDef\s+(\S+)/.exec(line);
+    if (def && own.has(def[1])) continue;
+    out.push(line);
+  }
+  if (inHeader) throw new Error('unterminated %%{init}%% header (no closing }%%)');
+  return out.join('\n');
+}
+
+// `where` names the diagram in the refusal message.
+export function swapDiagram(palette, source, where) {
+  const body = stripPalette(palette, source);
+  if (!/\S/.test(body)) {
+    // An empty file, or the caller redirected output onto the input
+    // (`... f > f` truncates f before this reads it). A header-only diagram
+    // would look like success and silently drop the diagram.
+    throw new Error(`no diagram body in ${where} (empty file, or output redirected onto the input?)`);
+  }
+  return applyPalette(palette, body);
+}
+
+// Swap every mermaid fence of a .md, or only the 1-based `block`, splicing
+// each new diagram between its fences so every byte outside them is kept.
+// Fences are found (and numbered) exactly as lint-mermaid reports them.
+export function swapFences(palette, content, file, block) {
+  const blocks = extractMermaidBlocks(content, file);
+  if (blocks.length === 0) {
+    // An empty (or fence-less) .md is what `... p f.md > f.md` leaves behind
+    // once the shell truncates f.md before this reads it — same trap as the
+    // .mmd empty-file case in swapDiagram, so it gets the same hint.
+    throw new Error(`no mermaid fences in ${file} (empty file, or output redirected onto the input?)`);
+  }
+  if (block !== undefined && block > blocks.length) {
+    throw new Error(`block ${block} requested but ${file} has ${blocks.length} mermaid fence(s)`);
+  }
+  let out = '';
+  let pos = 0;
+  for (const b of block === undefined ? blocks : [blocks[block - 1]]) {
+    const n = b.block;
+    // Indented fences (list items, blockquotes) need their indent re-applied
+    // to every new line; refuse rather than break the enclosing structure.
+    const opensAtColumn0 = b.fenceStart === 0 || content[b.fenceStart - 1] === '\n';
+    const closesAtColumn0 = content[b.bodyEnd - 1] === '\n';
+    if (!opensAtColumn0 || !closesAtColumn0) {
+      throw new Error(`block ${n} of ${file} is indented (not a top-level fence); swap it by hand`);
+    }
+    out += content.slice(pos, b.bodyStart) +
+      swapDiagram(palette, content.slice(b.bodyStart, b.bodyEnd), `block ${n} of ${file}`);
+    pos = b.bodyEnd;
+  }
+  return out + content.slice(pos);
+}
+
+function swap([paletteFile, file, block]) {
+  const palette = JSON.parse(readFileSync(paletteFile, 'utf8'));
+  const content = readFileSync(file, 'utf8');
+  try {
+    process.stdout.write(file.endsWith('.md')
+      ? swapFences(palette, content, file, block === undefined ? undefined : Number(block))
+      : swapDiagram(palette, content, file));
+  } catch (e) {
+    console.error(e.message);
+    process.exit(2);
+  }
+}
+
 function main() {
-  const [paletteFile, bodyFile] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  if (args[0] === '--swap') {
+    if (args.length < 3 || args.length > 4) {
+      console.error('usage: apply-palette.mjs --swap <palette.json> <file.mmd|file.md> [block]');
+      process.exit(2);
+    }
+    swap(args.slice(1));
+    return;
+  }
+  const [paletteFile, bodyFile] = args;
   if (!paletteFile || !bodyFile) {
     console.error('usage: apply-palette.mjs <palette.json> <body.mmd>');
     process.exit(2);
@@ -117,6 +212,6 @@ function main() {
   process.stdout.write(applyPalette(palette, body));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   main();
 }

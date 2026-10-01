@@ -104,14 +104,65 @@ Node text is `#ffffff` (white) in every palette. The `themeCSS` snippet in
 the init header forces white text on default (non-classDef'd) nodes so
 diagrams render correctly without per-node classDefs.
 
+## Re-applying a palette
+
+`scripts/swap-palette.sh [--block N] <palette> <file>` strips a diagram's
+init header and the palette's own `classDef`s (`sysA`…`sysF`) and writes the
+named palette's validated ones. Custom `classDef`s, `style` statements, and
+every node, edge, and `class` line are kept. It prints to stdout: write to
+`<file>.new`, then move that over `<file>` — redirecting onto `<file>` empties
+it before the script reads it.
+
+A `.mmd` is one diagram. In a `.md` the script swaps every mermaid fence —
+` ```mermaid ` or `~~~mermaid` — or only `--block <block>` (the `block`
+field from `lint-mermaid --json`, numbered the same way regardless of which
+fence character a diagram uses), and leaves every byte outside the swapped
+fences unchanged. It exits 2 with a reason
+and no output for an unknown palette, a `--block` past the last fence, a
+fence with no diagram, an unterminated init header, or a fence indented
+inside a list item or blockquote.
+
+### Repairing a palette by hand
+
+For what the script refuses or does not touch — an indented fence, a
+`classDef edgeLabel`:
+
+1. Take the palette's values from `palettes/<palette>.json`: `nodes.sysX`
+   `fill`/`text` for a `sysX` class, `edgeLabel` `bg`/`text` for
+   `edgeLabel`, and the init header from the tables above.
+2. Replace the init header and the drifted `classDef` inside the diagram
+   only. In an indented fence keep every line's indentation.
+3. Run `scripts/lint-mermaid.mjs` on the file and confirm no findings.
+
 ## Syntax constraints
 
 The linter uses merval, a strict subset of mermaid's grammar:
 
 1. **Quote labels containing `:`, `,`, `(`, or `)`** — `B["Lane 1: structural"]` not `B[Lane 1: structural]`.
-2. **Stadium shape `([text])` is not supported.** Use `[text]` or `(text)`.
+2. **Only some flowchart shapes parse.** These are valid mermaid but the
+   linter's parser (merval 1.0.7, the latest release) rejects them with a
+   misleading "Expected closing bracket" error, so the `SYNTAX_ERROR` message
+   names the shape:
+
+   | Accepted | Rejected |
+   | --- | --- |
+   | `[text]` rectangle | `([text])` stadium |
+   | `(text)` rounded | `[[text]]` subroutine |
+   | `((text))` circle | `[(text)]` cylinder |
+   | `{text}` rhombus | `>text]` asymmetric |
+   | `[/text/]` `[\text\]` parallelogram | `{{text}}` hexagon |
+   | `[/text\]` `[\text/]` trapezoid | `(((text)))` double circle |
+   | | `A@{ shape: … }` expanded syntax |
+
+   Swap a rejected shape for an accepted one, e.g. a datastore as `[text]`
+   rather than `[(text)]`.
 3. **Inline class `node["label"]:::sysX` is rejected** for nodes with explicit shapes. Use `class node1,node2 sysA` instead.
 4. `/`, `?`, `<br/>`, hyphens, and ampersands work unquoted.
+
+A syntax error does not hide the other checks: the header, class-name and
+contrast checks read the diagram text, so they still report on a diagram
+merval rejects. Every finding carries a 1-based `line` in its file (for a
+fenced block, lines count from the top of the `.md`).
 
 ## ER edge labels — known mermaid quirk
 
@@ -162,9 +213,27 @@ labels, ER attributes, sankey/radar/quadrant text legible. The `themeCSS`
 override then forces white text on node fills so default nodes still read
 correctly without a classDef.
 
-## Opting out
+## Colors outside the palette
 
-For a one-off color outside the palette, add
-`<!-- lint-mermaid:allow-classname=<name> -->` on the line immediately
-before the offending `classDef`. Contrast still runs; only the
-approved-name check is suppressed.
+There is no opt-out marker. Reach for an approved class first: `sysA` …
+`sysF` give six contrast-checked fills per palette, and `edgeLabel` covers
+edge text.
+
+If a diagram truly needs another color, keep the custom `classDef`. The
+linter reports it as an `UNAPPROVED_CLASSNAME` **warning**, not a blocker:
+
+- The run still exits 1, so the warning is visible in review and has to be
+  accepted there.
+- The contrast checks skip classes outside the approved set. Verify the
+  color by hand: text on fill at least 4.5:1, and fill at least 3.0:1
+  against both `#ffffff` and `#1e1e1e`.
+
+A `style <node> fill:…,color:…` statement is the per-node form of the same
+escape hatch. Any `style` that sets `fill`, `color`, or `stroke` is an
+`UNAPPROVED_STYLE` **warning** — replace it with `class <node> sysX`. Unlike
+a custom `classDef`, its colors are still contrast-checked, and a failure is
+a `LOW_CONTRAST_*` blocker whose message begins `style "<node>"`.
+
+Colors may be hex (`#rgb`, `#rrggbb`) or any of the 148 CSS named colors
+(`yellow`, `rebeccapurple`, …) in both `classDef` and `style`. Other forms
+(`transparent`, `rgb()`, 4- or 8-digit hex) are not contrast-checked.

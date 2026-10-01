@@ -1,6 +1,24 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { validate } from './validate-palette.mjs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync, symlinkSync, cpSync, realpathSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { validate } from '../../../module/skills/docs-organization/scripts/validate-palette.mjs';
+
+// Every temp dir the entry-guard tests below create is tracked here and
+// removed once, after the whole file runs (matches check-staleness.test.mjs).
+const tmpDirs = [];
+after(() => {
+  for (const d of tmpDirs) rmSync(d, { recursive: true, force: true });
+});
+
+function mktemp(prefix = 'validate-palette-') {
+  const d = realpathSync(mkdtempSync(join(tmpdir(), prefix)));
+  tmpDirs.push(d);
+  return d;
+}
 
 const SOLAR = {
   name: 'Solar',
@@ -69,4 +87,55 @@ test('validate: edge label contrast is enforced at AA', () => {
   broken.edgeLabel = { bg: '#eef2f8', text: '#bbbbbb' };  // pale gray on near-white
   const fails = validate(broken).filter((r) => !r.pass);
   assert.ok(fails.some((f) => f.label === 'edge label text vs edge label bg'));
+});
+
+// --- entry guard: the script must run as the main module from any install
+// path, not just one with no spaces and no symlinks in it. ---
+
+const SCRIPTS_DIR = fileURLToPath(new URL('../../../module/skills/docs-organization/scripts', import.meta.url));
+
+// A palette that fails a check (low-contrast node text vs fill), so the CLI's
+// exit code and non-empty FAIL output actually prove the run happened.
+const BROKEN_SOLAR = structuredClone(SOLAR);
+BROKEN_SOLAR.name = 'Broken Solar';
+BROKEN_SOLAR.nodes.sysA = { fill: '#444444', text: '#222222' };
+
+// Copies the whole (runtime-only) scripts directory rather than a
+// hand-picked file list, so a script gaining a new sibling import can't
+// silently break this test.
+function copyScriptsDirTo(destDir) {
+  cpSync(SCRIPTS_DIR, destDir, { recursive: true });
+}
+
+function runScript(scriptPath, paletteFile) {
+  try {
+    return { code: 0, out: execFileSync('node', [scriptPath, paletteFile], { encoding: 'utf8' }) };
+  } catch (e) {
+    if (e.status === 1) return { code: 1, out: e.stdout };
+    throw e;
+  }
+}
+
+test('CLI: invocable via a script path containing a space', () => {
+  const spaceParent = mktemp();
+  const targetDir = join(spaceParent, 'sp ace');
+  copyScriptsDirTo(targetDir);
+  const paletteFile = join(spaceParent, 'broken.json');
+  writeFileSync(paletteFile, JSON.stringify(BROKEN_SOLAR));
+
+  const { code, out } = runScript(join(targetDir, 'validate-palette.mjs'), paletteFile);
+  assert.equal(code, 1);
+  assert.match(out, /\[FAIL\]/);
+});
+
+test('CLI: invocable through a symlinked directory', () => {
+  const parent = mktemp();
+  const linkDir = join(parent, 'link');
+  symlinkSync(SCRIPTS_DIR, linkDir, 'dir');
+  const paletteFile = join(parent, 'broken.json');
+  writeFileSync(paletteFile, JSON.stringify(BROKEN_SOLAR));
+
+  const { code, out } = runScript(join(linkDir, 'validate-palette.mjs'), paletteFile);
+  assert.equal(code, 1);
+  assert.match(out, /\[FAIL\]/);
 });

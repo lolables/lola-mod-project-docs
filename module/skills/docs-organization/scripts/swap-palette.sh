@@ -1,13 +1,45 @@
 #!/usr/bin/env bash
-# Swap the palette init header on an existing .mmd file. Strips the
-# current init block and any classDef lines, then re-applies via
-# apply-palette.mjs against the named palette's JSON.
+# Swap the palette on an existing diagram and print the result to stdout.
+# Strips the current init header and the palette's own classDef lines, then
+# re-applies the named palette via apply-palette.mjs.
 #
-# Usage: swap-palette.sh <palette-name> <path/to/diagram.mmd>
+# A .md is swapped in place: every mermaid fence — ```mermaid or ~~~mermaid,
+# numbered the same way lint-mermaid does (or only --block N, the 1-based
+# `block` field of a lint-mermaid --json finding) — gets the new palette and
+# every byte outside those fences is left untouched. Any other file is taken
+# as one whole diagram (.mmd).
+#
+# Usage: swap-palette.sh [--block N] <palette-name> <path/to/diagram.mmd|doc.md>
+# Refusals (unknown palette, bad --block, no diagram body, an indented
+# fence) print a reason on stderr and exit 2 with nothing on stdout.
 set -euo pipefail
 
-PALETTE="${1:?usage: swap-palette.sh <palette-name> <path/to/diagram.mmd>}"
-INPUT="${2:?usage: swap-palette.sh <palette-name> <path/to/diagram.mmd>}"
+USAGE="usage: swap-palette.sh [--block N] <palette-name> <path/to/diagram.mmd|doc.md>"
+
+# Unset (not empty) means "every fence"; `--block ""` must still be refused.
+unset BLOCK
+while [[ $# -gt 0 && "$1" == --* ]]; do
+  case "$1" in
+    --block)
+      if [[ $# -lt 2 ]]; then
+        echo "$USAGE" >&2
+        exit 2
+      fi
+      BLOCK="$2"
+      shift 2
+      ;;
+    *)
+      echo "unknown option: $1 — $USAGE" >&2
+      exit 2
+      ;;
+  esac
+done
+if [[ $# -ne 2 ]]; then
+  echo "$USAGE" >&2
+  exit 2
+fi
+PALETTE="$1"
+INPUT="$2"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PALETTE_DIR="$SCRIPT_DIR/../reference/palettes"
@@ -27,7 +59,16 @@ if [[ ! -f "$INPUT" ]]; then
   exit 2
 fi
 
-BODY="$(mktemp)"
-trap 'rm -f "$BODY"' EXIT
-awk '/^%%\{init:/,/\}%%/ {next} /^[[:space:]]*classDef[[:space:]]/ {next} {print}' "$INPUT" > "$BODY"
-node "$SCRIPT_DIR/apply-palette.mjs" "$PALETTE_JSON" "$BODY"
+SWAP_ARGS=(--swap "$PALETTE_JSON" "$INPUT")
+if [[ -n "${BLOCK+set}" ]]; then
+  if [[ ! "$BLOCK" =~ ^[1-9][0-9]*$ ]]; then
+    echo "--block needs a positive integer (1 = first mermaid fence), got: $BLOCK" >&2
+    exit 2
+  fi
+  if [[ "$INPUT" != *.md ]]; then
+    echo "--block selects a fence in a .md; $INPUT is a whole diagram" >&2
+    exit 2
+  fi
+  SWAP_ARGS+=("$BLOCK")
+fi
+node "$SCRIPT_DIR/apply-palette.mjs" "${SWAP_ARGS[@]}"

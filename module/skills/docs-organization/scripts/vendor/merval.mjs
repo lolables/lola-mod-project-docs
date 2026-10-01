@@ -1,4 +1,4 @@
-// module/skills/docs-organization/scripts/node_modules/@aj-archipelago/merval/dist/lexer/index.js
+// .taskfiles/vendor/node_modules/@aj-archipelago/merval/dist/lexer/index.js
 var TokenType;
 (function(TokenType2) {
   TokenType2["GRAPH"] = "GRAPH";
@@ -417,7 +417,7 @@ var Lexer = class {
   }
 };
 
-// module/skills/docs-organization/scripts/node_modules/@aj-archipelago/merval/dist/parser/index.js
+// .taskfiles/vendor/node_modules/@aj-archipelago/merval/dist/parser/index.js
 var Parser = class {
   tokens;
   position = 0;
@@ -2250,14 +2250,14 @@ var Parser = class {
   }
 };
 
-// module/skills/docs-organization/scripts/node_modules/@aj-archipelago/merval/dist/version.js
+// .taskfiles/vendor/node_modules/@aj-archipelago/merval/dist/version.js
 var MERMAID_VERSION_INFO = {
   validatedAgainst: "11.12.0",
   lastValidated: "2024-10-15",
   cliVersion: "@mermaid-js/mermaid-cli@11.12.0"
 };
 
-// module/skills/docs-organization/scripts/node_modules/@aj-archipelago/merval/dist/index.js
+// .taskfiles/vendor/node_modules/@aj-archipelago/merval/dist/index.js
 function getMermaidVersionInfo() {
   return MERMAID_VERSION_INFO;
 }

@@ -2,6 +2,8 @@
 // References: https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio
 //             https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
 
+import { CSS_NAMED_COLORS } from './css-named-colors.mjs';
+
 export function parseHex(hex) {
   if (typeof hex !== 'string') throw new Error(`not a string: ${hex}`);
   const m = /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(hex);
@@ -38,4 +40,14 @@ export function contrastRatio(hexA, hexB) {
   const lighter = Math.max(La, Lb);
   const darker = Math.min(La, Lb);
   return (lighter + 0.05) / (darker + 0.05);
+}
+
+// A mermaid style value as a hex contrastRatio accepts: 3- or 6-digit hex
+// as written, or a CSS named color (case-insensitive). Anything else —
+// `transparent`, rgb(), 4/8-digit hex — is null: no ratio can be computed.
+export function resolveColor(value) {
+  if (typeof value !== 'string') return null;
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) return value;
+  const name = value.toLowerCase();
+  return Object.hasOwn(CSS_NAMED_COLORS, name) ? CSS_NAMED_COLORS[name] : null;
 }

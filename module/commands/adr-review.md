@@ -37,7 +37,7 @@ the subagent prompt — subagents do not inherit your shell variables.
 
    ```text
    Read the ADR at <absolute path to NNNN-*.md>. Then read the rubric at
-   <absolute path to $SKILL_DIR/reference/review-rubric.md>. Apply
+   <absolute path to `$SKILL_DIR/reference/review-rubric.md`>. Apply
    every section of the rubric to the ADR. Reply in under 600 words with
    JSON in this exact shape:
 
@@ -61,7 +61,7 @@ the subagent prompt — subagents do not inherit your shell variables.
    to `reviewed`?" If yes, edit the ADR's frontmatter `status:` field to
    `reviewed`. Do NOT advance to `accepted` automatically — that is a
    separate user decision.
-7. Run `bash $SKILL_DIR/scripts/adr-index.sh <adr-dir>` if status
+7. Run `bash "$SKILL_DIR/scripts/adr-index.sh" <adr-dir>` if status
    changed.
 8. Commit: `docs(adr): NNNN review (status: reviewed)` if status changed,
    otherwise no commit.

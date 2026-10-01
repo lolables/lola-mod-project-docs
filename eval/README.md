@@ -19,8 +19,8 @@ by hand when a lane's prompt changes.
 
 ## Running a lane
 
-Requires the `claude` CLI on `PATH` and the script deps installed once
-(`cd ../module/skills/docs-organization/scripts && npm install`).
+Requires the `claude` CLI on `PATH`. The skill's scripts need no install step;
+their dependencies ship pre-bundled under `scripts/vendor/`.
 
 ```bash
 python3 run_needsstructure.py     # scannability of procedures (NEEDS_STRUCTURE)

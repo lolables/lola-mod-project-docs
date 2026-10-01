@@ -20,9 +20,7 @@ judged on completeness. Grounding also emits `MODE_MIXING` (info) when a
 non-`landing` doc commits to one mode but embeds another that interrupts its job
 (a how-to that detours into pages of concept). It is a **lens, not a law**: a
 `landing` page is never flagged for mixing, and the finding is info-level — the
-framework guides, it does not dictate. (Validated: 5/5 consistent on eval
-fixtures, with the landing page exempted from `MODE_MIXING` rather than
-flagged.)
+framework guides, it does not dictate.
 
 ## Then cold-read it
 
@@ -30,8 +28,7 @@ The **cold read** is the lane none of the narrow checks cover: read the doc as
 the intended audience and flag where a real reader gets stuck — an undefined
 term, a missing step, a dangling "see below", prose that contradicts its own
 example, terminology that drifts, an unstated prerequisite, a spec citation the
-reader can't resolve. Measured on the eval fixture it is high-precision (0
-spurious findings, 4/5 planted traps caught), so its findings are treated as
+reader can't resolve. It is high-precision, so its findings are treated as
 real but kept info-level.
 
 ## Completeness, without a section checklist
@@ -43,5 +40,5 @@ resolution, a reference describes every listed entry, a how-to names the
 prerequisites its steps assume. It is **not** a section-checklist: it fires only
 for a reader who would be *blocked*, never for a missing named heading, and
 never on a `landing` page. That guard is load-bearing — without it the check
-nagged even a complete how-to (0/5); with it, 20/20 on the eval (full recall on
-real gaps, zero nagging on complete or intentionally-minimal docs).
+nagged even a complete how-to; with it, the check gets full recall on real
+gaps with zero nagging on complete or intentionally-minimal docs.

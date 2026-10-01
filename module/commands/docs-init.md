@@ -23,6 +23,13 @@ Invoke the `docs-organization` skill via your host's Skill tool. The skill's
 for every `scripts/...` and `reference/...` reference below — do not
 hardcode `.claude/skills/...` or search candidate paths.
 
+If step 3 or step 4 below will create `docs/dev/README.md` from the
+template (the greenfield path, or the existing-project path when
+`docs/dev/` is missing), additionally activate the companion `adr` skill
+and bind `$ADR_DIR` from its loaded `SKILL.md` location the same way —
+`docs/dev/README.md` links `adr/index.md`, and that link must resolve.
+Skip the `adr` activation otherwise.
+
 ### Steps
 
 1. Read `$SKILL_DIR/SKILL.md` for the invariants and principles this skill enforces. The procedure below is the source of truth for what to do.
@@ -66,11 +73,24 @@ hardcode `.claude/skills/...` or search candidate paths.
 5. **Always:**
    - Append `docs/superpowers/` to `.gitignore` if not present (preserve
      existing entries).
-   - Run `bash $SKILL_DIR/scripts/check-structure.sh`
+   - If step 3 or step 4 created `docs/dev/README.md` from the template,
+     its `adr/index.md` link needs a target: create `docs/dev/adr/` if it
+     doesn't already exist, then run
+     `bash "$ADR_DIR/scripts/adr-index.sh" docs/dev/adr` to generate the
+     index (an empty ADR dir produces the "No ADRs yet" stub — still a
+     valid link target).
+   - Run `bash "$SKILL_DIR/scripts/check-structure.sh"`
      to verify the structural invariants now hold. Surface any remaining
      findings.
-6. Commit the scaffolding with a conventional message: `docs: scaffold
-   documentation structure`.
+6. **Show what was created, then ask before committing:**
+   - List every file created or modified (new files created, existing
+     files appended to — e.g. `.gitignore`).
+   - Stage those files by name (never `git add .`/`-A`) and show the user
+     `git diff --staged`.
+   - Ask: "Commit this scaffolding?" On yes, commit with a conventional
+     message: `docs: scaffold documentation structure`. On no, or no
+     response, leave the changes staged-but-uncommitted and say so —
+     do not commit automatically.
 
 ## Stop conditions
 
@@ -79,3 +99,6 @@ hardcode `.claude/skills/...` or search candidate paths.
 - If the user declines a destructive prompt (e.g., refuses the README
   split), apply only the non-destructive changes (.gitignore, missing
   docs/dev/ files).
+- If the user declines the commit prompt in step 6, leave the scaffolding
+  staged and uncommitted; do not retry the prompt or commit on a later
+  invocation without being asked again.

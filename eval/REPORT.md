@@ -397,3 +397,268 @@ that, rather than us building a `check-demo.mjs` on assumption. Wired as
 `MISSING_DEMO` (info, encouragement bucket, README/landing only). The
 `/docs-update` fix is an HTML-comment spec pointing at asciinema/VHS; it never
 scaffolds a `.tape` or fabricates a recording. Run: `python3 run_missingdemo.py`.
+
+## Round 10 — `reference` exemption for `SPLIT_CANDIDATE`
+
+Question: does grounding label a long enumeration `reference`, which the Lane 3
+`SPLIT_CANDIDATE` exemption depends on? Fixtures `diataxis-glossary`,
+`diataxis-punchlist`; `run_diataxis.py`, K=5.
+
+| Fixture | Expected | primary_mode (×5) | mode_mixing (×5) | correct |
+|---|---|---|---|---|
+| diataxis-glossary (24-term glossary) | reference, clean | reference ×5 | False ×5 | 5/5 |
+| diataxis-punchlist (8-entry issue punch list) | reference, clean | reference ×4, how-to ×1 | False ×5 | 4/5 |
+
+Mode mixing was correctly silent on both across all 10 calls. The glossary hit
+the bar outright. The punch list missed by one sample; a repeat five-call run
+scored 5/5, so 9/10 overall. Labelling "evidence / impact / fix" entries as
+`reference` rather than `how-to` is real but not perfectly stable.
+
+A miss fails safe: a punch list graded `how-to` keeps its `SPLIT_CANDIDATE`
+info finding, which is the behavior before the exemption existed. The
+exemption is reliable for glossary-style docs and usable for punch lists. If
+the occasional kept finding on a punch list is a nuisance, narrow the Lane 3
+exemption wording in `module/commands/docs-audit.md` to glossary-style docs.
+Not measured here: whether a long `explanation` doc is ever mislabelled
+`reference`, which would suppress a split it should get. Both fixtures are
+also well under the 600-line `SPLIT_CANDIDATE` threshold (77 and 110 lines),
+so this round shows the labelling on short enumerations, not at the length
+where the exemption actually applies.
+
+## Round 11 — full `/docs-audit` on a planted-drift CLI: severity and Lane 6 dispatch
+
+Question: does the one-question `CONTENT_DRIFT` severity rule (030c381) give
+the same severity every run, and does the model follow the Lane 6 dispatch
+rule? Unlike Rounds 1–10, this runs the installed command end to end, not a
+lane prompt fed inline.
+
+**Setup.** Fixture `tasklet`, a small Python CLI built by the independent
+tester's `build-app.sh`: README, `docs/configuration.md`,
+`docs/architecture.md` (one mermaid block), `docs/canon/` (3 files),
+`docs/mirror/` (2 symlinks into `canon/` plus a forked `style.md`). The last
+commit plants three drifts: `add --due` removed, `list --json` replaced by
+`--format {text,json}`, and the default store moved from `~/.tasklet.json` to
+the XDG data dir. The module was installed with `lola install … --scope
+project` from a `git archive` of the commit under test. `HOME` and
+`CLAUDE_CONFIG_DIR` were isolated so an older user-level `docs-audit.md` could
+not shadow it. Each round ran
+`claude -p "/docs-audit" --output-format stream-json --verbose` 5 times in
+sequence (model `claude-opus-5-5`, CLI 2.1.283). Scoring used the last
+`result` event and the subagent transcripts. No run needed a retry.
+
+**Expected severities under the rule.** `--due` (README:16) and `--json`
+(configuration.md:9) are flags the reader types, and the code rejects them,
+so both are Blockers. The store location is stated as a fact: README:31 says
+"Tasks are stored in `~/.tasklet.json`" and the configuration.md:7 table lists
+it as the default. The reader types nothing, so both are Warnings. The rule's
+own example matches this case almost word for word.
+
+### Round 11a — HEAD 030c381 (per-file dispatch with optional grouping)
+
+| Run | `--due` | `--json` | store path (README:31, config:7) | Lane 6 subagents | Lane 6 rule | Summary line | Files unchanged | Cost |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Blocker | Blocker | Warning, Warning | 4 | ✗ `canon/*` grouped with `mirror/style.md` | ✓ | ✓ | $1.04 |
+| 2 | Blocker | Blocker | Warning, Warning | 3 | ✗ same cross-directory group; diagram check folded into a group prompt | ✓ (bold) | ✓ | $0.75 |
+| 3 | Blocker | Blocker | Warning, Warning | 4 | ✗ same cross-directory group | ✗ prose ("… and 15 info findings") | ✓ | $0.80 |
+| 4 | Blocker | Blocker | Warning, Warning | 5 | ✓ | ✓ | ✓ | $0.86 |
+| 5 | Blocker | Blocker | Warning, Warning | 5 | ✓ | ✓ | ✓ | $0.90 |
+
+- **Severity: 5/5** on all three planted drifts. Each run used the same code
+  and the severity the rule predicts.
+- **Lane 6 dispatch: 2/5.** In runs 1–3, `docs/canon/*.md` and
+  `docs/mirror/style.md` shared one subagent, although they are in different
+  directories. All five runs grouped `architecture.md` (explanation) with
+  `configuration.md` (reference). That pair is allowed, but the rule says to
+  note mixed modes under Other, and no run did. Every reply led with
+  `Grounding` and had every applicable section. Run 1's README reply put one
+  sentence before that heading.
+- **Summary line: 4/5** in the `N blockers, N warnings, N info` form. The
+  counts matched the table rows in all five runs. Tables used
+  `| Code | File | Line | Note |` in 5/5.
+- **Deterministic lanes: 5/5.** All five scripts ran every time, with no
+  `LANE_FAILED`. Findings were `FORKED_COPY`, `STALE_README` and 6×`STALE_DOC`,
+  plus the lint-mermaid findings below. Prose and refs were clean and reported
+  as clean.
+- **Suppressions:** none were needed (Lane 3 was clean). No run wrote a
+  malformed suppression.
+- **Files unchanged: 5/5.** The sha256 of every file matched, and so did
+  `git status`.
+
+The plan's decision rule then applied, because dispatch compliance was below
+5/5. ff56f5f replaced the grouping rule with the dispatch the lane's figures
+were measured with: one grounding subagent per file first, then one subagent
+per applicable prompt per file.
+
+### Round 11b — ff56f5f (one subagent per prompt per file)
+
+| Run | `--due` | `--json` | store path (README:31, config:7) | Lane 6 subagents | Lane 6 rule | Summary line | Files unchanged | Cost |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Blocker | Blocker | Warning, Warning | 43 | ✓ | ✓ | ✓ | $3.57 |
+| 2 | Blocker | Blocker | Warning, Warning | 43 | ✓ | ✓ | ✓ | $3.23 |
+| 3 | Blocker | Blocker | Warning, Warning | 43 | ✓ | ✗ says 7/6/17; tables hold 6/5/16 | ✓ | $3.26 |
+| 4 | Blocker | Blocker | Warning, Warning | 44 | ✓ (+1 stray) | ✓ | ✓ | $3.62 |
+| 5 | Blocker | Blocker | Warning, Warning | 43 | ✓ | ✗ `**Findings: 6 blockers, …**` | ✓ | $3.26 |
+
+- **Severity: 5/5** again. That makes 10/10 across both rounds.
+- **Lane 6 dispatch: 5/5.** Each run made the 43 expected dispatches:
+  - 7 grounding subagents, one per real file;
+  - 5 prompts per file;
+  - completeness for the 6 non-landing files;
+  - hero demo for the README only;
+  - one diagram-drift subagent.
+
+  Each subagent covered one file and one prompt. In every case the file's
+  grounding reply arrived before any of that file's other prompts were
+  dispatched. Every reply led with the expected heading. Run 4 also sent one
+  stray subagent whose whole prompt was the word "placeholder"; it did
+  nothing, and the punch list says so.
+- **Summary line: 3/5.** Run 3's summary line overstated every count by one
+  compared with its own tables. That is the only count mismatch across all 10
+  runs, and it matters because `/docs-update` parses this contract. Run 5
+  added a `Findings:` prefix.
+- **Deterministic lanes: 5/5; files unchanged: 5/5.**
+
+### Totals
+
+| | 11a (grouping) | 11b (per prompt) |
+|---|---|---|
+| Planted-drift severity consistent and correct | 5/5 | 5/5 |
+| Lane 6 dispatch compliant | 2/5 | 5/5 |
+| Summary line exact and correct | 4/5 | 3/5 |
+| No files written | 5/5 | 5/5 |
+| Mean cost per audit | $0.87 | $3.39 |
+| Mean wall time per audit | ~100 s | ~200 s |
+
+Total spend for the 10 runs was $21.29.
+
+### Conclusions
+
+- **The severity rule met the bar.** All three planted drifts got the same
+  code and severity in 10/10 runs, and the wrong default path came out as a
+  Warning every time. Before Task 9 it came out Blocker, Blocker, Warning.
+- **Findings outside the fixture's design were less stable.** "Run the tests
+  with `python -m unittest`" in a repo with no tests was a Blocker in 8/10
+  runs and a Warning in 2/10. The rule doesn't clearly settle it, since the
+  command runs but tests nothing. Recall for the style-guide "drift" varied
+  from 0 to 2 rows. Nobody planted it, and it is arguably not doc-vs-code.
+- **Per-prompt dispatch met the bar, but it costs 3.9× as much and takes
+  twice as long.** The grouping rule saved subagents only when the model
+  kept to it, which it did in 2 of 5 runs.
+- **Not met: the summary-line contract (7/10 across both rounds).** One of
+  the misses gave wrong counts, not just the wrong format. This round did not
+  fix it.
+- **Worth knowing:**
+  - lint-mermaid reports the fixture's `File[(tasks.json)]` cylinder as a
+    `SYNTAX_ERROR` Blocker in 10/10 runs. The shape is valid mermaid, but
+    the house style's merval subset excludes it on purpose (see "Syntax
+    constraints").
+  - In two 11a runs the orchestrator ran `python3 -m unittest` in the
+    audited repo to check a claim. It wrote nothing, but it did execute the
+    project's code during a read-only audit.
+
+## Round 12 — after the read-only rule: per-prompt vs per-file Lane 6 dispatch
+
+Question: with the read-only rule of 1358aa6 in place, does the committed
+per-prompt dispatch (**B**) still meet every bar? And would a cheaper
+per-file dispatch (**C**) also meet them? C is one subagent per file that
+runs grounding and then every applicable prompt.
+
+**Decision.** The user chose **B**, the committed per-prompt dispatch. C
+was planned for K=5 but stopped after 3 runs when that decision came in.
+The C rows below are a **partial, abandoned comparison**. C was never
+committed.
+
+**Setup.** Identical to Round 11: the same `tasklet` fixture, the same
+isolation, the same invocation and the same scoring. Each variant was
+installed with `lola install … --scope project` into its own fresh copy
+of the fixture, with earlier module files removed first. Each copy got a
+`git archive` of HEAD 1358aa6. For C, only the snapshot's
+`module/commands/docs-audit.md` was edited:
+
+- Each real file gets exactly one `Explore` subagent. Files are never
+  grouped.
+- That subagent runs the grounding prompt first, then every applicable
+  prompt.
+- It replies with one section per prompt, headed by the prompt's name,
+  with `Grounding` first. Each section keeps its prompt's word limit.
+- The retry rule now works per missing section: re-dispatch that file
+  with grounding plus only the failed prompts.
+- The read-only rule and the `SPLIT_CANDIDATE` per-section option were
+  left unchanged.
+
+Runs went in sequence, and scoring used the last `result` event. No run
+needed a retry.
+
+**Execution scan.** Every Bash call was checked, in both the orchestrator
+and every subagent transcript. Any call that was not a
+`$SKILL_DIR/scripts/*` invocation, a read-only git query, or read-only
+file inspection (`cat`, `head`, `ls`, `grep`, `find`, `awk`, `wc`) counts
+as execution.
+
+### Round 12a — B, HEAD 1358aa6 (one subagent per prompt per file)
+
+| Run | `--due` | `--json` | store path (README:31, config:7) | Lane 6 subagents | Lane 6 rule | Summary line (tables) | Project code executed | Files unchanged | Cost | Wall |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Blocker | Blocker | Warning, Warning | 43 | ✓ | ✓ 6/5/23 (6/5/23) | none (52 Bash calls) | ✓ | $3.54 | 255 s |
+| 2 | Blocker | Blocker | Warning, Warning | 43 | ✓ | ✓ 6/7/16 (6/7/16) | none (55) | ✓ | $3.89 | 196 s |
+| 3 | Blocker | Blocker | Warning, Warning | 43 | ✓ | ✓ 6/7/25 (6/7/25) | none (55) | ✓ | $3.44 | 237 s |
+
+- **Dispatch: 3/3.** Each run made the 43 dispatches Round 11b expected.
+  Every subagent covered one file and one prompt, and each file's
+  grounding came back before that file's other prompts went out. Every
+  prompt carried the read-only rule.
+- **Run 2 differences.** Its replies used plain-text section names rather
+  than markdown headings. It also sent the last `mirror/style.md`
+  subagents to the background. The orchestrator ended its turn four
+  times while it waited, so the punch list is the fifth `result` event.
+
+### Round 12b — C, candidate (one subagent per file); partial, abandoned
+
+| Run | `--due` | `--json` | store path (README:31, config:7) | Lane 6 subagents | Lane 6 rule | Summary line (tables) | Project code executed | Files unchanged | Cost | Wall |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Blocker | Blocker | Warning, Warning | 7 + 1 diagram | ✓ | ✓ 6/5/12 (6/5/12) | none (20 Bash calls) | ✓ | $1.43 | 120 s |
+| 2 | Blocker | Blocker | Warning, Warning | 7 | ✓, diagram check folded in | ✓ 6/5/18 (6/5/18) | none (23) | ✓ | $1.40 | 158 s |
+| 3 | Blocker | Blocker | Warning, Warning | 7 | ✓, diagram check folded in | ✓ 6/7/11 (6/7/11) | none (21) | ✓ | $1.06 | 124 s |
+
+- **Per-file rule: 3/3.** Every run gave each real file exactly one
+  subagent and never grouped files. Every reply led with `Grounding` and
+  had every applicable section: 6 for the README (with Hero demo), 6 for
+  every other file (with Completeness). The `style.md` prompts named the
+  other copy only as context.
+- **Diagram check.** Runs 2 and 3 folded the diagram-drift check into
+  `architecture.md`'s subagent as a seventh section. The command says to
+  dispatch it separately, and C did not change that instruction.
+- **Fewer info findings.** C found 12–18 info findings per run, against
+  16–25 for B. The blockers and warnings were the same kind in both.
+
+### Totals
+
+| | B (per prompt, committed) | C (per file, abandoned) |
+|---|---|---|
+| Runs | 3 | 3 of a planned 5 |
+| Planted-drift code and severity correct | 3/3 | 3/3 |
+| Lane 6 dispatch compliant | 3/3 | 3/3 per-file rule; 2/3 folded the diagram check |
+| Summary line exact, counts equal to table rows | 3/3 | 3/3 |
+| Project code executed | 0/3 | 0/3 |
+| Files unchanged (sha256, symlinks, `git status`) | 3/3 | 3/3 |
+| Mean cost per audit | $3.62 | $1.30 |
+| Mean wall time per audit | 229 s | 134 s |
+
+Total spend for the 6 runs was $14.76.
+
+### Conclusions
+
+- **B met every bar in 3/3 runs.** That covers severity, dispatch, the
+  summary-line contract, no execution and no writes.
+- **The summary line held in all six runs.** Each opened with exactly one
+  `N blockers, N warnings, N info` code span, and every count equalled
+  the table rows. Round 11 got 7/10.
+- **The read-only rule held.** None of the six runs executed project
+  code. Applying the same scan to Round 11b's transcripts (ff56f5f, before
+  the rule) finds project-code execution in 3/5 runs. Subagents ran
+  `python3 -m unittest` in runs 1 and 5, and `black --check` in run 3.
+  Round 11 reported this only for 11a.
+- **C costs about a third of B and takes about 60% of the wall time.** On
+  3 runs it met the same bars. It did bend one unchanged instruction (the
+  diagram-drift dispatch) and returned fewer info findings. The user kept
+  B, so C stays unmeasured at K=5.

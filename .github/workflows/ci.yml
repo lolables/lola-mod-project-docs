@@ -51,9 +51,10 @@ jobs:
       - name: Rebuild vendored bundles
         run: task vendor
 
-      # A committed bundle that does not match the version package.json pins is
-      # a silent supply-chain drift. Rebuilding and diffing turns it into a
-      # build failure. Dependabot bumps land red here until rebuilt — intended.
+      # A committed bundle that does not match the version
+      # .taskfiles/vendor/package.json pins is a silent supply-chain drift.
+      # Rebuilding and diffing turns it into a build failure. Dependabot bumps
+      # land red here until rebuilt — intended.
       - name: Vendored bundles match the pinned versions
         run: git diff --exit-code module/skills/docs-organization/scripts/vendor/
 
