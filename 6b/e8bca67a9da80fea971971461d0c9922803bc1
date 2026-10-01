@@ -1,0 +1,65 @@
+AGENTS.md
+  s_51ed7597c650d5::t_18be1441093151 18
+README.md
+  s_51ed7597c650d5::t_8ec62eff3a9701 91-129,191
+docs/dev/architecture.md
+  s_51ed7597c650d5::t_7cca8dcd8906d5 58,109-111,116-210
+eval/README.md
+  s_51ed7597c650d5::t_f57b67338be3b1 28
+eval/REPORT.md
+  s_51ed7597c650d5::t_2587bfc7a21ec9 665-709
+eval/fixtures/cited-drift/DOC.md
+  s_51ed7597c650d5::t_ce5fe2bab6915b 1-30
+eval/fixtures/cited-drift/expected.json
+  s_51ed7597c650d5::t_9e878e8ea62cfb 1-19
+eval/fixtures/cited-drift/snapshots/b67ed5bc30e1ec788707101b2fb2782b518947273840153541665b17ab5e0596.txt
+  s_51ed7597c650d5::t_77c753ec01bdff 1-12
+eval/fixtures/cited-drift/sources/rate-limits.md
+  s_51ed7597c650d5::t_a817374151245a 1-4
+eval/fixtures/cited-drift/sources/retention.json
+  s_51ed7597c650d5::t_ce37f9af0964b0 1
+eval/prompts/cited-drift.txt
+  s_51ed7597c650d5::t_a5e205fc378913 1-7
+eval/results/cited-drift.json
+  s_51ed7597c650d5::t_48bf52bd60167c 1-93
+eval/run_citeddrift.py
+  s_51ed7597c650d5::t_cd823d32655520 1-143
+module/commands/docs-audit.md
+  s_51ed7597c650d5::t_61ac4bec568f51 3,17-27,47-49,77-127,131,134,141-143,212-220,255-277,300-302,311-315,318-320,323-344,419-421,441-442,470-486,502-504,506-515,540-541,640-661,728-729,732-739,746
+module/commands/docs-update.md
+  s_51ed7597c650d5::t_916a4f958fe62f 17-19,21-23,54-57,80-96,251-281,391-402
+module/skills/docs-organization/SKILL.md
+  s_51ed7597c650d5::t_b5b0e920782225 66-68,138-139,142-144,149
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_51ed7597c650d5::t_a44a239c80c9fd 22-33,45-47,51,53-54,58,92,128-129,134,143-151,153-154,157,162,176-194,201-214,216-232,234,236-237,239,243,247-248,253
+module/skills/docs-organization/scripts/fetch-citations.mjs
+  s_51ed7597c650d5::t_cd22c3b1b57179 1-438
+module/skills/docs-organization/scripts/md-files.mjs
+  s_51ed7597c650d5::t_1d1eb8c5ad266a 9-13,17,32-45
+module/skills/docs-organization/scripts/md-lines.mjs
+  s_51ed7597c650d5::t_ab6142347fcb72 1-63
+tests/e2e/docs-discipline.venom.yml
+  s_51ed7597c650d5::t_a49b3f1230e6e6 194-283
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_51ed7597c650d5::t_28b18af86206d8 352-354,359-503
+tests/scripts/docs-organization/fetch-citations.test.mjs
+  s_51ed7597c650d5::t_b36c3093c33212 1-898
+tests/scripts/docs-organization/md-files.test.mjs
+  s_51ed7597c650d5::t_ce83cd1401bad8 1-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6be8bca67a9da80fea971971461d0c9922803bc1",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
