@@ -1,0 +1,64 @@
+AGENTS.md
+  h_4db53f42b9be42 18
+CHANGELOG.md
+  h_4db53f42b9be42 11-16,37-39,66-77
+docs/dev/architecture.md
+  h_4db53f42b9be42 61,68-83
+eval/README.md
+  h_4db53f42b9be42 31-33,36-47
+eval/REPORT.md
+  h_4db53f42b9be42 57-62,716-912
+eval/prompts/ledger-extract.txt
+  h_4db53f42b9be42 1-7
+eval/prompts/ledger-extract.v1.txt
+  h_4db53f42b9be42 1-7
+eval/prompts/ledger-extract.v2.txt
+  h_4db53f42b9be42 1-7
+eval/prompts/ledger-verify.txt
+  h_4db53f42b9be42 1-10
+eval/prompts/ledger-verify.v1.txt
+  h_4db53f42b9be42 1-9
+eval/prompts/ledger-verify.v2.txt
+  h_4db53f42b9be42 1-9
+eval/results/r15-chunked-real-isolated.json
+  h_4db53f42b9be42 1-134
+eval/results/r15-ledger-fixture.json
+  h_4db53f42b9be42 1-818
+eval/results/r15-ledger-real.json
+  h_4db53f42b9be42 1-6931
+eval/results/r15-ledger2-fixture.json
+  h_4db53f42b9be42 1-709
+eval/results/r15-ledger2-real.json
+  h_4db53f42b9be42 1-5716
+eval/results/r15-ledger3-fixture.json
+  h_4db53f42b9be42 1-829
+eval/results/r15-ledger3-real.json
+  h_4db53f42b9be42 1-6729
+eval/run_citeddrift.py
+  h_4db53f42b9be42 25-27,43,46
+eval/run_ledger.py
+  h_4db53f42b9be42 1-130
+eval/run_repodrift.py
+  h_4db53f42b9be42 16-22,24,29-30,36-66,88-94,96,98-103,107,111-112,114,116-120,123,126-140,145-151,153-154,156-157,183-186,190-193,205-206
+module/commands/docs-audit.md
+  h_4db53f42b9be42 48,319-404,541-543,672-673,750-751,757-760,826-827,848-850
+module/commands/docs-update.md
+  h_4db53f42b9be42 78-79
+module/skills/docs-organization/SKILL.md
+  h_4db53f42b9be42 142,152-154
+module/skills/docs-organization/scripts/md-chunks.mjs
+  h_4db53f42b9be42 1-112
+tests/scripts/docs-organization/md-chunks.test.mjs
+  h_4db53f42b9be42 1-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9e9454ee65912887094834e656c366a15e1375fa",
+  "prompts": {},
+  "humans": {
+    "h_4db53f42b9be42": {
+      "author": "Trevor Vaughan <peiriannydd@gmail.com>"
+    }
+  }
+}
