@@ -1,0 +1,24 @@
+AGENTS.md
+  s_51ed7597c650d5::t_fb9f8a024013e6 18
+module/skills/docs-organization/scripts/md-chunks.mjs
+  s_51ed7597c650d5::t_fe0717a5bb21ac 1-98
+tests/scripts/docs-organization/md-chunks.test.mjs
+  s_51ed7597c650d5::t_37108887277eb8 102-106
+  s_51ed7597c650d5::t_8e09369186e6df 1-101,107-154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5221cd0dfad24b4d3ea2eee7c4be4bfd919bd1d4",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
