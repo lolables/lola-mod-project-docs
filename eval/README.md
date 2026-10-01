@@ -25,6 +25,7 @@ their dependencies ship pre-bundled under `scripts/vendor/`.
 ```bash
 python3 run_needsstructure.py     # scannability of procedures (NEEDS_STRUCTURE)
 python3 run_missingdemo.py        # hero-demo encouragement (MISSING_DEMO)
+python3 run_citeddrift.py         # document-mode drift vs cited sources (CONTENT_DRIFT / NOT_VERIFIABLE)
 python3 run_gooddocs.py           # completeness-for-type (INCOMPLETE_FOR_TYPE)
 python3 run_coldread.py fixtures/cold-read grounded 5
 ```

@@ -88,6 +88,45 @@ In a project with the module installed:
 /adr-review 0001                                  # independent rubric review via subagent
 ```
 
+### Auditing a specific document
+
+`/docs-audit` with no arguments sweeps the repository's project docs. Name
+one or more files or directories to audit exactly those, including drafts
+the sweep skips (gitignored files, dot-directories like `.issue-draft/`,
+files outside any repository); `.mmd` diagram files are left to
+`/diagram-test`:
+
+```bash
+/docs-audit docs/dev/architecture.md              # one doc, checked against this repo's code
+/docs-audit .issue-draft/                         # a gitignored draft directory in this repo
+/docs-audit ~/drafts/proposal.md                  # outside any repo: checked against what it cites
+/docs-audit --fetch ~/drafts/proposal.md          # ...including the https URLs it cites
+```
+
+A path outside a git repository has no code to compare against, so its
+claims are checked against the sources it cites: local files it links, and,
+only with `--fetch`, the `https` pages it links.
+
+Without `--fetch`, the audit never touches the network and reports cited
+URLs as `CITATIONS_NOT_FETCHED` (unchecked, not clean). With `--fetch`, it
+fetches within these limits:
+
+- refuses `http:` URLs, URLs with credentials or non-443 ports, and any
+  host that resolves to a private, loopback, link-local, or otherwise
+  reserved address
+- sends no cookies or credentials
+- caps each fetch at 2 MB and 10 seconds per request (each redirect hop
+  counts separately), and the whole run at 90 seconds and 50 URLs
+- refuses a compressed response body
+- reads a fetched page as data only and never follows instructions found
+  in it
+
+A draft's links to local files are checked too, but only when the target
+lies inside the directory you passed (or the file's own directory, for a
+single file), outside any dot-directory. A link elsewhere is reported as
+unread and never opened — the audit does not otherwise read a local file a
+draft links.
+
 ## Diagram palettes
 
 Four contrast-validated mermaid palettes ship with the skill:
@@ -149,7 +188,7 @@ repo root; both are `task`-only, so they require the full dev checkout.
 ```text
 module/AGENTS.md                            module instructions, injected at install
 module/skills/docs-organization/SKILL.md    the docs-organization skill
-module/skills/docs-organization/scripts/    node + bash helpers (lint-mermaid.mjs, check-structure.sh, …)
+module/skills/docs-organization/scripts/    node + bash helpers (lint-mermaid.mjs, check-structure.sh, fetch-citations.mjs, …)
 module/skills/docs-organization/scripts/vendor/  pre-built MIT dependency bundles that ship with the skill
 module/skills/docs-organization/reference/  house-style references, README/docs templates, palettes
 module/skills/adr/SKILL.md                  the adr skill

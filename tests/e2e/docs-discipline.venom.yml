@@ -191,6 +191,96 @@ testcases:
           - result.systemout ShouldContainSubstring "First decision"
           - result.systemout ShouldContainSubstring "accepted"
 
+  # Path mode, document mode: a draft in a dot-directory outside any git repo.
+  # Every URL in the fixture is rejected before DNS (http:, IP literals), so
+  # these steps need no network.
+  - name: path-mode-document-outside-git
+    steps:
+      - type: exec
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          DOCDIR=$(mktemp -d -t docs-discipline-doc.XXXXXX)
+          trap 'rm -rf "$DOCDIR"' EXIT
+          mkdir -p "$DOCDIR/.issue-draft"
+          printf '# Draft\n\nSee [spec](spec.md) and [gone](gone.md).\n' > "$DOCDIR/.issue-draft/ISSUE.md"
+          printf '# Spec\n' > "$DOCDIR/.issue-draft/spec.md"
+          node {{.WORKDIR}}/module/skills/docs-organization/scripts/md-files.mjs "$DOCDIR/.issue-draft"
+        assertions:
+          - result.code ShouldEqual 0
+          - result.systemout ShouldContainSubstring "ISSUE.md"
+          - result.systemout ShouldContainSubstring "spec.md"
+      - type: exec
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          DOCDIR=$(mktemp -d -t docs-discipline-doc.XXXXXX)
+          trap 'rm -rf "$DOCDIR"' EXIT
+          mkdir -p "$DOCDIR/.issue-draft"
+          printf '# Draft\n\nSee [spec](spec.md) and [gone](gone.md).\n' > "$DOCDIR/.issue-draft/ISSUE.md"
+          printf '# Spec\n' > "$DOCDIR/.issue-draft/spec.md"
+          node {{.WORKDIR}}/module/skills/docs-organization/scripts/check-refs.mjs "$DOCDIR/.issue-draft"
+        assertions:
+          - result.code ShouldEqual 1
+          - result.systemoutjson.scanned ShouldEqual 2
+          - result.systemout ShouldContainSubstring "REF_BROKEN"
+          - result.systemout ShouldContainSubstring "no such file on disk"
+          - result.systemout ShouldNotContainSubstring "REF_NOT_IN_GIT"
+      - type: exec
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          DOCDIR=$(mktemp -d -t docs-discipline-doc.XXXXXX)
+          trap 'rm -rf "$DOCDIR"' EXIT
+          printf '# Draft\n\nPer [the RFC](https://example.com/rfc).\n' > "$DOCDIR/ISSUE.md"
+          node {{.WORKDIR}}/module/skills/docs-organization/scripts/fetch-citations.mjs --root "$DOCDIR" --offline "$DOCDIR/ISSUE.md"
+        assertions:
+          - result.code ShouldEqual 1
+          - result.systemoutjson.fetched ShouldEqual 0
+          - result.systemout ShouldContainSubstring "CITATIONS_NOT_FETCHED"
+      - type: exec
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          DOCDIR=$(mktemp -d -t docs-discipline-doc.XXXXXX)
+          trap 'rm -rf "$DOCDIR"' EXIT
+          mkdir "$DOCDIR/snap"
+          printf '# Draft\n\n[a](http://example.com/) [b](https://169.254.169.254/latest/) [c](https://[::1]/)\n' > "$DOCDIR/ISSUE.md"
+          node {{.WORKDIR}}/module/skills/docs-organization/scripts/fetch-citations.mjs --root "$DOCDIR" --out "$DOCDIR/snap" "$DOCDIR/ISSUE.md"
+        assertions:
+          - result.code ShouldEqual 1
+          - result.systemoutjson.fetched ShouldEqual 0
+          - result.systemout ShouldContainSubstring "is not https"
+          - result.systemout ShouldContainSubstring "169.254.169.254 is private"
+          - result.systemout ShouldNotContainSubstring "not a valid URL"
+      - type: exec
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          DOCDIR=$(mktemp -d -t docs-discipline-doc.XXXXXX)
+          trap 'rm -rf "$DOCDIR"' EXIT
+          mkdir "$DOCDIR/draft"
+          printf 'TOP-SECRET-CONTENT\n' > "$DOCDIR/outside.md"
+          printf '# Draft\n\nSee [spec](spec.md) and [notes](../outside.md).\n' > "$DOCDIR/draft/ISSUE.md"
+          printf '# Spec\n' > "$DOCDIR/draft/spec.md"
+          node {{.WORKDIR}}/module/skills/docs-organization/scripts/fetch-citations.mjs --root "$DOCDIR/draft" --offline "$DOCDIR/draft/ISSUE.md"
+        assertions:
+          - result.code ShouldEqual 0
+          - result.systemout ShouldContainSubstring "outside the audited tree"
+          - result.systemout ShouldContainSubstring "draft/spec.md"
+          - result.systemout ShouldNotContainSubstring "TOP-SECRET-CONTENT"
+      - type: exec
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          DOCDIR=$(mktemp -d -t docs-discipline-doc.XXXXXX)
+          trap 'rm -rf "$DOCDIR"' EXIT
+          printf '# Draft\n\nShort.\n' > "$DOCDIR/ISSUE.md"
+          node {{.WORKDIR}}/module/skills/docs-organization/scripts/check-prose.mjs "$DOCDIR/ISSUE.md"
+        assertions:
+          - result.code ShouldEqual 0
+          - result.systemoutjson.scanned ShouldEqual 1
+
   - name: cleanup
     steps:
       - type: exec

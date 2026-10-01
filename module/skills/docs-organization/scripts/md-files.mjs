@@ -6,9 +6,15 @@
 // A symlinked *directory* is not descended — git tracks it as one entry, and
 // following it could loop. A dangling .md symlink makes statSync throw, which
 // the callers surface as exit 2 rather than silently skipping the file.
+//
+// CLI: `node md-files.mjs <path>...` prints the JSON array of markdown files
+// the walk finds, in argument order. /docs-audit uses it to expand directory
+// arguments so every lane receives the same explicit file list. A missing path
+// exits 2.
 
 import { statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { isMain } from './is-main.mjs';
 
 export function walkMarkdown(target) {
   const st = statSync(target);
@@ -22,4 +28,18 @@ export function walkMarkdown(target) {
     else if (entry.isFile() || (entry.isSymbolicLink() && statSync(p).isFile())) out.push(p);
   }
   return out;
+}
+
+if (isMain(import.meta.url)) {
+  const targets = process.argv.slice(2);
+  if (targets.length === 0) {
+    process.stderr.write('usage: md-files.mjs <file-or-dir>...\n');
+    process.exit(2);
+  }
+  try {
+    process.stdout.write(JSON.stringify(targets.flatMap((t) => walkMarkdown(t)), null, 2) + '\n');
+  } catch (e) {
+    process.stderr.write('md-files: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
+    process.exit(2);
+  }
 }

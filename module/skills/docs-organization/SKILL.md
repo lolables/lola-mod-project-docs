@@ -63,6 +63,9 @@ describes the project itself. When enumerating documentation files (in
   with prompt-engineering iteration rather than with code, so auditing
   them for code drift produces noise.
 
+**Explicit paths override these rules:** `/docs-audit <path>...` audits
+exactly what the user names.
+
 **Symlinks:** a doc tree can be a directory of symlinks into a canonical copy.
 Content judgments (Lanes 3 and 6) run once per real file and report the
 canonical path — editing a symlink writes through to its target anyway;
@@ -132,16 +135,18 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
 - `scripts/check-prose.mjs` — readability and size over a markdown AST:
   `WALL_OF_TEXT` (dense top-level paragraph), `DENSE_BULLET` (fat flat list
   item with no sub-bullets), `SPLIT_CANDIDATE` (oversized file or H2 section).
-- `scripts/check-refs.mjs` — reference integrity: `REF_BROKEN` /
-  `REF_NOT_IN_GIT` (a markdown link/image to a path that does not resolve to a
-  git-tracked file) and `UNLINKED_REF` (an unlinked `§` citation).
+- `scripts/check-refs.mjs` — `REF_NOT_IN_GIT`, `REF_BROKEN` (untracked docs:
+  checked on disk), `UNLINKED_REF` (bare `§`).
 - `scripts/lint-mermaid.mjs` — merval parse, init header, palette,
   contrast.
+- `scripts/md-files.mjs` — path-mode expansion.
+- `scripts/fetch-citations.mjs` — document-mode URLs, local sources; only
+  network actor (`--fetch`; else `--offline`).
 
 `check-prose.mjs` and `check-refs.mjs` also report `scanned`, so an empty
 result can be told apart from a lane that read nothing: `check-prose.mjs`
 counts distinct documents read (a symlink and its target count once);
-`check-refs.mjs` counts tracked doc paths checked (a symlink and its target
+`check-refs.mjs` counts doc paths checked (a symlink and its target
 count separately).
 
 Requires Node.js ≥20. The two npm deps and GitHub Linguist's vendored

@@ -55,7 +55,7 @@ would be faster.
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, unscannable procedures |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven) | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type |
+| 6 LLM | — (subagent-driven); `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type; cited-source snapshots |
 
 Lane 6 is the model-owned exception: a grounding subagent classifies each
 file's Diátaxis mode first, then a separate subagent runs each applicable
@@ -106,10 +106,107 @@ target into one document, reported at the target's path; Lane 4 checks
 links from every path a doc is reached by, symlinks included, so a
 relative link is verified from wherever a reader actually opens it. Both
 report `scanned` in their JSON, so an empty result can be told apart from a
-lane that read nothing.
+lane that read nothing. Lane 4 and `fetch-citations.mjs` share `md-lines.mjs`,
+which stamps every markdown-it inline token with its exact source line, so a
+link and a cited URL are reported on the line a reader finds them.
 
 Convention 2 in `AGENTS.md` — developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
+
+### Path mode and document mode
+
+`/docs-audit <path>...` skips repo enumeration: `md-files.mjs` expands the
+arguments into one explicit file list that every lane receives, so no lane can
+disagree with another about what a directory contains. Each file then picks
+its source of truth from where it lives:
+
+- **Inside a git work tree (repo-scoped).** The repo's code is the truth, as in
+  a sweep. Lanes 1 and 2 are skipped because they describe the whole repo, not
+  the named files.
+- **Outside any work tree (document).** There is no code, so content drift
+  compares the doc against the sources it cites. Diagram drift and the hero
+  demo prompt are skipped.
+
+`check-refs.mjs` makes the same choice per file rather than once per run. A
+tracked doc is checked against the tracked set, as before. A doc outside
+git, or an untracked doc named explicitly, is checked on disk. `REF_NOT_IN_GIT`
+exists to catch links that dangle for someone who clones, and a doc that
+isn't in git has no cloner. Since `check-refs.mjs` audits every file it is
+given, untracked ones on disk, a repo sweep's gitignore and dot-directory
+exclusions rely entirely on the Lane 3 enumeration that builds its list.
+
+`fetch-citations.mjs --root <root>` resolves a document's local links the
+same way: it finds each target's realpath and checks whether that realpath
+lies inside `--root`, outside any dot-directory. The script only stats and
+realpaths a local source; it never reads one. Containment matters because
+the document is untrusted input — without this check, a hostile draft
+linking `../../.aws/credentials` would get that file read and quoted into a
+subagent's context.
+
+Two checks apply at different points, on purpose:
+
+- **Docs are checked lexically**, by the path they were reached by, so a
+  symlinked doc tree is audited without dereferencing.
+- **Local sources are checked by realpath**, so a symlinked source can't
+  point outside `--root` and still pass.
+
+`/docs-update` re-derives a finding's local sources the same way before
+re-reading any file — it runs `fetch-citations.mjs --offline --root <root>`,
+with `<root>` taken from the audit's `Mode:` line, and never `--out`, so it
+never fetches.
+
+### Why fetching is a script
+
+Document mode can check claims against the `https` pages a doc cites, which
+makes the audit a network client driven by an untrusted document. A draft can
+link `https://169.254.169.254/…` (cloud instance metadata), `localhost`, or an
+intranet host. `fetch-citations.mjs` is the only component allowed to fetch,
+and only under `--fetch`; Lane 6 subagents read its snapshot files and never
+fetch themselves. Two reasons:
+
+- **A filter in code can't be argued past.** A prompt rule ("don't fetch
+  private hosts") is one more instruction that the doc or a fetched page can
+  override. The script's checks run regardless of what the content says.
+- **Host independence.** lola installs into hosts with different tool sets;
+  reading files is the one capability every Lane 6 subagent already has.
+
+Every cited URL is reported in WHATWG canonical form (`new URL(url).href`)
+because it becomes a line in a snapshot's provenance header. The canonical
+form strips a raw tab, newline, or carriage return and percent-encodes other
+control characters in the path, query, and fragment, so a `%0A` in a cited
+URL can't forge an extra header line. A control character in the host fails
+to parse instead, and the extractor falls back to markdown-it's own
+already-percent-encoded target.
+
+The address check runs inside the `lookup` hook `https.request` calls, so it
+judges the addresses the socket actually connects to. Resolving first and
+fetching second would let a hostile DNS server answer differently the second
+time (DNS rebinding). Node skips `lookup` for an IP-literal host, so
+literals are checked before the request. Redirects are followed by hand, at
+most three, and every hop goes through the same filter.
+
+`net.BlockList` matches IPv4-mapped IPv6 addresses against the IPv4 ranges on
+its own. Three IPv6 ranges get handling beyond that:
+
+- `::/96` (covering `::`, `::1`, and IPv4-compatible addresses) and the
+  deprecated site-local range `fec0::/10` are blocked outright.
+- The RFC 8215 local-use NAT64 prefix `64:ff9b:1::/48` is blocked outright
+  too, because it may embed an IPv4 address outside its last 32 bits.
+- The well-known NAT64 prefix `64:ff9b::/96` is judged by the IPv4 address
+  in its last 32 bits, because on a NAT64 network that address is where the
+  connection lands.
+
+A response is refused outright when its `Content-Encoding` is anything other
+than identity, rather than decompressed, closing off a decompression bomb.
+Each request gets a 10-second timeout on top of that. A redirect hop is its
+own request, so a three-redirect chain can take up to 40 seconds. The whole
+run — no matter how many URLs it cites — gets a 90-second deadline; a hop
+already in flight when the deadline passes is cut off, and no hop starts
+after it.
+
+Without `--fetch`, `fetch-citations.mjs --offline` still extracts the
+citations and reports `CITATIONS_NOT_FETCHED`, so a doc whose claims rest on
+URLs reads as unassessed rather than clean.
 
 Splitting it this way is what makes the audit reproducible. The `eval/`
 harness measures each lane's recall and false-positive rate against fixtures

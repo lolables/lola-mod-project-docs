@@ -19,8 +19,18 @@
 //     `pool/<blake3>.tar.zst`), and resolving them heuristically produces
 //     mostly false positives. Stale
 //     source citations are the content-drift lane's job.
-//   - Only *git-tracked* docs are scanned. A gitignored working doc (e.g. under
-//     docs/superpowers/) is not a project deliverable and is out of audit scope.
+//   - Each doc is checked in one of two modes, chosen per file from the git
+//     work tree that contains it (if any):
+//       git mode      the doc is tracked. Links resolve against the tracked
+//                     file set; REF_NOT_IN_GIT applies.
+//       on-disk mode  the doc is outside any git repo, or it was named as an
+//                     explicit file argument and is untracked (a gitignored
+//                     draft). Links resolve against the filesystem, anywhere
+//                     on disk; REF_NOT_IN_GIT never fires, because a doc that
+//                     isn't in git can't dangle for someone who clones.
+//     An untracked doc found by *walking a directory* inside a repo is skipped:
+//     a gitignored working doc (e.g. under docs/superpowers/) reached that way
+//     is not a project deliverable and is out of audit scope.
 //   - This does NOT demand every reference be committed — some are legitimately
 //     private/external. It surfaces dangling references for the author to
 //     resolve in /docs-update (link, commit, or mark external). Never auto-fixes.
@@ -32,58 +42,20 @@
 //     attributed to the canonical path (when it's in scope) and reported once.
 //
 // Output: JSON {status, scanned, findings:[{code, severity, file, line, message}]}.
-// `scanned` counts tracked doc *paths* checked — a symlink and its target
-// count separately.
+// `scanned` counts doc *paths* checked — a symlink and its target count
+// separately. `file` is relative to the doc's repo root, or absolute for a
+// doc outside any repo.
 // Exit 0 = no findings, 1 = findings, 2 = internal error. Uses execFileSync
 // (no shell) with fixed git arguments.
 
-import MarkdownIt from './vendor/markdown-it.mjs';
-import { readFileSync, existsSync, lstatSync, realpathSync } from 'node:fs';
+import { readFileSync, existsSync, lstatSync, realpathSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { dirname, resolve, relative } from 'node:path';
+import { basename, dirname, join, resolve, relative } from 'node:path';
+import { lineAwareMarkdown } from './md-lines.mjs';
 import { walkMarkdown } from './md-files.mjs';
 import { isMain } from './is-main.mjs';
 
-const md = new MarkdownIt();
-
-// Exact line numbers. markdown-it maps only *blocks* to source lines; inline
-// tokens carry no position. An inline token's `content` is its block's source
-// lines joined by "\n" (indent and `>` markers stripped, line count kept), so
-// a token's line within the block is the number of "\n" before the position
-// it starts at. Counting softbreak tokens instead would miss newlines a single
-// token swallows (a wrapped code span, a link title spanning two lines).
-//
-// So every inline rule is wrapped: when it matches (non-silent), each token it
-// created that is not yet stamped gets the line of the rule's start position.
-// Nested rules (link text) run first and stamp their own tokens. Pending text
-// flushed by the rule's first push ends exactly where the rule starts and
-// contains no "\n" (the newline rule always flushes first), so it shares that
-// line. The one flush outside any rule — trailing text at the end of the
-// top-level tokenize — is stamped by a post-process rule with the last line.
-const tokenLine = new WeakMap();
-const lineAt = (src, pos) => {
-  let n = 0;
-  for (let i = src.indexOf('\n'); i !== -1 && i < pos; i = src.indexOf('\n', i + 1)) n++;
-  return n;
-};
-function stampNew(state, from, line) {
-  for (let i = from; i < state.tokens.length; i++) {
-    if (!tokenLine.has(state.tokens[i])) tokenLine.set(state.tokens[i], line);
-  }
-}
-for (const rule of [...md.inline.ruler.__rules__]) {
-  const orig = rule.fn;
-  md.inline.ruler.at(rule.name, (state, silent) => {
-    const start = state.pos;
-    const from = state.tokens.length;
-    const ok = orig(state, silent);
-    if (ok && !silent) stampNew(state, from, lineAt(state.src, start));
-    return ok;
-  }, { alt: rule.alt });
-}
-md.inline.ruler2.before('balance_pairs', 'stamp_trailing_text', (state) => {
-  stampNew(state, 0, lineAt(state.src, state.src.length));
-});
+const { inlineBlocks } = lineAwareMarkdown();
 
 function git(args, cwd) {
   return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
@@ -115,15 +87,9 @@ function decodeTarget(t) {
 // any link — "§3.2 of [spec](spec.md)" already tells the reader where to go.
 // A link in a different paragraph or a sibling table cell does not count.
 function extract(content) {
-  const tokens = md.parse(content, {});
   const links = [];
   const sections = [];
-  let rowStart = null; // table cells have no map; their row (tr_open) does
-  for (const b of tokens) {
-    if (b.type === 'tr_open') rowStart = b.map[0];
-    if (b.type !== 'inline' || !b.children) continue;
-    const base = b.map ? b.map[0] : rowStart;
-    const lineOf = (tok) => base + tokenLine.get(tok) + 1;
+  for (const { block: b, lineOf } of inlineBlocks(content)) {
     const blockSections = [];
     let linkDepth = 0;
     let hasLink = false;
@@ -159,11 +125,13 @@ function trackedDirsOf(tracked) {
   return dirs;
 }
 
+// `tracked` is the repo's tracked-path set (git mode), or null (on-disk mode,
+// where `root` is unused).
 export function analyzeFile(file, root, tracked) {
   const content = readFileSync(file, 'utf8');
   const findings = [];
   const seen = new Set();
-  const trackedDirs = trackedDirsOf(tracked);
+  const trackedDirs = tracked ? trackedDirsOf(tracked) : null;
   const { links, sections } = extract(content);
   for (const ref of links) {
     const target = ref.target;
@@ -172,21 +140,26 @@ export function analyzeFile(file, root, tracked) {
     if (!stripped) continue; // pure anchor
     const cleaned = decodeTarget(stripped);
     const abs = resolve(dirname(file), cleaned);
-    const rel = relative(root, abs);
-    if (rel.startsWith('..')) continue;
-    const key = 'L' + rel + '@' + ref.line;
-    // A tracked file, or a directory that contains tracked files, is followable.
-    if (seen.has(key) || tracked.has(rel) || trackedDirs.has(rel)) continue;
+    let where = abs;
+    if (tracked) {
+      where = relative(root, abs);
+      if (where.startsWith('..')) continue;
+      // A tracked file, or a directory that contains tracked files, is followable.
+      if (tracked.has(where) || trackedDirs.has(where)) continue;
+    } else if (existsSync(abs)) continue;
+    const key = 'L' + where + '@' + ref.line;
+    if (seen.has(key)) continue;
     seen.add(key);
-    if (existsSync(abs)) {
+    const what = `${ref.kind === 'image' ? 'image' : 'link to'} \`${cleaned}\``;
+    if (tracked && existsSync(abs)) {
       findings.push({
         code: 'REF_NOT_IN_GIT', severity: 'warning', line: ref.line,
-        message: `${ref.kind === 'image' ? 'image' : 'link to'} \`${cleaned}\` — exists but is NOT git-tracked (gitignored/unstaged); commit it, or make it an explicit external link if intentionally private`,
+        message: `${what} — exists but is NOT git-tracked (gitignored/unstaged); commit it, or make it an explicit external link if intentionally private`,
       });
     } else {
       findings.push({
         code: 'REF_BROKEN', severity: 'warning', line: ref.line,
-        message: `${ref.kind === 'image' ? 'image' : 'link to'} \`${cleaned}\` — no such file in the repo; fix the path or link the real target`,
+        message: `${what} — no such file ${tracked ? 'in the repo' : 'on disk'}; fix the path or link the real target`,
       });
     }
   }
@@ -200,48 +173,84 @@ export function analyzeFile(file, root, tracked) {
   return findings;
 }
 
+// The git work tree containing `dir`, or null when git itself says `dir` is
+// not inside a repository — docs there are checked on disk. Any other git
+// failure (corrupt config, a safe.directory refusal, git not installed) is
+// not "outside git" and propagates so the caller exits 2 with git's message.
+function repoRootOf(dir) {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: dir,
+      env: { ...process.env, LC_ALL: 'C' },
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+  } catch (e) {
+    if (typeof e.status === 'number' && /not a git repository/.test(e.stderr || '')) return null;
+    if (typeof e.status === 'number') throw new Error(`git rev-parse --show-toplevel: ${(e.stderr || '').trim()}`);
+    throw e;
+  }
+}
+
 function main(argv) {
   const targets = argv.slice(2);
   if (targets.length === 0) {
     process.stderr.write('usage: check-refs.mjs <file-or-dir>...\n');
     process.exit(2);
   }
-  const root = git(['rev-parse', '--show-toplevel']).trim();
-  // -z: git quotes non-ASCII/special filenames in plain `ls-files` output
-  // (core.quotePath default) — NUL-delimited output is unquoted, matching
-  // what decodeTarget() produces from a percent-encoded link target.
-  const tracked = new Set(git(['ls-files', '-z'], root).split('\0').filter(Boolean));
+  const rootOfDir = new Map();
+  const trackedOf = new Map();
+  const repoOf = (f) => {
+    const dir = dirname(resolve(f));
+    if (!rootOfDir.has(dir)) rootOfDir.set(dir, repoRootOf(dir));
+    const root = rootOfDir.get(dir);
+    // -z: git quotes non-ASCII/special filenames in plain `ls-files` output
+    // (core.quotePath default) — NUL-delimited output is unquoted, matching
+    // what decodeTarget() produces from a percent-encoded link target.
+    if (root && !trackedOf.has(root)) {
+      trackedOf.set(root, new Set(git(['ls-files', '-z'], root).split('\0').filter(Boolean)));
+    }
+    return root;
+  };
 
-  // Collect every tracked doc path first, then process non-symlink paths
-  // before symlink paths (stable order within each group). That way a
-  // content-only finding lands on the canonical path whenever it's in scope,
-  // regardless of the order targets were given on the command line.
-  const paths = [];
-  for (const t of targets) for (const f of walkMarkdown(t)) {
-    const rel = relative(root, f);
-    if (!tracked.has(rel)) continue; // only audit tracked docs (skips gitignored)
-    paths.push(f);
+  // Collect every doc to check first, then process non-symlink paths before
+  // symlink paths (stable order within each group). That way a content-only
+  // finding lands on the canonical path whenever it's in scope, regardless of
+  // the order targets were given on the command line.
+  const docs = [];
+  for (const t of targets) {
+    const explicitFile = statSync(t).isFile();
+    for (const f of walkMarkdown(t)) {
+      const root = repoOf(f);
+      const tracked = root ? trackedOf.get(root) : null;
+      // git reports the physical root, so match against the doc's physical
+      // directory; the basename stays unresolved so a symlinked doc keeps
+      // being judged from the path it was reached by.
+      const phys = join(realpathSync(dirname(resolve(f))), basename(f));
+      if (tracked && tracked.has(relative(root, phys))) docs.push({ f, phys, root, tracked });
+      else if (!root || explicitFile) docs.push({ f, phys, root, tracked: null });
+    }
   }
-  const scanned = paths.length;
+  const scanned = docs.length;
   const ordered = [
-    ...paths.filter((f) => !lstatSync(f).isSymbolicLink()),
-    ...paths.filter((f) => lstatSync(f).isSymbolicLink()),
+    ...docs.filter((d) => !lstatSync(d.f).isSymbolicLink()),
+    ...docs.filter((d) => lstatSync(d.f).isSymbolicLink()),
   ];
+  const shown = (root, p) => (root ? relative(root, p) : resolve(p));
 
   const findings = [];
   const seenReal = new Set();
-  for (const f of ordered) {
-    const rel = relative(root, f);
+  for (const { f, phys, root, tracked } of ordered) {
     const real = realpathSync(f);
     const firstVisit = !seenReal.has(real);
     seenReal.add(real);
-    const canonical = lstatSync(f).isSymbolicLink() ? relative(root, real) : null;
-    for (const x of analyzeFile(f, root, tracked)) {
+    const canonical = lstatSync(f).isSymbolicLink() ? shown(root, real) : null;
+    for (const x of analyzeFile(tracked ? phys : f, root, tracked)) {
       if (x.code === 'UNLINKED_REF' && !firstVisit) continue; // same text, already reported
       if (canonical && x.code !== 'UNLINKED_REF') {
         x.message += ` (this path is a symlink to \`${canonical}\`; the link must work from both locations)`;
       }
-      findings.push({ ...x, file: rel });
+      findings.push({ ...x, file: shown(root, root ? phys : f) });
     }
   }
   process.stdout.write(JSON.stringify({ status: findings.length ? 'findings' : 'ok', scanned, findings }, null, 2) + '\n');
