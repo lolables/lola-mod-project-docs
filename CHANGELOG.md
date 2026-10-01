@@ -6,123 +6,76 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-01
+
+Initial release.
+
 ### Added
 
-- `md-chunks.mjs` splits a markdown file into heading-aligned line ranges
-  (H2/H3, at most 100 lines each; a single range for 150 lines or fewer) for
-  `/docs-audit`'s content-drift claim ledger.
-- `/docs-audit` cold-read findings carry an `actionable` tag. One that makes a
-  command, flag, or step the reader runs fail as written is a **Warning**;
-  every other `COLD_READ` stays Info.
-- `check-prose.mjs` and `check-refs.mjs` JSON output gained a `scanned`
-  field, so an empty result can be told apart from a lane that read nothing.
-- `/docs-audit` gained a documented `CONTENT_DRIFT` code with a
-  Blocker/Warning rule, a `FORKED_COPY` structural finding
-  (`check-structure.sh`), and a `LANE_FAILED` finding when `scanned: 0` or a
-  deterministic script crashes. Lane 6 (the LLM lane) now dispatches a
-  grounding subagent per file, then one subagent per applicable prompt per
-  file — never grouped. File enumeration falls back to
-  `git ls-files --cached --others --exclude-standard` when the host has no
-  Glob tool.
-  `reference`-mode enumerations (glossaries, changelogs, punch lists) may
-  suppress `SPLIT_CANDIDATE` — stated under "Other", never silent.
-  `/docs-update` gained fix procedures for `CONTENT_DRIFT` and
-  `FORKED_COPY`.
-- Symlinked docs are now audited correctly: `check-prose.mjs` audits a
-  symlink and its target once, reported at the target's path;
-  `check-refs.mjs` checks links from every path a doc is reached by
-  (symlinks included) and names the canonical file in its findings.
-- **The skill's npm dependencies now ship with it.** `@aj-archipelago/merval`
-  and `markdown-it` are vendored as pre-built bundles under
+- **Two skills, six slash commands, no auto-invocation.** `docs-organization`
+  covers README and `docs/` layout, code-to-docs drift, and mermaid diagrams;
+  `adr` covers MADR 4.0 decision records. Each is reached only through an
+  explicit command — `/docs-init`, `/docs-audit`, `/docs-update`,
+  `/diagram-test`, `/adr-new`, `/adr-review` — and both skill descriptions
+  carry the `DO NOT AUTO-INVOKE.` prefix.
+- **`/docs-audit`** reports structural, staleness, and content drift:
+  - `check-structure.sh` checks layout invariants, including a
+    `FORKED_COPY` finding for a regular file, sitting among symlinks,
+    that has diverged from its tracked twin.
+  - `check-staleness.mjs` classifies source with GitHub Linguist's
+    language, vendor, and documentation data, so source is found anywhere
+    in the repo rather than only in conventional directories. Data files
+    (`.json`, `.yml`, `.toml`, and the like) never count. A repo with no
+    recognized source reports a `STALENESS_NOT_ASSESSED` warning.
+  - `check-prose.mjs` and `check-refs.mjs` report a `scanned` count, so an
+    empty result can be told apart from a lane that read nothing. Symlinked
+    docs are audited once, at the target's path, and links are checked from
+    every path a doc is reached by.
+  - Content drift is checked as a claim ledger. `md-chunks.mjs` splits each
+    doc into heading-aligned ranges; an extract subagent lists every
+    checkable claim per range, and verify subagents return one verdict per
+    claim. Drift — including a step credited to the wrong component, or an
+    item missing from a list that names its items — is `CONTENT_DRIFT`.
+    "Other" carries one coverage line per file. Measured in
+    `eval/REPORT.md` Round 15: 13 of 25 real drifts found, at about $4.50
+    per 350-line doc.
+  - Cold-read findings carry an `actionable` tag: a command, flag, or step
+    that fails as written is a **Warning**; other `COLD_READ` findings are
+    Info.
+  - A lane that reads nothing or crashes reports `LANE_FAILED` rather than
+    passing silently.
+- **`/docs-update`** applies `/docs-audit` fixes one at a time, with
+  confirmation, including procedures for `CONTENT_DRIFT` and `FORKED_COPY`.
+- **`/diagram-test`** lints every mermaid diagram for syntax, the house-style
+  init header, palette classes, and WCAG contrast. Four contrast-validated
+  palettes ship — Solar (default), Federation, Citrus, Parchment — and
+  `swap-palette.sh` moves a diagram between them.
+- **`/adr-new`** drafts an MADR 4.0 record with an inline self-review;
+  **`/adr-review`** runs an independent rubric review in a context-isolated
+  subagent. `adr-index.sh` regenerates the ADR index.
+- **No-prerequisite install.** `@aj-archipelago/merval`, `markdown-it`, and
+  trimmed Linguist data ship pre-built under
   `module/skills/docs-organization/scripts/vendor/` (330K; MIT, except two
-  bundled transitive deps, argparse and entities — see `vendor/LICENSES.md`),
-  alongside `vendor/linguist.json` (GitHub Linguist's language, vendor, and
-  documentation data, trimmed to what the staleness lane needs). Installing
-  the module is now two `lola` commands with no prerequisites — no `npm
-  install`, no network, no follow-up step.
-- `task vendor` rebuilds those bundles from the versions `package.json` pins
-  (the Linguist tag and SHA-256 hashes are pinned separately in
-  `.taskfiles/scripts/build-linguist-data.mjs`), and CI fails if a committed
-  bundle has drifted from them.
-- Sandboxed install verification (`task test:install`), covering both scopes and
-  both `claude-code` and `opencode`. It redirects `HOME` and `LOLA_HOME` into a
-  temporary directory, so it runs locally without touching a real assistant
-  install. It asserts that every file a skill ships actually arrives, which is
-  what would catch a future lola filtering `vendor/` out in transit.
-- `task check` as the single gate: structural lint, content lint, diagram lint,
-  and every test suite.
-- `task cleanroom` repeats the install verification inside a fresh UBI10
-  container.
-- MegaLinter in CI (markdownlint, yamllint, shellcheck, betterleaks, trivy,
-  secretlint) and the skillsaw content gate (`task lint:content`).
-- Dependabot for GitHub Actions, the `Containerfile`, and the pinned `merval`
-  and `markdown-it` dependencies.
-- Tag-triggered GitHub releases.
-- `docs/dev/architecture.md`, the maintainer-facing companion to `AGENTS.md`.
-- `MODE=llm` on the lint and verify gates for errors-only output.
+  bundled transitive deps, argparse and entities — see `vendor/LICENSES.md`).
+  Installing is two `lola` commands: no `npm install`, no network access.
+  Requires git, Node.js ≥ 20, and bash ≥ 4; macOS users need
+  `brew install bash`, since the system bash 3.2 is not supported.
+- **Contributor tooling:**
+  - `task check` runs every gate: structural lint, content lint
+    (skillsaw), diagram lint, and the unit, bash, bats, Venom, and
+    install suites. `MODE=llm` gives errors-only output.
+  - `task test:install` verifies a sandboxed lola install across both
+    scopes and both `claude-code` and `opencode`, asserting that every
+    shipped file arrives. `task cleanroom` repeats it in a fresh UBI10
+    container.
+  - `task vendor` rebuilds the vendored bundles from pinned versions, and
+    CI fails if a committed bundle drifts from them. `task clean` removes
+    derived state but never `vendor/`.
+  - CI runs MegaLinter (markdownlint, yamllint, shellcheck, betterleaks,
+    trivy, secretlint); Dependabot tracks Actions, the `Containerfile`,
+    and the pinned npm dependencies; pushing a `v*` tag creates a GitHub
+    release.
+  - `docs/dev/architecture.md` documents how the skills and gates work.
 
-### Changed
-
-- `/docs-audit` checks repo-mode content drift as a claim ledger, replacing
-  the single whole-file prompt. An extract subagent per `md-chunks.mjs`
-  range lists every checkable claim, typed `fact` or `set`, and verify
-  subagents return one verdict per claim in batches of 20. Claim ids left
-  without a verdict become a `LANE_FAILED`. "Other" gains one coverage line
-  per file (`content drift: <file> — <n> claims, <d> drift, <u>
-  unverifiable`), which `/docs-update` skips. Measured in `eval/REPORT.md`
-  Round 15: 13 of 25 real drifts found against 5 before, at about $4.50
-  per 350-line doc.
-- Content drift now flags a check, flag, or step credited to the wrong
-  component, and an item missing from a list that names its items one by
-  one. Such an omission is `CONTENT_DRIFT`, never "Other".
-- Unit tests, their fixtures, and the npm build toolchain no longer ship
-  in the installed skill; they moved to `tests/scripts/` and
-  `.taskfiles/vendor/`.
-- **BREAKING:** bash ≥ 4 is now the stated requirement. macOS's bundled
-  bash 3.2 is not supported; the README tells Mac users to
-  `brew install bash`.
-- **BREAKING:** The staleness script is now `check-staleness.mjs`, run with
-  `node`. Source is classified from GitHub Linguist's language, vendor, and
-  documentation data, instead of assuming source lives in `src/`, `lib/`,
-  `cmd/`, `app/`, `internal/`, or `pkg/`: any programming or markup language
-  counts, anywhere in the repo, outside vendored, documentation, and
-  dot-directory paths; data files (`.json`, `.yml`, `.toml`, and the like)
-  never count as source. Some repos will see more staleness findings than
-  before — source is now found anywhere, and markup like `.html`/`.css`
-  counts. A repo where no source is recognized — a docs-only repo, say —
-  reports a `STALENESS_NOT_ASSESSED` warning with status `findings` and exit
-  1, instead of status `ok` and exit 0; the old `note` field is gone.
-- **BREAKING:** `task lint` now runs the structural module lint. The mermaid
-  diagram linter moved to `task lint:diagrams`.
-- **BREAKING:** `task install`, `task uninstall`, and their subtargets are
-  removed. lola owns installation; the README documents `lola mod add` and
-  `lola install` directly. `install:scripts` becomes `task vendor`, and
-  `uninstall:scripts` folds into `task clean`, which now removes every derived
-  artifact — but never `vendor/`, which is committed and shipped.
-- `@aj-archipelago/merval` and `markdown-it` moved from `dependencies` to
-  `devDependencies`. They are build inputs for the vendored bundles now, not
-  runtime imports.
-- `scripts/` moved to `.taskfiles/scripts/`. `scripts/lint-module.sh` is
-  replaced by the shared `lint-structure.sh`.
-- Both skill descriptions now carry the `DO NOT AUTO-INVOKE.` prefix, matching
-  the convention other lola modules use and letting the structural linter
-  verify that each explicit skill is reachable from a command.
-- Documentation says "module" rather than "pack", and links to
-  <https://lobstertrap.org/lola/>.
-
-### Fixed
-
-- `README.md` and `AGENTS.md` described a `.taskfiles/` directory that did not
-  exist, and described `tests/` as holding unit tests that actually live beside
-  the scripts they cover.
-- CI asserted opencode installs at `~/.opencode/`, a path lola moved to
-  `~/.config/opencode/`.
-- `/docs-audit`'s stop conditions still advised running `npm install` to
-  recover from a missing dependency; the dependencies are vendored, so
-  there is nothing to install.
-
-### Removed
-
-- The `MERVAL_NOT_INSTALLED` finding, its detection branch, and its two test
-  cases. It reported that the mermaid linter's dependency was absent from an
-  installed skill; with dependencies vendored, that state cannot occur.
+[Unreleased]: https://github.com/lolables/lola-mod-project-docs/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/lolables/lola-mod-project-docs/releases/tag/v0.1.0
