@@ -1,7 +1,9 @@
 .taskfiles/scripts/build-vendor.sh
   s_51ed7597c650d5::t_92bc3d90b95723 64-68
+  s_51ed7597c650d5::t_5319318152ff32 64-68
 module/skills/docs-organization/scripts/vendor/LICENSES.md
   s_51ed7597c650d5::t_8356af2e1258dd 6-10
+  s_51ed7597c650d5::t_b9d1d8351fbfa3 6-10
 ---
 {
   "schema_version": "authorship/3.0.0",
