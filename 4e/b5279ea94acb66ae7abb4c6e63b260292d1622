@@ -1,0 +1,42 @@
+.taskfiles/scripts/build-vendor.sh
+  s_2fe5c7579ceb59::t_4533ebcaa4816f 108
+  s_2fe5c7579ceb59::t_3c8110fe693ea1 78
+  s_2fe5c7579ceb59::t_d7c90208b860ac 4-5
+  s_2fe5c7579ceb59::t_18b03e8407426e 34-42
+  s_2fe5c7579ceb59::t_3a24a2b4ecf93f 53
+  s_2fe5c7579ceb59::t_6eb7c1cad1458c 71-72
+.taskfiles/vendor/package-lock.json
+  s_2fe5c7579ceb59::t_6e89778013e230 12,15-18,34-51,617-637
+module/skills/docs-organization/scripts/vendor/LICENSES.md
+  s_2fe5c7579ceb59::t_a0b7e5009dc526 5-6,69-161
+module/skills/docs-organization/scripts/vendor/asciidoctor.mjs
+  s_2fe5c7579ceb59::t_778484fa4b64e9 1-22345
+module/skills/docs-organization/scripts/vendor/markdown-it.mjs
+  s_2fe5c7579ceb59::t_69a06d1e43e058 270-395,5595-5959,5961-5964
+.taskfiles/vendor/package.json
+  s_a9dd967b65b4b5::t_0cd41bf9642e03 11,14-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4eb5279ea94acb66ae7abb4c6e63b260292d1622",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_a9dd967b65b4b5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-af74ecac50583c80f",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
