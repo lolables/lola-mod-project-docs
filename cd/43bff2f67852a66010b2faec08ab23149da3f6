@@ -1,0 +1,21 @@
+eval/run_repodrift.py
+  s_51ed7597c650d5::t_bf1a66b8e20f41 112,115
+  s_51ed7597c650d5::t_0c16d24b947147 36-45
+  s_51ed7597c650d5::t_8f5ee4f7ceab9c 24,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cd43bff2f67852a66010b2faec08ab23149da3f6",
+  "prompts": {},
+  "sessions": {
+    "s_51ed7597c650d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "086895fa-5f25-45ef-9eb6-6885507555f1",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
