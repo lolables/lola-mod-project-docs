@@ -2,12 +2,16 @@ AGENTS.md
   s_51ed7597c650d5::t_66e5822cacc631 18
 CHANGELOG.md
   s_51ed7597c650d5::t_9da485123909f1 11-16,37-39,66-77
+  s_51ed7597c650d5::t_ad4b2109177b70 37-38
+  s_51ed7597c650d5::t_0bbb7e2950b388 11-16,66-77
+  s_51ed7597c650d5::t_fbac5e98360ca6 39
 docs/dev/architecture.md
   s_51ed7597c650d5::t_42e47d371a3d90 61,68-83
 eval/README.md
   s_51ed7597c650d5::t_af21326e2783a5 31-33,36-47
 eval/REPORT.md
   s_51ed7597c650d5::t_11eafca2754c96 57-62,716-912
+  s_51ed7597c650d5::t_fbac5e98360ca6 908-910
 eval/prompts/ledger-extract.txt
   s_51ed7597c650d5::t_2f90a7a50eb2d5 1-7
 eval/prompts/ledger-extract.v1.txt
@@ -24,12 +28,16 @@ eval/results/r15-chunked-real-isolated.json
   s_51ed7597c650d5::t_c0b257cf8f53d8 1-134
 eval/results/r15-ledger-fixture.json
   s_51ed7597c650d5::t_7695aff4816348 1-818
+  s_51ed7597c650d5::t_84e45850a088fa 813-816
 eval/results/r15-ledger-real.json
   s_51ed7597c650d5::t_305a4a87545a7a 1-6931
+  s_51ed7597c650d5::t_84e45850a088fa 6926-6929
 eval/results/r15-ledger2-fixture.json
   s_51ed7597c650d5::t_c7f1c0b24edf30 1-709
+  s_51ed7597c650d5::t_84e45850a088fa 6-7
 eval/results/r15-ledger2-real.json
   s_51ed7597c650d5::t_abcf85286b15f0 1-5716
+  s_51ed7597c650d5::t_84e45850a088fa 6-7
 eval/results/r15-ledger3-fixture.json
   s_51ed7597c650d5::t_527f1175eb3033 1-829
 eval/results/r15-ledger3-real.json
@@ -38,10 +46,12 @@ eval/run_citeddrift.py
   s_51ed7597c650d5::t_979746d5ba3888 25-27,43,46
 eval/run_ledger.py
   s_51ed7597c650d5::t_7e0b55f1b1815b 1-130
+  s_51ed7597c650d5::t_e5b6442706e142 13,23-28,30,37,46-52,56-58,61,66,74,79
 eval/run_repodrift.py
   s_51ed7597c650d5::t_abf638f1293895 16-22,24,29-30,36-66,88-94,96,98-103,107,111-112,114,116-120,123,126-140,145-151,153-154,156-157,183-186,190-193,205-206
 module/commands/docs-audit.md
   s_51ed7597c650d5::t_b7eaa53f16020f 48,319-404,541-543,672-673,750-751,757-760,826-827,848-850
+  s_51ed7597c650d5::t_337dd5f2f947a6 325-326,362-363,541-543,848-850
 module/commands/docs-update.md
   s_51ed7597c650d5::t_49e960452eae0e 78-79
 module/skills/docs-organization/SKILL.md
