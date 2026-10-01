@@ -40,6 +40,7 @@ eval/prompts/repo-drift-enumerate.txt
   s_51ed7597c650d5::t_2b339297118649 1-7
 eval/prompts/repo-drift-reportall.txt
   s_51ed7597c650d5::t_3883a53b80fc70 1-7
+  s_51ed7597c650d5::t_7ab61be3ce8c87 1-7
 eval/prompts/repo-drift.baseline.txt
   s_51ed7597c650d5::t_f74c3f3b798bf0 1-7
 eval/prompts/repo-drift.txt
@@ -64,6 +65,7 @@ eval/results/r14-real-enumerate.json
   s_51ed7597c650d5::t_5797f36cfa49cf 1-120
 eval/results/r14-real-reportall.json
   s_51ed7597c650d5::t_3860efc51f561b 1-128
+  s_51ed7597c650d5::t_e9e546695ca336 1-128
 eval/results/r14-repodrift-after.json
   s_51ed7597c650d5::t_4bff7c38213194 1-244
 eval/results/r14-repodrift-baseline.json
