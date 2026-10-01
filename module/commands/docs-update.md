@@ -75,8 +75,8 @@ present, skip the `adr` activation.
      `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
      `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`, `UNAPPROVED_CLASSNAME`,
      `UNAPPROVED_STYLE` findings, and anything else needing judgment. Exclude "Other" lines
-     marked `suppressed: …` — those are stated suppressions, not findings
-     to fix.
+     marked `suppressed: …` or `content drift: …` — those are stated
+     suppressions and coverage counts, not findings to fix.
      (`LANE_FAILED`, `STALENESS_NOT_ASSESSED`, `MISSING_README`,
      `NOT_VERIFIABLE`, `CITATIONS_NOT_FETCHED`, `CITATION_BLOCKED`,
      `CITATION_FETCH_FAILED`, and `CITATION_LIMIT` are not fixable here — see

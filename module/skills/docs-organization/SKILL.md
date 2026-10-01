@@ -139,7 +139,7 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   checked on disk), `UNLINKED_REF` (bare `§`).
 - `scripts/lint-mermaid.mjs` — merval parse, init header, palette,
   contrast.
-- `scripts/md-files.mjs` — path-mode expansion.
+- `scripts/md-files.mjs`, `md-chunks.mjs` — path expansion; drift ranges.
 - `scripts/fetch-citations.mjs` — document-mode URLs, local sources; only
   network actor (`--fetch`; else `--offline`).
 
@@ -149,9 +149,9 @@ counts distinct documents read (a symlink and its target count once);
 `check-refs.mjs` counts doc paths checked (a symlink and its target
 count separately).
 
-Requires Node.js ≥20. The two npm deps and GitHub Linguist's vendored
-language data (`@aj-archipelago/merval`, `markdown-it`, `linguist.json`) ship
-pre-bundled under `scripts/vendor/`; nothing to install.
+Requires Node.js ≥20. The npm deps (`@aj-archipelago/merval`, `markdown-it`)
+and Linguist data (`linguist.json`) ship pre-bundled under `scripts/vendor/`;
+nothing to install.
 
 ### Deterministic where it's unambiguous, LLM where it's fuzzy
 

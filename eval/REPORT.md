@@ -54,6 +54,12 @@ model finds everything when the call succeeds — even a drift on the last line 
 a 400-line doc. Chunking-by-section (my initial hypothesis) is unnecessary
 overhead at these sizes and is **not** added as a default.
 
+> **Revised by Round 14.** These fixtures plant numeric drift that one grep
+> verifies. On a real 354-line doc whose drift needs reading code to judge
+> (who owns a check, what a list leaves out), one call reports one or two
+> findings however it is prompted, and only chunking raises coverage. Long
+> docs (over 150 lines) are now chunked.
+
 ## Finding 3 — the real LLM-lane risk is a transient empty reply read as "clean"
 
 A blank/errored subagent reply silently becomes "no findings" — a spurious
@@ -707,3 +713,200 @@ counts.
 
 Wired into `/docs-audit` as the document-mode content-drift prompt.
 Run: `python3 run_citeddrift.py`.
+
+## Round 14 — attribution, omission, actionable cold reads, long-doc coverage
+
+The self-audit of this repo (README and `docs/dev/architecture.md`) showed
+three weaknesses:
+
+- **A missed misattribution.** The lane table credited "unscannable
+  procedures" to Lane 3 (`check-prose.mjs`); that check is Lane 6's.
+- **A broken README example rated Info.** Every `COLD_READ` was Info, even
+  one whose command fails as written.
+- **An omission stranded in "Other".** The README tree listed `tests/*.bats`
+  one by one and left one out; `/docs-update` never acts on "Other".
+
+Earlier rounds measured repo-mode drift with `prompts/content-drift.txt`,
+which predates the prompt `/docs-audit` ships. Round 14 copies the shipped
+prompts verbatim (`prompts/repo-drift*.txt`, `prompts/cold-read-shipped*.txt`;
+`.baseline` is the pre-change text), and the new runners keep `expected.json`
+out of the directory the model reads. K=5, `claude-sonnet-5`.
+
+### Fixtures: baseline → after the prompt change
+
+`run_repodrift.py` on `fixtures/repo-drift-attribution/` (a small tool repo)
+and `run_coldread_actionable.py` on `fixtures/cold-read-actionable/`:
+
+| Item | Baseline | After |
+|---|---|---|
+| table row credits a check to the wrong script | 5/5 | 5/5 |
+| flag credited to the wrong script | 5/5 | 5/5 |
+| tree lists tests one by one, omits one | 1/5 | **4/5** |
+| wrong constant (sentinel) | 5/5 | 5/5 |
+| controls flagged (selective list, directory entry, correct row) | 1/5 (selective list) | **0/5** |
+| cold read: recall, 4 planted stumbles | 5/5 each | 5/5, 5/5, 4/5, 5/5 |
+| cold read: `actionable` tag correct (2 yes, 2 no) | — (no tag) | **5/5 each** |
+
+Two fixture items were rewritten after a first baseline, and the numbers
+above are from the rewritten fixtures. The undefined term "palette cache"
+explained itself in its own sentence, so no run flagged it. Its replacement,
+"house header", gated whether the tool acted, so tagging it actionable was
+defensible. The final term, an unexplained acronym (`WCV`), is neither.
+
+### The real document
+
+The toy fixture reproduced the omission miss but not the misattribution, so
+the real doc is the test. `docs/dev/architecture.md` at `d3b2c96^` (before
+the self-audit fix) is audited in a history-free snapshot, so the model
+cannot read the fix from git:
+
+```bash
+git archive d3b2c96^ | tar -x -C /tmp/r14-real
+cd /tmp/r14-real && git init -q && git add . && git commit -qm snapshot
+python3 run_repodrift.py --fixture fixtures/real-lane-table \
+  --repo /tmp/r14-real --doc docs/dev/architecture.md --out results/r14-real-after.json
+```
+
+`fixtures/real-lane-table/expected.json` holds the lane-table defect plus
+four real drifts these runs surfaced, all since fixed (`e85dccd`,
+`0b46617`). The `--block N` attribution the self-audit reported is also
+listed, but its paragraph introduces `apply-palette.mjs` and
+`swap-palette.sh` together, so it is ambiguous and excluded from the bar
+(0/5 in every variant). Hits per item, K=5:
+
+| Variant | lane table | IPv6 count | docs-init | merval shapes | licenses | calls/run | wall (K=5) |
+|---|---|---|---|---|---|---|---|
+| baseline prompt | 0 | 3 | 0 | 0 | 0 | 1 | — |
+| after (shipped wording) | 1 | 3 | 0 | 0 | 0 | 1 | — |
+| + 600-word reply cap | 0 | 4 | 0 | 1 | 0 | 1 | — |
+| + enumerate claims first | 0 | 3 | 0 | 0 | 0 | 1 | 157 s |
+| + "report every drift" | 1 | 4 | 0 | 0 | 0 | 1 | — |
+| **chunked, ≤100 lines** | 0 | 4 | 1 | 2 | 1 | 5 | 494 s |
+| 60-line excerpt, baseline | 0 | — | — | 2 | — | 1 | — |
+| 60-line excerpt, after | **4** | — | — | 0 | — | 1 | — |
+
+The excerpt is the title, lines 43-60 (lane table) and 216-254 (palette
+section) of the snapshot. "—" means not in the excerpt, or not timed.
+
+### Conclusions
+
+- **The wording change is needed.** On the excerpt it moves the lane-table
+  miss from 0/5 to 4/5, and it moves the fixture omission from 1/5 to 4/5
+  without flagging a control.
+- **Length then caps coverage.** Every whole-document variant returns one
+  or two findings per call (mostly the IPv6 drift, the most prominent one).
+  A larger reply cap, a claim-enumeration step, and an explicit "report
+  every drift" all leave that unchanged.
+- **More calls is the only lever measured.** Chunking at H2/H3 into ranges
+  of at most 100 lines finds 8 hits across the five clear drifts against 4
+  for the whole doc; its 494 s for K=5 is about 3x the 157 s of the
+  enumerate variant (the plain whole-doc runs were not timed). It still misses the lane
+  table, which only surfaces when it is the most prominent claim in a call.
+- **The actionable tag is reliable** where the call is clear (5/5 on all
+  four items).
+
+### Wired into `/docs-audit`
+
+- Content drift names ownership claims and one-by-one lists as drift;
+  selective lists and directory entries are exempt.
+- Cold-read findings carry `actionable`; actionable ones are Warnings.
+- An omission is `CONTENT_DRIFT`, never "Other".
+- A repo-mode doc over 150 lines is split by `md-chunks.mjs` (H2/H3,
+  ≤100-line ranges), one drift subagent per range. Document mode is not
+  chunked (unmeasured). *Superseded by Round 15's claim ledger.*
+
+Run: `python3 run_repodrift.py`, `python3 run_coldread_actionable.py`, and
+the real-document command above (`--chunked --prompt
+prompts/repo-drift-chunk.txt` for the chunked row).
+
+## Round 15 — content drift as a claim ledger (isolated runs)
+
+Round 14 left long docs at one or two drift findings per call. A traced
+call on the 354-line snapshot made 15 tool calls ($0.54) and grepped the
+exact evidence for the lane-table drift, then reported only the IPv6
+drift. Asked to judge a whole doc, a subagent compares claims against code
+without ever writing them down, and most claims are lost in that step.
+
+The ledger makes every step explicit:
+
+1. `md-chunks.mjs` ranges.
+2. One extract subagent per range lists every checkable claim.
+3. Claims are numbered and verified in consecutive batches, one mandatory
+   verdict per claim.
+4. Missing verdicts are retried, and the report shows a coverage line per
+   file.
+
+`run_ledger.py` reproduces this flow.
+
+**Isolation.** The same trace showed the headless run calling a
+`ReportFindings` tool from the user-level config. Every earlier round ran
+with user plugins and `CLAUDE.md` loaded. From this round on, runs use a
+temporary `CLAUDE_CONFIG_DIR` holding only a credentials copy
+(`isolated_config()` in `run_repodrift.py`; `--isolated` there, always on
+in `run_ledger.py`). The managed policy file and the audited repo's own
+`AGENTS.md` still load, as they do for real users. Treat Rounds 1-14 as
+measured under the user's config.
+
+Real doc (`fixtures/real-lane-table`, hits out of 5, K=5) and the
+`repo-drift-attribution` fixture:
+
+| Variant | lane table | IPv6 | docs-init | merval | licenses | **/25** | fixture | cost/doc | claims |
+|---|---|---|---|---|---|---|---|---|---|
+| chunked, isolated (Round 14 shipped) | 1 | 3 | 1 | 0 | 0 | **5** | — | — | — |
+| ledger v1, batch 10 | 4 | 0 | 0 | 0 | 2 | **6** | omission 0/5 | $5.23 | 149 |
+| ledger v2, fact/set, batch 20 | 5 | 4 | 1 | 0 | 2 | **12** | 4/4 at 5/5 | $4.57 | 108 |
+| **ledger v3, doc_set/code_set** | 3 | 4 | 3 | 0 | 3 | **13** | 4/4 at 5/5 | $4.47 | 109 |
+
+Fixture rows: no negative control flagged in any variant, no false
+positive in v2 or v3. Every run gave every claim a verdict, with no
+failed runs. The fixture cost about $0.25 per run (7 claims, 2 calls).
+
+### What each version fixed
+
+- **v1 → v2.** v1 split trees and counts into per-item claims. Each piece
+  matched, so an omission or a "three ranges" claim could never be drift,
+  and it skipped lead-in count sentences entirely. v2 types each claim as a
+  `fact` or a `set` (one claim for a whole group) and tells the verifier to
+  compare a set with the complete group in the code.
+- **v2 → v3.** v3 makes the verifier write that comparison down
+  (`doc_set`, `code_set`) and defaults unsure claims to `set`. The total
+  barely moves (12 → 13), but four of the five clear items now reach ≥3/5,
+  against two under v2. That consistency is why v3 shipped.
+
+### Remaining limits
+
+- **merval shapes, 0/5 in every variant.** The claim is extracted as a set
+  each time and still judged `match`. Its evidence is a comment in
+  `lint-mermaid.mjs` and the vendored merval grammar, and in four of five
+  runs the verifier did not fill `code_set`.
+- **The bar in the design (≥20/25) was not met.** The ledger shipped on the
+  user's call: 2.6x the isolated chunked result, a perfect fixture, and
+  complete, auditable coverage.
+
+### Unplanted drift
+
+The ledger's unplanted findings were mostly real drift still in the current
+doc:
+
+- Dependabot's npm entry covers four toolchain packages, not two.
+- `validate-palette.mjs` checks the light-only Parchment palette against
+  the light background only.
+
+Both are fixed in `a7fb8ac`. One finding was a false positive (dot-directory
+handling lives in `check-staleness.mjs`). One was borderline: the bare
+`scripts/…` names in `SKILL.md`'s tool list are labels, not invocations.
+
+### Cost
+
+About $4.50 and roughly 11 calls for a 354-line doc, and about $0.25 for a
+short README. `run_ledger.py` runs calls one after another (about 21
+minutes per run); `/docs-audit` dispatches the verify subagents in
+parallel.
+
+Wired into `/docs-audit` as repo-mode content drift (Lane 6 prompt 1). The
+extract and verify text is copied verbatim from `prompts/ledger-*.txt`;
+`.v1`/`.v2` keep the earlier versions. The `prompts` field in the v1 and v2 result files was
+corrected afterwards to name those `.v1`/`.v2` copies (v1 ran with batch 10
+and claims listed without a kind).
+Run: `python3 run_ledger.py --batch 20 --fixture fixtures/real-lane-table
+--repo /tmp/r14-real --doc docs/dev/architecture.md --out <file>`.

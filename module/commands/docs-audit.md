@@ -45,6 +45,7 @@ faster:
 - Lane 4: `node "$SKILL_DIR/scripts/check-refs.mjs" <in-scope-files>`
 - Lane 5: `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <in-scope-files>`
 - Path mode, directory expansion: `node "$SKILL_DIR/scripts/md-files.mjs" <path>...`
+- Lane 6 content-drift chunks: `node "$SKILL_DIR/scripts/md-chunks.mjs" <file>`
 - Document mode, citations: `node "$SKILL_DIR/scripts/fetch-citations.mjs" --root <root>`
   (`--offline`, or `--out <dir>` under `--fetch`)
 
@@ -315,20 +316,92 @@ pass.
      drift`, `Missing diagrams`, `Cold read`, …), with `file:line` citations — one prompt per reply is how findings stay
      attributed. Dispatch independent subagents in parallel. Do not batch to
      save subagents — a grouped-dispatch rule proved unreliable in testing.
-       1. **Content drift (repo sweep and repo-scoped):** "Read <file>.
-          Identify any specific claims in this document that no longer match
-          the code in the repository at <repo-root>.
-          Check tables and lists that say which component does what: a row
-          or sentence crediting a check, flag, or step to the wrong script,
-          command, or module is drift. A list, table, or tree that names its
-          items one by one (or states a count) claims completeness: an
-          existing item it omits, or a listed item that no longer exists, is
-          drift. Selective lists ('includes', 'e.g.', 'key …') and
-          directory-level entries are not.
-          Return a list of `file:line` citations with what the doc says vs
-          what the code actually does. Do not edit any file. Reply in
-          under 300 words." `<repo-root>` is the group's repo root (repo
-          sweep: the current repository's `git rev-parse --show-toplevel`).
+       1. **Content drift (repo sweep and repo-scoped) — a claim ledger.**
+          One subagent judging a whole doc reports one or two drifts and
+          silently drops the rest, so drift is checked claim by claim (Round
+          15 in `eval/REPORT.md`). These subagents reply with the JSON object
+          their prompt asks for instead of a prompt-name heading, and a file
+          gets several of them — the one exception to one subagent per prompt
+          per file. Prefix them with the read-only rule only, not the
+          grounding note (Round 15 measured them that way).
+          1. **Chunk.** Run `node "$SKILL_DIR/scripts/md-chunks.mjs" <file>`;
+             `chunks` holds heading-aligned line ranges (one range for a doc
+             of 150 lines or fewer).
+          2. **Extract**, one subagent per range:
+             "Read lines <start>-<end> of <file>. List every specific,
+             checkable claim those lines make about the repository at
+             <repo-root>, including lines inside code blocks such as file
+             trees and listings. A claim is one of two kinds. A `fact` names
+             one thing: a name, path, command, flag, config key, value,
+             version, or which script, command, or module does what. A `set`
+             speaks for a whole group: a count ("three ranges", "four
+             shapes"), a word like only, both, all, or every, or a list,
+             table, or tree that names its items one by one — record a set as
+             ONE claim covering all its lines, never as one claim per item.
+             When unsure whether a claim is a fact or a set, call it a set.
+             Skip opinions, plans, rationale, and claims about things outside
+             the repository. Do not verify anything yet. For each claim give
+             its kind, its line (a range like 40-47 for a set), its exact
+             text (at most 120 characters; for a set, its first line), and
+             the file or symbol it is about (`?` if unclear). Do not edit any
+             file."
+
+             Reply format:
+
+             ```text
+             Output ONLY a single JSON object and nothing else:
+             {"claims":[{"kind":"fact|set","line":"12 or 40-47","quote":"...","target":"..."}]}
+             If the lines make no checkable claim, output {"claims":[]}.
+             ```
+
+          3. **Number and batch.** Number the claims `C1`…`Cn` in document
+             order across ranges and split them into consecutive batches of
+             at most 20.
+          4. **Verify**, one subagent per batch, its claims listed one per
+             line as `C<n> (<kind>, line <line>): "<quote>" — target:
+             <target>` in a `Claims:` block placed after the prompt text and
+             before its reply format:
+             "Verify each claim below, made by <file>, against the code in
+             the repository at <repo-root>. Read the code each claim depends
+             on; its target is a hint, not a limit. A claim is drift when it
+             no longer matches the code: a wrong name, path, flag, count, or
+             value; a check, flag, or step credited to the wrong script,
+             command, or module; or a list, table, or tree that names its
+             items one by one but omits an existing item or names one that no
+             longer exists (selective lists — 'includes', 'e.g.', 'key …' —
+             and directory-level entries are not drift). For a `set` claim,
+             read all of its lines in the document and list the members it
+             names or counts as `doc_set`; then find the complete group in
+             the code — every member, not only the ones the doc names — and
+             list it as `code_set`, each with its `file:line`. Compare the
+             two lists: a set is `match` only when they agree (same members,
+             same count, and nothing the doc calls "only", "both", or "all"
+             leaves a member out). Return exactly one verdict for every claim
+             id: `match`, `drift`, or `unverifiable` (what it depends on is
+             not in the repository), with `file:line` evidence, and for drift
+             what the code actually does. Do not edit any file."
+
+             Reply format:
+
+             ```text
+             Output ONLY a single JSON object and nothing else:
+             {"verdicts":[{"id":"C1","verdict":"match|drift|unverifiable","evidence":"file:line","code_says":"...","doc_set":["..."],"code_set":["member (file:line)"]}]}
+             (`doc_set` and `code_set` only for set claims.)
+             ```
+
+          5. **Check coverage.** Every claim id needs exactly one verdict of
+             `match`, `drift`, or `unverifiable`. Re-dispatch verification
+             for ids without one, up to twice; ids still missing are a
+             `LANE_FAILED` for the file naming them. An extract range whose
+             reply stays empty after the guardrail's retries is a
+             `LANE_FAILED` naming its line range.
+          6. **Report.** Each `drift` verdict is a `CONTENT_DRIFT` finding:
+             the claim's line, what the doc says, and the verdict's evidence
+             and `code_says` (severity rule below). `unverifiable` is not a
+             finding. List one coverage line per file under "Other":
+             `content drift: <file> — <n> claims, <d> drift, <u> unverifiable`.
+          `<repo-root>` is the group's repo root (repo sweep: the current
+          repository's `git rev-parse --show-toplevel`).
 
           **Document mode** uses this prompt instead, with the file's local
           sources and snapshots from the citations step: "Read <file>. Verify
@@ -465,13 +538,9 @@ pass.
      heading, re-run grounding first. Re-dispatch up to
      **twice**; if it still yields nothing parseable, record a
      `LANE_FAILED` **Warning** naming the file and lane rather
-     than reporting the file as clean.
-   - Whole-file content-drift is reliable for files up to several hundred
-     lines. For a file that *also*
-     triggers `SPLIT_CANDIDATE`, you may run the content-drift prompt once
-     per top-level section — as separate subagents, one per section, each
-     running only the content-drift prompt — and union the findings:
-     insurance for very large files, not required for ordinary ones.
+     than reporting the file as clean. Claim-ledger replies carry no
+     heading: for them, a reply with no parseable JSON object is the
+     failure signal.
 8. Aggregate findings from all six lanes and present a structured
    punch list. **This format is the contract `/docs-update` parses** from
    conversation context, so it must be regular. Build it in this order —
@@ -600,8 +669,8 @@ pass.
          stumble makes a command, flag, or step the reader runs fail or do
          the wrong thing (a prose claim contradicting its own example, a
          command missing a required argument); prefix the note with
-         `actionable:`. Info otherwise. Never Blocker: Blocker stays
-         reserved for code-verified `CONTENT_DRIFT`.
+         `actionable:`. Info otherwise. Never Blocker: among Lane 6
+         findings, Blocker stays reserved for code-verified `CONTENT_DRIFT`.
        - `MODE_MIXING`: the primary Diátaxis mode, the intruding mode, and the
          section. Info. Fix is to move the intruding content to its own doc
          (e.g. a how-to's conceptual detour → an `explanation` doc, linked).
@@ -678,15 +747,17 @@ pass.
          because `--fetch` was not given. Info — claims resting on them are
          unassessed, not clean.
        - `LANE_FAILED`: which file (or `—` for a whole deterministic lane) and
-         which lane could not be audited — after retries for a Lane 6
+         which lane could not be audited (for content drift, the extract
+         range or the claim ids left without a verdict) — after retries for a Lane 6
          subagent; immediately for a deterministic script. Warning — it means
          "unknown", not "clean".
    - If a finding doesn't fit the schema, list it under a separate
      "Other" subsection rather than mangling the table. A doc-vs-code gap —
      including an item missing from a list that names its items one by
-     one — is `CONTENT_DRIFT`, never "Other". "Other" also lists
-     stated suppressions (`suppressed: <code> — <file> (<mode>); not for
-     /docs-update`), which `/docs-update` skips.
+     one — is `CONTENT_DRIFT`, never "Other". "Other" also lists the
+     content-drift coverage lines and stated suppressions (`suppressed:
+     <code> — <file> (<mode>); not for /docs-update`), both of which
+     `/docs-update` skips.
    - Once every table is built, count each table's rows and print the
      summary as the first line of the punch list, in exactly this form —
      a single code span, nothing before or after it, no bold: `` `N
@@ -752,6 +823,8 @@ Then: "Run /docs-update to fix these findings interactively."
   `check-refs`), so a crashed lane never reads as clean.
 - If `md-files.mjs` exits 2 (a missing path, a dangling `.md` symlink, or an
   unreadable directory): surface the error and stop before any lane runs.
+- If `md-chunks.mjs` exits 2 for a file: record a `LANE_FAILED` **Warning**
+  for that file's content drift; never guess the ranges yourself.
 - `fetch-citations.mjs` exits 1 whenever it reports a finding; that is a
   result. On exit 2, surface the error, record a `LANE_FAILED` **Warning**
   with `File` `—` naming the `fetch-citations` lane, and run the
@@ -772,3 +845,6 @@ Then: "Run /docs-update to fix these findings interactively."
   twice, then record a `LANE_FAILED` Warning naming the file and lane.
   **Never** let an empty subagent reply collapse into a silent all-clear —
   that is the failure this guardrail exists to prevent.
+- If claim ids are still without a verdict after two re-verifications:
+  record a `LANE_FAILED` Warning for that file's content drift naming the
+  ids, and still report the drift the other verdicts found.

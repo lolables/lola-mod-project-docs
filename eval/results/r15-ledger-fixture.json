@@ -1,0 +1,818 @@
+{
+  "runs": 5,
+  "batch": 10,
+  "isolated": true,
+  "failed_runs": 0,
+  "recall": {
+    "attr-table": 1.0,
+    "attr-flag": 1.0,
+    "numeric": 1.0,
+    "omission": 0.0
+  },
+  "control_flag_rate": {
+    "selective-list": 0.0,
+    "dir-entry": 0.0,
+    "correct-row": 0.0
+  },
+  "mean_fp": 0.0,
+  "mean_claims": 11.6,
+  "verdict_completeness": 1.0,
+  "runs_with_missing": 0,
+  "mean_calls": 2.8,
+  "mean_cost_usd": 0.256,
+  "mean_wall_s": 124.4,
+  "detail": [
+    {
+      "failed": false,
+      "findings": [
+        {
+          "id": "C1",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "evidence": "tools/lint.sh:1-7",
+          "code_says": "tools/lint.sh only checks for trailing whitespace in Markdown files; the SPDX license header check is implemented in tools/headers.sh (confirmed by tests/headers.bats invoking tools/headers.sh)."
+        },
+        {
+          "id": "C4",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "evidence": "tools/deploy.sh:5-9",
+          "code_says": "deploy.sh only parses a --target option and exits 2 with 'unknown option' for any other flag, including --dry-run; the --dry-run behavior actually belongs to tools/release.sh:6."
+        },
+        {
+          "id": "C7",
+          "line": 24,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES is set to 200 in config.sh, not 500 as the README states."
+        }
+      ],
+      "claims": 12,
+      "verdicts": 12,
+      "missing": [],
+      "unverifiable": 0,
+      "ledger": [
+        {
+          "id": "C1",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "verdict": "drift",
+          "evidence": "tools/lint.sh:1-7",
+          "code_says": "tools/lint.sh only checks for trailing whitespace in Markdown files; the SPDX license header check is implemented in tools/headers.sh (confirmed by tests/headers.bats invoking tools/headers.sh)."
+        },
+        {
+          "id": "C2",
+          "line": 10,
+          "quote": "`tools/fmt.sh` | rewrites `*` and `+` list markers to `-`",
+          "target": "tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/fmt.sh:4",
+          "code_says": "fmt.sh uses sed -E 's/^([[:space:]]*)[*+] /\\1- /' on *.md files, rewriting leading '*' and '+' list markers to '-'."
+        },
+        {
+          "id": "C3",
+          "line": 12,
+          "quote": "Key scripts include `tools/lint.sh` and `tools/fmt.sh`.",
+          "target": "tools/lint.sh, tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/lint.sh:1, tools/fmt.sh:1",
+          "code_says": "Both scripts exist; phrased as an inclusive/selective list ('include'), not an exhaustive enumeration, so the presence of other scripts (deploy.sh, release.sh, stats.sh, headers.sh) is not drift."
+        },
+        {
+          "id": "C4",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "verdict": "drift",
+          "evidence": "tools/deploy.sh:5-9",
+          "code_says": "deploy.sh only parses a --target option and exits 2 with 'unknown option' for any other flag, including --dry-run; the --dry-run behavior actually belongs to tools/release.sh:6."
+        },
+        {
+          "id": "C5",
+          "line": 22,
+          "quote": "run `tools/release.sh`. It tags the release",
+          "target": "tools/release.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:13",
+          "code_says": "release.sh runs `git tag \"release-$(date +%Y%m%d)\"` to tag the release."
+        },
+        {
+          "id": "C6",
+          "line": 23,
+          "quote": "and hands it to `tools/deploy.sh --target production`",
+          "target": "tools/deploy.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:14",
+          "code_says": "release.sh invokes \"$(dirname \"$0\")/deploy.sh\" --target production after tagging."
+        },
+        {
+          "id": "C7",
+          "line": 24,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "verdict": "drift",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES is set to 200 in config.sh, not 500 as the README states."
+        },
+        {
+          "id": "C8",
+          "line": 29,
+          "quote": "tools/               check, format, and publish scripts",
+          "target": "tools/ (project structure listing)",
+          "verdict": "match",
+          "evidence": "tools/ directory listing",
+          "code_says": "Directory-level entry; tools/ contains lint.sh, fmt.sh, headers.sh, deploy.sh, release.sh, stats.sh \u2014 all check/format/publish related scripts, consistent with the summary."
+        },
+        {
+          "id": "C9",
+          "line": 31,
+          "quote": "docs/                site content",
+          "target": "docs/",
+          "verdict": "match",
+          "evidence": "docs/index.md",
+          "code_says": "Directory-level entry; docs/ holds index.md, i.e. site content."
+        },
+        {
+          "id": "C10",
+          "line": 32,
+          "quote": "config.sh            site limits",
+          "target": "config.sh",
+          "verdict": "match",
+          "evidence": "config.sh:1-2",
+          "code_says": "config.sh contains a comment 'Site limits shared by the tools.' and defines MAX_PAGES, matching the 'site limits' description."
+        },
+        {
+          "id": "C11",
+          "line": 33,
+          "quote": "tests/lint.bats      tests for lint.sh",
+          "target": "tests/lint.bats",
+          "verdict": "match",
+          "evidence": "tests/lint.bats:2",
+          "code_says": "run bash tools/lint.sh docs \u2014 test targets tools/lint.sh as described"
+        },
+        {
+          "id": "C12",
+          "line": 34,
+          "quote": "tests/headers.bats   tests for headers.sh",
+          "target": "tests/headers.bats",
+          "verdict": "match",
+          "evidence": "tests/headers.bats:2",
+          "code_says": "run bash tools/headers.sh tools \u2014 test targets tools/headers.sh as described"
+        }
+      ],
+      "calls": 3,
+      "cost_usd": 0.2646674,
+      "wall_s": 52,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": false
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0
+    },
+    {
+      "failed": false,
+      "findings": [
+        {
+          "id": "C1",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "evidence": "tools/lint.sh:1-7; tools/headers.sh:1-7",
+          "code_says": "tools/lint.sh only checks trailing whitespace; the missing-SPDX-header check is implemented in tools/headers.sh, a separate script"
+        },
+        {
+          "id": "C4",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "evidence": "tools/deploy.sh:4-11",
+          "code_says": "deploy.sh only recognizes --target <value>; any other argument including --dry-run hits the unknown-option branch and exits 2 \u2014 --dry-run is release.sh's flag (tools/release.sh:6), not deploy.sh's"
+        },
+        {
+          "id": "C7",
+          "line": 24,
+          "quote": "most 500 pages (`MAX_PAGES` in `config.sh`); a larger site fails the",
+          "target": "config.sh (MAX_PAGES)",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES=200, not 500"
+        }
+      ],
+      "claims": 8,
+      "verdicts": 8,
+      "missing": [],
+      "unverifiable": 0,
+      "ledger": [
+        {
+          "id": "C1",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "verdict": "drift",
+          "evidence": "tools/lint.sh:1-7; tools/headers.sh:1-7",
+          "code_says": "tools/lint.sh only checks trailing whitespace; the missing-SPDX-header check is implemented in tools/headers.sh, a separate script"
+        },
+        {
+          "id": "C2",
+          "line": 10,
+          "quote": "`tools/fmt.sh` | rewrites `*` and `+` list markers to `-`",
+          "target": "tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/fmt.sh:4",
+          "code_says": "sed -i -E 's/^([[:space:]]*)[*+] /\\1- /' rewrites leading '*' or '+' list markers to '-'"
+        },
+        {
+          "id": "C3",
+          "line": 12,
+          "quote": "Key scripts include `tools/lint.sh` and `tools/fmt.sh`.",
+          "target": "tools/lint.sh, tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/lint.sh:1; tools/fmt.sh:1",
+          "code_says": "both tools/lint.sh and tools/fmt.sh exist as described (selective 'include' phrasing)"
+        },
+        {
+          "id": "C4",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "verdict": "drift",
+          "evidence": "tools/deploy.sh:4-11",
+          "code_says": "deploy.sh only recognizes --target <value>; any other argument including --dry-run hits the unknown-option branch and exits 2 \u2014 --dry-run is release.sh's flag (tools/release.sh:6), not deploy.sh's"
+        },
+        {
+          "id": "C5",
+          "line": 22,
+          "quote": "run `tools/release.sh`. It tags the release",
+          "target": "tools/release.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:13",
+          "code_says": "git tag \"release-$(date +%Y%m%d)\" tags the release"
+        },
+        {
+          "id": "C6",
+          "line": 23,
+          "quote": "and hands it to `tools/deploy.sh --target production`.",
+          "target": "tools/deploy.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:14",
+          "code_says": "\"$(dirname \"$0\")/deploy.sh\" --target production hands off to deploy.sh with --target production"
+        },
+        {
+          "id": "C7",
+          "line": 24,
+          "quote": "most 500 pages (`MAX_PAGES` in `config.sh`); a larger site fails the",
+          "target": "config.sh (MAX_PAGES)",
+          "verdict": "drift",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES=200, not 500"
+        },
+        {
+          "id": "C8",
+          "line": 29,
+          "quote": "tools/               check, format, and publish scripts",
+          "target": "tools/ (directory tree listing)",
+          "verdict": "match",
+          "evidence": "tools/ directory listing: lint.sh, fmt.sh, headers.sh, stats.sh, deploy.sh, release.sh",
+          "code_says": "directory-level entry describing tools/ as check, format, and publish scripts, consistent with its contents"
+        }
+      ],
+      "calls": 2,
+      "cost_usd": 0.1804268,
+      "wall_s": 385,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": false
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0
+    },
+    {
+      "failed": false,
+      "findings": [
+        {
+          "id": "C1",
+          "line": 7,
+          "quote": "| Script | What it checks |",
+          "target": "Checks table (list of scripts and what they check)",
+          "evidence": "README.md:7-10; tools/lint.sh:1-7; tools/headers.sh:1-7",
+          "code_says": "The checks table lists only lint.sh and fmt.sh, but tools/headers.sh (the script that actually performs the SPDX header check) is a separate check script omitted from the table, and the SPDX check is misattributed to lint.sh (see C2)."
+        },
+        {
+          "id": "C2",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "evidence": "tools/lint.sh:4; tools/headers.sh:6",
+          "code_says": "tools/lint.sh only greps for trailing whitespace in Markdown files; the missing-SPDX-license-header check is performed by a separate script, tools/headers.sh (head -n 3 \"$f\" | grep -q 'SPDX-License-Identifier:')."
+        },
+        {
+          "id": "C5",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "evidence": "tools/deploy.sh:4-9; tools/release.sh:5-6,9-11",
+          "code_says": "tools/deploy.sh has no --dry-run option; passing --dry-run hits the default case 'deploy: unknown option: $1' and exits 2. The dry-run preview behavior described is actually implemented in tools/release.sh (--dry-run prints 'would tag and deploy N pages' and exits 0 without tagging or deploying)."
+        },
+        {
+          "id": "C8",
+          "line": 24,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES is set to 200 in config.sh, not 500 as the README states."
+        }
+      ],
+      "claims": 13,
+      "verdicts": 13,
+      "missing": [],
+      "unverifiable": 0,
+      "ledger": [
+        {
+          "id": "C1",
+          "line": 7,
+          "quote": "| Script | What it checks |",
+          "target": "Checks table (list of scripts and what they check)",
+          "verdict": "drift",
+          "evidence": "README.md:7-10; tools/lint.sh:1-7; tools/headers.sh:1-7",
+          "code_says": "The checks table lists only lint.sh and fmt.sh, but tools/headers.sh (the script that actually performs the SPDX header check) is a separate check script omitted from the table, and the SPDX check is misattributed to lint.sh (see C2)."
+        },
+        {
+          "id": "C2",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "verdict": "drift",
+          "evidence": "tools/lint.sh:4; tools/headers.sh:6",
+          "code_says": "tools/lint.sh only greps for trailing whitespace in Markdown files; the missing-SPDX-license-header check is performed by a separate script, tools/headers.sh (head -n 3 \"$f\" | grep -q 'SPDX-License-Identifier:')."
+        },
+        {
+          "id": "C3",
+          "line": 10,
+          "quote": "`tools/fmt.sh` | rewrites `*` and `+` list markers to `-`",
+          "target": "tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/fmt.sh:4",
+          "code_says": "sed -i -E 's/^([[:space:]]*)[*+] /\\1- /' rewrites leading '*' or '+' markdown list markers to '-', exactly as claimed."
+        },
+        {
+          "id": "C4",
+          "line": 12,
+          "quote": "Key scripts include `tools/lint.sh` and `tools/fmt.sh`.",
+          "target": "tools/lint.sh, tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/lint.sh:1; tools/fmt.sh:1",
+          "code_says": "Both tools/lint.sh and tools/fmt.sh exist as described; 'Key scripts include' is selective language so no omission (e.g. headers.sh, stats.sh) counts as drift."
+        },
+        {
+          "id": "C5",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "verdict": "drift",
+          "evidence": "tools/deploy.sh:4-9; tools/release.sh:5-6,9-11",
+          "code_says": "tools/deploy.sh has no --dry-run option; passing --dry-run hits the default case 'deploy: unknown option: $1' and exits 2. The dry-run preview behavior described is actually implemented in tools/release.sh (--dry-run prints 'would tag and deploy N pages' and exits 0 without tagging or deploying)."
+        },
+        {
+          "id": "C6",
+          "line": 22,
+          "quote": "When the preview looks right, run `tools/release.sh`.",
+          "target": "tools/release.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:5-14",
+          "code_says": "Running tools/release.sh with no --dry-run flag proceeds to tag the release and deploy, matching 'When the preview looks right, run tools/release.sh.'"
+        },
+        {
+          "id": "C7",
+          "line": 22,
+          "quote": "It tags the release and hands it to `tools/deploy.sh --target production`.",
+          "target": "tools/release.sh, tools/deploy.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:13-14",
+          "code_says": "release.sh runs `git tag \"release-$(date +%Y%m%d)\"` then `\"$(dirname \"$0\")/deploy.sh\" --target production`, exactly as claimed."
+        },
+        {
+          "id": "C8",
+          "line": 24,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "verdict": "drift",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES is set to 200 in config.sh, not 500 as the README states."
+        },
+        {
+          "id": "C9",
+          "line": 29,
+          "quote": "tools/               check, format, and publish scripts",
+          "target": "tools/ directory",
+          "verdict": "match",
+          "evidence": "tools/ directory listing: deploy.sh, fmt.sh, headers.sh, lint.sh, release.sh, stats.sh",
+          "code_says": "tools/ contains check (lint.sh, headers.sh), format (fmt.sh), and publish (deploy.sh, release.sh) scripts, consistent with the directory-level description."
+        },
+        {
+          "id": "C10",
+          "line": 31,
+          "quote": "docs/                site content",
+          "target": "docs/ directory",
+          "verdict": "match",
+          "evidence": "docs/index.md",
+          "code_says": "docs/ contains site content (index.md), consistent with the directory-level description."
+        },
+        {
+          "id": "C11",
+          "line": 32,
+          "quote": "config.sh            site limits",
+          "target": "config.sh",
+          "verdict": "match",
+          "evidence": "config.sh:1-2",
+          "code_says": "config.sh contains only MAX_PAGES=200 with comment 'Site limits shared by the tools.' \u2014 matches 'site limits'"
+        },
+        {
+          "id": "C12",
+          "line": 33,
+          "quote": "tests/lint.bats      tests for lint.sh",
+          "target": "tests/lint.bats",
+          "verdict": "match",
+          "evidence": "tests/lint.bats:1-4",
+          "code_says": "lint.bats runs `bash tools/lint.sh docs` and checks exit status \u2014 a test for lint.sh"
+        },
+        {
+          "id": "C13",
+          "line": 34,
+          "quote": "tests/headers.bats   tests for headers.sh",
+          "target": "tests/headers.bats",
+          "verdict": "match",
+          "evidence": "tests/headers.bats:1-4",
+          "code_says": "headers.bats runs `bash tools/headers.sh tools` and checks exit status 1 \u2014 a test for headers.sh"
+        }
+      ],
+      "calls": 3,
+      "cost_usd": 0.28788800000000003,
+      "wall_s": 69,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": false
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0
+    },
+    {
+      "failed": false,
+      "findings": [
+        {
+          "id": "C1",
+          "line": 7,
+          "quote": "Script | What it checks (table header)",
+          "target": "table listing tools/lint.sh, tools/fmt.sh",
+          "evidence": "tools/headers.sh:6 vs README.md:9",
+          "code_says": "The checks table (README.md lines 9-10) credits tools/lint.sh with checking 'missing SPDX license headers', but that check is actually performed by tools/headers.sh (head -n 3 \"$f\" | grep -q 'SPDX-License-Identifier:'), which is a separate script omitted from the table entirely."
+        },
+        {
+          "id": "C2",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "evidence": "tools/lint.sh:4",
+          "code_says": "tools/lint.sh only greps for trailing whitespace ([[:space:]]+$) in *.md files; it does not check for SPDX license headers. The SPDX header check is implemented in tools/headers.sh:6 instead."
+        },
+        {
+          "id": "C5",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "evidence": "tools/deploy.sh:4-10",
+          "code_says": "tools/deploy.sh only parses a --target option and exits with 'deploy: unknown option' for any other argument; it has no --dry-run support. The --dry-run preview flag is implemented on tools/release.sh (tools/release.sh:6), confirmed by tests/release.bats."
+        },
+        {
+          "id": "C8",
+          "line": 23,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "evidence": "config.sh:2",
+          "code_says": "config.sh sets MAX_PAGES=200, not 500 as claimed in the README."
+        }
+      ],
+      "claims": 13,
+      "verdicts": 13,
+      "missing": [],
+      "unverifiable": 0,
+      "ledger": [
+        {
+          "id": "C1",
+          "line": 7,
+          "quote": "Script | What it checks (table header)",
+          "target": "table listing tools/lint.sh, tools/fmt.sh",
+          "verdict": "drift",
+          "evidence": "tools/headers.sh:6 vs README.md:9",
+          "code_says": "The checks table (README.md lines 9-10) credits tools/lint.sh with checking 'missing SPDX license headers', but that check is actually performed by tools/headers.sh (head -n 3 \"$f\" | grep -q 'SPDX-License-Identifier:'), which is a separate script omitted from the table entirely."
+        },
+        {
+          "id": "C2",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "verdict": "drift",
+          "evidence": "tools/lint.sh:4",
+          "code_says": "tools/lint.sh only greps for trailing whitespace ([[:space:]]+$) in *.md files; it does not check for SPDX license headers. The SPDX header check is implemented in tools/headers.sh:6 instead."
+        },
+        {
+          "id": "C3",
+          "line": 10,
+          "quote": "`tools/fmt.sh` | rewrites `*` and `+` list markers to `-`",
+          "target": "tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/fmt.sh:4",
+          "code_says": "sed -i -E 's/^([[:space:]]*)[*+] /\\1- /' rewrites leading '*' and '+' list markers to '-', matching the claim exactly."
+        },
+        {
+          "id": "C4",
+          "line": 12,
+          "quote": "Key scripts include `tools/lint.sh` and `tools/fmt.sh`.",
+          "target": "tools/lint.sh, tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "README.md:12",
+          "code_says": "Both tools/lint.sh and tools/fmt.sh exist in the repo; phrased as a selective 'include' list, which is not held to exhaustiveness."
+        },
+        {
+          "id": "C5",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "verdict": "drift",
+          "evidence": "tools/deploy.sh:4-10",
+          "code_says": "tools/deploy.sh only parses a --target option and exits with 'deploy: unknown option' for any other argument; it has no --dry-run support. The --dry-run preview flag is implemented on tools/release.sh (tools/release.sh:6), confirmed by tests/release.bats."
+        },
+        {
+          "id": "C6",
+          "line": 22,
+          "quote": "When the preview looks right, run `tools/release.sh`.",
+          "target": "tools/release.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:1-14",
+          "code_says": "tools/release.sh is the script to run to perform the real (non-preview) release after checking the dry-run output looks right."
+        },
+        {
+          "id": "C7",
+          "line": 22,
+          "quote": "It tags the release and hands it to `tools/deploy.sh --target production`.",
+          "target": "tools/release.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:13-14",
+          "code_says": "release.sh tags the release with `git tag \"release-$(date +%Y%m%d)\"` and then calls `\"$(dirname \"$0\")/deploy.sh\" --target production`, matching the claim."
+        },
+        {
+          "id": "C8",
+          "line": 23,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "verdict": "drift",
+          "evidence": "config.sh:2",
+          "code_says": "config.sh sets MAX_PAGES=200, not 500 as claimed in the README."
+        },
+        {
+          "id": "C9",
+          "line": 29,
+          "quote": "tools/               check, format, and publish scripts",
+          "target": "tools/",
+          "verdict": "match",
+          "evidence": "tools/ directory",
+          "code_says": "Directory-level entry describing tools/ as holding check, format, and publish scripts; tools/ contains lint.sh, headers.sh (check), fmt.sh (format), deploy.sh/release.sh (publish), and stats.sh \u2014 consistent with the summary, and directory-level entries are not held to item-by-item completeness."
+        },
+        {
+          "id": "C10",
+          "line": 31,
+          "quote": "docs/                site content",
+          "target": "docs/",
+          "verdict": "match",
+          "evidence": "docs/index.md",
+          "code_says": "docs/ contains index.md, consistent with 'site content'; directory-level entry, not drift."
+        },
+        {
+          "id": "C11",
+          "line": 32,
+          "quote": "config.sh            site limits",
+          "target": "config.sh",
+          "verdict": "match",
+          "evidence": "config.sh:1-2",
+          "code_says": "config.sh contains `# Site limits shared by the tools.` and `MAX_PAGES=200`, consistent with being site limits"
+        },
+        {
+          "id": "C12",
+          "line": 33,
+          "quote": "tests/lint.bats      tests for lint.sh",
+          "target": "tests/lint.bats",
+          "verdict": "match",
+          "evidence": "tests/lint.bats:2",
+          "code_says": "tests/lint.bats invokes `bash tools/lint.sh docs`, confirming it tests lint.sh"
+        },
+        {
+          "id": "C13",
+          "line": 34,
+          "quote": "tests/headers.bats   tests for headers.sh",
+          "target": "tests/headers.bats",
+          "verdict": "match",
+          "evidence": "tests/headers.bats:2",
+          "code_says": "tests/headers.bats invokes `bash tools/headers.sh tools`, confirming it tests headers.sh"
+        }
+      ],
+      "calls": 3,
+      "cost_usd": 0.3027802,
+      "wall_s": 66,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": false
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0
+    },
+    {
+      "failed": false,
+      "findings": [
+        {
+          "id": "C1",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "evidence": "tools/lint.sh:4-7",
+          "code_says": "lint.sh only greps for trailing whitespace in .md files; the SPDX license header check is a separate script, tools/headers.sh:5 (head -n 3 \"$f\" | grep -q 'SPDX-License-Identifier:')."
+        },
+        {
+          "id": "C4",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "evidence": "tools/deploy.sh:5-10",
+          "code_says": "deploy.sh only accepts --target <value>; any other flag including --dry-run hits the 'unknown option' branch and exits 2. --dry-run is implemented in tools/release.sh:6, not deploy.sh."
+        },
+        {
+          "id": "C7",
+          "line": 23,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES=200, not 500 as README states."
+        }
+      ],
+      "claims": 12,
+      "verdicts": 12,
+      "missing": [],
+      "unverifiable": 0,
+      "ledger": [
+        {
+          "id": "C1",
+          "line": 9,
+          "quote": "`tools/lint.sh` | trailing whitespace and missing SPDX license headers",
+          "target": "tools/lint.sh",
+          "verdict": "drift",
+          "evidence": "tools/lint.sh:4-7",
+          "code_says": "lint.sh only greps for trailing whitespace in .md files; the SPDX license header check is a separate script, tools/headers.sh:5 (head -n 3 \"$f\" | grep -q 'SPDX-License-Identifier:')."
+        },
+        {
+          "id": "C2",
+          "line": 10,
+          "quote": "`tools/fmt.sh` | rewrites `*` and `+` list markers to `-`",
+          "target": "tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/fmt.sh:4",
+          "code_says": "sed -i -E 's/^([[:space:]]*)[*+] /\\1- /' rewrites leading '*' or '+' list markers to '-'."
+        },
+        {
+          "id": "C3",
+          "line": 12,
+          "quote": "Key scripts include `tools/lint.sh` and `tools/fmt.sh`.",
+          "target": "tools/lint.sh, tools/fmt.sh",
+          "verdict": "match",
+          "evidence": "tools/lint.sh:1, tools/fmt.sh:1",
+          "code_says": "Both tools/lint.sh and tools/fmt.sh exist; this is a selective 'include' list so omissions elsewhere don't count as drift."
+        },
+        {
+          "id": "C4",
+          "line": 19,
+          "quote": "tools/deploy.sh --dry-run",
+          "target": "tools/deploy.sh",
+          "verdict": "drift",
+          "evidence": "tools/deploy.sh:5-10",
+          "code_says": "deploy.sh only accepts --target <value>; any other flag including --dry-run hits the 'unknown option' branch and exits 2. --dry-run is implemented in tools/release.sh:6, not deploy.sh."
+        },
+        {
+          "id": "C5",
+          "line": 22,
+          "quote": "run `tools/release.sh`. It tags the release",
+          "target": "tools/release.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:13",
+          "code_says": "git tag \"release-$(date +%Y%m%d)\" tags the release."
+        },
+        {
+          "id": "C6",
+          "line": 23,
+          "quote": "and hands it to `tools/deploy.sh --target production`.",
+          "target": "tools/deploy.sh",
+          "verdict": "match",
+          "evidence": "tools/release.sh:14",
+          "code_says": "\"$(dirname \"$0\")/deploy.sh\" --target production hands the release to deploy.sh with --target production."
+        },
+        {
+          "id": "C7",
+          "line": 23,
+          "quote": "A site may hold at most 500 pages (`MAX_PAGES` in `config.sh`)",
+          "target": "config.sh (MAX_PAGES)",
+          "verdict": "drift",
+          "evidence": "config.sh:2",
+          "code_says": "MAX_PAGES=200, not 500 as README states."
+        },
+        {
+          "id": "C8",
+          "line": 29,
+          "quote": "tools/               check, format, and publish scripts",
+          "target": "tools/",
+          "verdict": "match",
+          "evidence": "tools/ (directory listing)",
+          "code_says": "tools/ contains check (lint.sh, headers.sh), format (fmt.sh), and publish (deploy.sh, release.sh) scripts; directory-level entry, not drift."
+        },
+        {
+          "id": "C9",
+          "line": 31,
+          "quote": "docs/                site content",
+          "target": "docs/",
+          "verdict": "match",
+          "evidence": "docs/index.md",
+          "code_says": "docs/ holds site content (index.md); directory-level entry, not drift."
+        },
+        {
+          "id": "C10",
+          "line": 32,
+          "quote": "config.sh            site limits",
+          "target": "config.sh",
+          "verdict": "match",
+          "evidence": "config.sh:1-2",
+          "code_says": "config.sh defines MAX_PAGES, a site limit, matching the 'site limits' description."
+        },
+        {
+          "id": "C11",
+          "line": 33,
+          "quote": "tests/lint.bats      tests for lint.sh",
+          "target": "tests/lint.bats",
+          "verdict": "match",
+          "evidence": "tests/lint.bats:1",
+          "code_says": "tests/lint.bats contains @test \"lint passes on a clean file\" which runs tools/lint.sh, i.e. it tests lint.sh"
+        },
+        {
+          "id": "C12",
+          "line": 34,
+          "quote": "tests/headers.bats   tests for headers.sh",
+          "target": "tests/headers.bats",
+          "verdict": "match",
+          "evidence": "tests/headers.bats:1",
+          "code_says": "tests/headers.bats contains @test \"headers flags a script without SPDX\" which runs tools/headers.sh, i.e. it tests headers.sh"
+        }
+      ],
+      "calls": 3,
+      "cost_usd": 0.24473,
+      "wall_s": 50,
+      "found": {
+        "attr-table": true,
+        "attr-flag": true,
+        "numeric": true,
+        "omission": false
+      },
+      "controls_flagged": {
+        "selective-list": false,
+        "dir-entry": false,
+        "correct-row": false
+      },
+      "fp": 0
+    }
+  ],
+  "prompts": [
+    "prompts/ledger-extract.v1.txt",
+    "prompts/ledger-verify.v1.txt"
+  ]
+}

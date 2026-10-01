@@ -58,12 +58,28 @@ would be faster.
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven); `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures; cited-source snapshots |
+| 6 LLM | — (subagent-driven); `md-chunks.mjs` for the drift claim ledger; `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures; cited-source snapshots |
 
 Lane 6 is the model-owned exception: a grounding subagent classifies each
 file's Diátaxis mode first, then a separate subagent runs each applicable
 prompt for that file — never grouped across files or prompts, per the
 dispatch measurements in `eval/REPORT.md`.
+
+Content drift is the exception to that rule. A subagent asked to judge a
+whole doc reports one or two drifts and silently drops the rest, so drift
+runs as a claim ledger (Rounds 14-15 in `eval/REPORT.md`):
+
+1. `md-chunks.mjs` splits the doc at H2/H3 headings into ranges of at most
+   100 lines (one range at 150 lines or fewer; a longer section stays whole).
+2. An extract subagent per range lists every checkable claim, typed `fact`
+   (one thing) or `set` (a count, an only/both/all, or a list that names its
+   items — kept as one claim).
+3. Verify subagents take the claims in batches of 20 and must return one
+   verdict per claim; for a set they list the doc's members and the code's
+   full group before judging.
+4. The orchestrator checks every claim got a verdict, retries the rest, and
+   reports a coverage line per file, so "no drift" can be told apart from
+   "not checked".
 
 Lane 2 classifies source with GitHub Linguist's language, vendor, and
 documentation data (vendored at a pinned tag as `scripts/vendor/linguist.json`)

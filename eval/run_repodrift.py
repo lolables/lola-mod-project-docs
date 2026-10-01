@@ -13,21 +13,56 @@ items' groups is not double-counted.
 With `--repo`, audits an existing checkout in place instead of copying a
 fixture (real-document mode); `--fixture` still supplies expected.json.
 
-With `--chunk-lines N`, the doc is split at H2/H3 headings into consecutive
-groups of at most N lines (a longer single section stays whole) and the
-prompt runs once per group, its {start}/{end} placeholders filled with the
-group's 1-based line range. A run's findings are the union over its groups;
-a run with any failed group counts as failed, never as clean.
+With `--chunked`, the doc is split into chunks by the shipped
+`md-chunks.mjs` script (heading-aligned, coalesced up to its line cap; a
+longer single section stays whole) and the prompt runs once per chunk, its
+{start}/{end} placeholders filled with the chunk's 1-based line range — this
+measures exactly what /docs-audit ships, not a separate Python
+reimplementation of the chunking rule. A run's findings are the union over
+its chunks; a run with any failed chunk counts as failed, never as clean.
 """
-import argparse, json, os, shutil, subprocess, tempfile
+import argparse, contextlib, json, os, re, shutil, subprocess, tempfile
 from concurrent.futures import ThreadPoolExecutor
 from run_citeddrift import parse_findings, tok_match
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+PLACEHOLDER_RE = re.compile(r"\{(file|repo_root|start|end|claims)\}")
+MD_CHUNKS_SCRIPT = os.path.join(HERE, "..", "module", "skills", "docs-organization", "scripts", "md-chunks.mjs")
 GIT_ENV = dict(os.environ,
     GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_SYSTEM="/dev/null",
     GIT_AUTHOR_NAME="docs-discipline eval", GIT_AUTHOR_EMAIL="eval@docs-discipline.invalid",
     GIT_COMMITTER_NAME="docs-discipline eval", GIT_COMMITTER_EMAIL="eval@docs-discipline.invalid")
+
+def fill_template(template, file, repo_root, start=None, end=None, claims=None):
+    """Fill {file}/{repo_root}/{start}/{end}/{claims} placeholders in a single
+    re.sub pass, so a substituted value (e.g. a file path containing the
+    literal text "{start}") is never re-substituted by a later .replace()
+    call."""
+    values = {"file": file, "repo_root": repo_root,
+              "start": "" if start is None else str(start),
+              "end": "" if end is None else str(end),
+              "claims": "" if claims is None else str(claims)}
+    return PLACEHOLDER_RE.sub(lambda m: values[m.group(1)], template)
+
+@contextlib.contextmanager
+def isolated_config():
+    """Yield an env for `claude -p` whose CLAUDE_CONFIG_DIR is a fresh temp
+    dir holding only a copy of the user's .credentials.json (mode 600), so a
+    headless run loads no user-level plugins, hooks, commands, or CLAUDE.md.
+    The dir is removed on exit. The machine's managed policy file
+    (/etc/claude-code/CLAUDE.md) and the audited repo's own instruction files
+    still load; real users' runs see those too."""
+    src = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude"), ".credentials.json")
+    if not os.path.isfile(src):
+        raise SystemExit(f"isolated config: no credentials at {src}")
+    d = tempfile.mkdtemp(prefix="eval-claude-config-")
+    try:
+        fd = os.open(os.path.join(d, ".credentials.json"), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "wb") as dst, open(src, "rb") as s:
+            dst.write(s.read())
+        yield dict(os.environ, CLAUDE_CONFIG_DIR=d)
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
 
 def matches(finding, groups):
     blob = " ".join(str(v) for v in finding.values()).lower()
@@ -50,73 +85,80 @@ def assign(findings, planted):
             unassigned.append(f)
     return assignment, unassigned
 
-def heading_chunks(path, max_lines):
-    """Split the doc at H2/H3 headings outside code fences and coalesce
-    consecutive sections into groups of at most `max_lines` lines. Return a
-    list of 1-based inclusive (start, end) line ranges covering the file."""
-    lines = open(path).read().splitlines()
-    starts, fence = [1], False
-    for i, line in enumerate(lines, 1):
-        if line.lstrip().startswith(("```", "~~~")):
-            fence = not fence
-        elif not fence and line.startswith(("## ", "### ")) and i > 1:
-            starts.append(i)
-    sections = list(zip(starts, [s - 1 for s in starts[1:]] + [len(lines)]))
-    groups = []
-    for start, end in sections:
-        if groups and end - groups[-1][0] + 1 <= max_lines:
-            groups[-1] = (groups[-1][0], end)
-        else:
-            groups.append((start, end))
-    return groups
+def md_chunks(path):
+    """Return the 1-based inclusive (start, end) line ranges `md-chunks.mjs`
+    computes for `path` — the same deterministic chunker /docs-audit's Lane 6
+    runs, so this eval measures the shipped behavior rather than a
+    reimplementation of it."""
+    out = subprocess.run(["node", MD_CHUNKS_SCRIPT, path], capture_output=True, text=True, check=True).stdout
+    return [(c["start"], c["end"]) for c in json.loads(out)["chunks"]]
 
-def call(prompt, cwd):
+def call(prompt, cwd, key="findings", env=None, meta=None):
     """Return (findings-or-None, error-excerpt-or-None). The excerpt includes
-    stderr when the CLI exits non-zero, since stdout alone can be empty."""
+    stderr when the CLI exits non-zero, since stdout alone can be empty.
+
+    `key` selects which JSON list field `parse_findings` extracts. `env`, when
+    given, replaces the subprocess environment (e.g. `isolated_config()`'s
+    env). When `meta` is a dict, each call increments `meta["calls"]` and adds
+    the reply's `total_cost_usd` (0 if absent) to `meta["cost_usd"]`."""
     try:
         p = subprocess.run(
             ["claude", "-p", prompt, "--dangerously-skip-permissions", "--output-format", "json", "--model", "claude-sonnet-5"],
-            cwd=cwd, capture_output=True, text=True, timeout=400, stdin=subprocess.DEVNULL)
+            cwd=cwd, env=env, capture_output=True, text=True, timeout=400, stdin=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
         return None, "timeout after 400 s"
     try:
-        result = json.loads(p.stdout).get("result", "")
+        outer = json.loads(p.stdout)
+        result = outer.get("result", "")
     except json.JSONDecodeError:
+        outer = {}
         result = p.stdout
+    if meta is not None:
+        meta.setdefault("calls", 0)
+        meta.setdefault("cost_usd", 0)
+        meta["calls"] += 1
+        meta["cost_usd"] += outer.get("total_cost_usd", 0)
     if p.returncode != 0:
         return None, f"cli exited {p.returncode}: {result[:500]} | stderr: {p.stderr[:500]}"
-    findings = parse_findings(result)
+    findings = parse_findings(result, key)
     return (None, result[:500]) if findings is None else (findings, None)
 
-def one_run(fixture, template, repo=None, doc="README.md", chunk_lines=None):
+@contextlib.contextmanager
+def fixture_repo(fixture):
+    """Copy `fixture` (minus expected.json) into a fresh git repository in a
+    temp directory, yield the repo path, and remove the temp dir on exit."""
+    work = tempfile.mkdtemp(prefix="repo-drift-")
+    try:
+        repo = os.path.join(work, "repo")
+        shutil.copytree(fixture, repo, ignore=shutil.ignore_patterns("expected.json"))
+        for cmd in (["git", "init", "-q"], ["git", "add", "."], ["git", "commit", "-q", "-m", "fixture"]):
+            subprocess.run(cmd, cwd=repo, env=GIT_ENV, check=True)
+        yield repo
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+def one_run(fixture, template, repo=None, doc="README.md", chunked=False, env=None):
     """Return (findings-or-None, error-excerpt-or-None).
 
     With `repo` given, run against that existing checkout in place (no copy,
     no git init) — the real-document lane. Otherwise copy `fixture` into a
-    fresh git repository in a temp directory. With `chunk_lines`, call once
-    per heading group and union the findings; any failed group fails the run."""
-    work = None
-    try:
-        if repo is None:
-            work = tempfile.mkdtemp(prefix="repo-drift-")
-            repo = os.path.join(work, "repo")
-            shutil.copytree(fixture, repo, ignore=shutil.ignore_patterns("expected.json"))
-            for cmd in (["git", "init", "-q"], ["git", "add", "."], ["git", "commit", "-q", "-m", "fixture"]):
-                subprocess.run(cmd, cwd=repo, env=GIT_ENV, check=True)
+    fresh git repository in a temp directory via `fixture_repo`. With
+    `chunked`, call once per chunk `md-chunks.mjs` returns (a single chunk
+    still fills {start}/{end}, covering the whole file) and union the
+    findings; any failed chunk fails the run. `env`, when given, is passed
+    through to every `call()` (e.g. `isolated_config()`'s env)."""
+    ctx = fixture_repo(fixture) if repo is None else contextlib.nullcontext(repo)
+    with ctx as repo:
         path = os.path.join(repo, doc)
-        prompt = template.replace("{file}", path).replace("{repo_root}", repo)
-        if chunk_lines is None:
-            return call(prompt, repo)
+        if not chunked:
+            return call(fill_template(template, path, repo), repo, env=env)
         findings = []
-        for start, end in heading_chunks(path, chunk_lines):
-            got, err = call(prompt.replace("{start}", str(start)).replace("{end}", str(end)), repo)
+        for start, end in md_chunks(path):
+            got, err = call(fill_template(template, path, repo, start, end), repo, env=env)
             if got is None:
                 return None, f"lines {start}-{end}: {err}"
             findings += got
         return findings, None
-    finally:
-        if work is not None:
-            shutil.rmtree(work, ignore_errors=True)
 
 def score(findings, expected):
     """Recall is per planted item's assignment (each finding counts toward at
@@ -138,13 +180,17 @@ def main():
     ap.add_argument("--repo", help="real-document mode: an existing repo checkout to audit in place, "
                                     "instead of copying --fixture into a fresh git repo")
     ap.add_argument("--doc", default="README.md", help="doc to audit, relative to the repo root")
-    ap.add_argument("--chunk-lines", type=int, help="split the doc at H2/H3 headings into groups of at most "
-                                                   "this many lines; the prompt needs {start}/{end}")
+    ap.add_argument("--chunked", action="store_true", help="split the doc with md-chunks.mjs and run the prompt "
+                                                   "once per chunk; the prompt needs {start}/{end}")
+    ap.add_argument("--isolated", action="store_true", help="run `claude` with an isolated CLAUDE_CONFIG_DIR "
+                                                   "(see isolated_config()) instead of the caller's own config")
     a = ap.parse_args()
     expected = json.load(open(os.path.join(a.fixture, "expected.json")))
     template = open(a.prompt).read()
-    with ThreadPoolExecutor(max_workers=min(3, a.runs)) as ex:
-        runs = list(ex.map(lambda _: one_run(a.fixture, template, repo=a.repo, doc=a.doc, chunk_lines=a.chunk_lines), range(a.runs)))
+    with contextlib.ExitStack() as stack:
+        env = stack.enter_context(isolated_config()) if a.isolated else None
+        with ThreadPoolExecutor(max_workers=min(3, a.runs)) as ex:
+            runs = list(ex.map(lambda _: one_run(a.fixture, template, repo=a.repo, doc=a.doc, chunked=a.chunked, env=env), range(a.runs)))
     rows = []
     for findings, err in runs:
         if findings is None:
@@ -156,7 +202,8 @@ def main():
     summary = {
         "prompt": os.path.relpath(a.prompt, HERE),
         "runs": a.runs,
-        "chunk_lines": a.chunk_lines,
+        "isolated": a.isolated,
+        "chunked": a.chunked,
         "failed_runs": len(rows) - len(ok),
         "recall": {d["id"]: sum(r["found"][d["id"]] for r in ok) / len(ok) for d in expected["planted"]} if ok else {},
         "control_flag_rate": {c["id"]: sum(r["controls_flagged"][c["id"]] for r in ok) / len(ok) for c in expected["controls"]} if ok else {},

@@ -1,0 +1,134 @@
+{
+  "prompt": "prompts/repo-drift-chunk.txt",
+  "runs": 5,
+  "isolated": true,
+  "chunked": true,
+  "failed_runs": 0,
+  "recall": {
+    "lane3-procedures": 0.2,
+    "ipv6-count": 0.6,
+    "docs-init-adr": 0.2,
+    "merval-shapes": 0.0,
+    "license-mit": 0.0,
+    "block-flag": 0.2
+  },
+  "control_flag_rate": {},
+  "mean_fp": 0.0,
+  "detail": [
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": true,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 35,
+          "doc_says": "The commands are not one-per-skill... /docs-update reaches both.",
+          "code_says": "/docs-init also conditionally activates the `adr` skill and binds $ADR_DIR when it creates docs/dev/README.md from the template (module/commands/docs-init.md:26-31, 77-79), so /docs-update is not the only command that reaches both skills.",
+          "source": "module/commands/docs-init.md:26-31"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": false,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": []
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": true
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond that: ::/96 + fec0::/10, 64:ff9b:1::/48, and 64:ff9b::/96 (judged by embedded IPv4).",
+          "code_says": "fetch-citations.mjs adds six IPv6 subnets to BLOCKED (::/96, fc00::/7, fec0::/10, fe80::/10, ff00::/8, 64:ff9b:1::/48) plus the separately-checked NAT64 64:ff9b::/96 \u2014 the doc's list and count omit fc00::/7 (unique-local), fe80::/10 (link-local), and ff00::/8 (multicast), all blocked outright.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:134-141"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 245,
+          "doc_says": "`apply-palette.mjs --swap` finds fences with `lint-mermaid.mjs`'s own `extractMermaidBlocks` and splices by its offsets, so `--block N` addresses exactly the block a finding's 1-based `block` field names",
+          "code_says": "apply-palette.mjs --swap takes a positional `[block]` argument (usage: `apply-palette.mjs --swap <palette.json> <file.mmd|file.md> [block]`); the `--block N` flag belongs to the separate wrapper swap-palette.sh, not apply-palette.mjs",
+          "source": "module/skills/docs-organization/scripts/apply-palette.mjs:7,197-203"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": false,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "\"Three IPv6 ranges get handling beyond that\" \u2014 naming only ::/96, fec0::/10, 64:ff9b:1::/48, and 64:ff9b::/96",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-151"
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "found": {
+        "lane3-procedures": true,
+        "ipv6-count": true,
+        "docs-init-adr": false,
+        "merval-shapes": false,
+        "license-mit": false,
+        "block-flag": false
+      },
+      "controls_flagged": {},
+      "fp": 0,
+      "findings": [
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 55,
+          "doc_says": "check-prose.mjs finds: wall-of-text, dense bullets, unscannable procedures",
+          "code_says": "check-prose.mjs emits only WALL_OF_TEXT, DENSE_BULLET, and SPLIT_CANDIDATE (oversized file/section); no logic inspects ordered lists or procedures",
+          "source": "module/skills/docs-organization/scripts/check-prose.mjs:103,130,148"
+        },
+        {
+          "code": "CONTENT_DRIFT",
+          "line": 189,
+          "doc_says": "Three IPv6 ranges get handling beyond that: ::/96, fec0::/10, 64:ff9b:1::/48 (blocked outright), and 64:ff9b::/96 (judged by embedded IPv4).",
+          "code_says": "The IPv6 block list also adds fc00::/10 (unique local) and fe80::/10 (link-local) and ff00::/8 (multicast), none of which the doc mentions.",
+          "source": "module/skills/docs-organization/scripts/fetch-citations.mjs:142-146"
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `md-chunks.mjs` splits a markdown file into heading-aligned line ranges
+  (H2/H3, at most 100 lines each; a single range for 150 lines or fewer) for
+  `/docs-audit`'s content-drift claim ledger.
+- `/docs-audit` cold-read findings carry an `actionable` tag. One that makes a
+  command, flag, or step the reader runs fail as written is a **Warning**;
+  every other `COLD_READ` stays Info.
 - `check-prose.mjs` and `check-refs.mjs` JSON output gained a `scanned`
   field, so an empty result can be told apart from a lane that read nothing.
 - `/docs-audit` gained a documented `CONTENT_DRIFT` code with a
@@ -28,8 +34,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (symlinks included) and names the canonical file in its findings.
 - **The skill's npm dependencies now ship with it.** `@aj-archipelago/merval`
   and `markdown-it` are vendored as pre-built bundles under
-  `module/skills/docs-organization/scripts/vendor/` (330K, both MIT), alongside
-  `vendor/linguist.json` (GitHub Linguist's language, vendor, and
+  `module/skills/docs-organization/scripts/vendor/` (330K; MIT, except two
+  bundled transitive deps, argparse and entities — see `vendor/LICENSES.md`),
+  alongside `vendor/linguist.json` (GitHub Linguist's language, vendor, and
   documentation data, trimmed to what the staleness lane needs). Installing
   the module is now two `lola` commands with no prerequisites — no `npm
   install`, no network, no follow-up step.
@@ -56,6 +63,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `/docs-audit` checks repo-mode content drift as a claim ledger, replacing
+  the single whole-file prompt. An extract subagent per `md-chunks.mjs`
+  range lists every checkable claim, typed `fact` or `set`, and verify
+  subagents return one verdict per claim in batches of 20. Claim ids left
+  without a verdict become a `LANE_FAILED`. "Other" gains one coverage line
+  per file (`content drift: <file> — <n> claims, <d> drift, <u>
+  unverifiable`), which `/docs-update` skips. Measured in `eval/REPORT.md`
+  Round 15: 13 of 25 real drifts found against 5 before, at about $4.50
+  per 350-line doc.
+- Content drift now flags a check, flag, or step credited to the wrong
+  component, and an item missing from a list that names its items one by
+  one. Such an omission is `CONTENT_DRIFT`, never "Other".
 - Unit tests, their fixtures, and the npm build toolchain no longer ship
   in the installed skill; they moved to `tests/scripts/` and
   `.taskfiles/vendor/`.
