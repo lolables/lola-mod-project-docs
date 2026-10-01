@@ -1,0 +1,34 @@
+tests/scripts/docs-organization/fetch-citations.test.mjs
+  s_2fe5c7579ceb59::t_46abb3439be5e2 97
+  s_2fe5c7579ceb59::t_8493881ae6178c 120
+  s_2fe5c7579ceb59::t_470309347b3a85 128-133
+  s_2fe5c7579ceb59::t_08bea39fd9fe76 64,87,95,102,108,113,119,124,152,177,426,431,821,828,842,862,868,875,882,892,905
+  s_2fe5c7579ceb59::t_b65765d54441d9 75,103,110,114,125
+  s_2fe5c7579ceb59::t_16982469e0a64e 14-16
+  s_2fe5c7579ceb59::t_2bb88da3c3d90d 88
+  s_2fe5c7579ceb59::t_61580de2215497 126-127
+module/skills/docs-organization/scripts/fetch-citations.mjs
+  s_2fe5c7579ceb59::t_fb97d30009519c 32
+  s_2fe5c7579ceb59::t_d5f9943cab58de 320-321
+  s_2fe5c7579ceb59::t_2c5086e186bddd 31
+  s_2fe5c7579ceb59::t_272a1eb171bba4 355-356,358
+  s_2fe5c7579ceb59::t_03f43dbe1f619c 33-37
+  s_2fe5c7579ceb59::t_6e6cdba86599ec 65,67,70-76,78,80-84,89-93,99-100,102-103,105-107
+  s_2fe5c7579ceb59::t_e273994f8cf9c5 53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "90599a5b9468485d57898b94c8673fe155afb019",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
