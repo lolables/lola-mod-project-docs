@@ -26,6 +26,8 @@ sandboxed-install suites.
 | `tests/scripts/<skill>/` | Unit tests (`*.test.mjs`, `*.test.sh`) and `__fixtures__/` for each skill's `scripts/`; kept out of `module/` so they never ship |
 | `tests/` | Structural-linter fixtures and bats suites, mermaid fixtures, Venom e2e |
 | `docs/dev/architecture.md` | How the skills and gates work internally |
+| `docs/dev/vendoring.md` | How the npm bundles and Linguist data are built, pinned, licensed, and shipped |
+| `docs/dev/maintaining.md` | Maintainer procedures: adding a document format, bumping the Linguist data |
 | `eval/` | Headless `/docs-audit` lane evaluation (maintainer research; not installed, not in `task test`). See `eval/README.md`. |
 | `.github/workflows/` | CI and release |
 

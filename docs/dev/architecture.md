@@ -39,8 +39,10 @@ and `/adr-review` front `adr`. `/docs-update` reaches both, and so does
 This is why the shared structural linter binds commands to skills **by
 reference** rather than by filename. A command is valid if its filename matches
 a skill directory or its body names one; an explicit skill is valid if any
-command names it. The original linter in `lola-mod-template`, the shared
-template these gate scripts come from, required a one-to-one filename match and
+command names it. The original linter in `lola-mod-template` — the shared
+template for [lola](https://lobstertrap.org/lola/) modules (lola is the
+cross-host packager that installs this module) that these gate scripts come
+from — required a one-to-one filename match and
 rejected this module outright.
 
 ## The `/docs-audit` lanes
@@ -53,7 +55,7 @@ would be faster.
 
 | Lane | Script | Finds |
 | --- | --- | --- |
-| 1 structural | `check-structure.sh` | missing or empty README, ungitignored `docs/superpowers/`, superpowers drafts tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`) |
+| 1 structural | `check-structure.sh` | missing or empty README, ungitignored `docs/superpowers/` (working specs and plans that planning skills such as superpowers write), drafts there tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`) |
 | 2 staleness | `check-staleness.mjs` | docs older than the code they describe; reports `STALENESS_NOT_ASSESSED` when no commit ever touched a file Linguist classifies as source |
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references |
@@ -65,9 +67,10 @@ file's Diátaxis mode first, then a separate subagent runs each applicable
 prompt for that file — never grouped across files or prompts, per the
 dispatch measurements in `eval/REPORT.md`.
 
-Content drift is the exception to that rule. A subagent asked to judge a
-whole doc reports one or two drifts and silently drops the rest, so drift
-runs as a claim ledger (Rounds 14-15 in `eval/REPORT.md`):
+Content drift goes further than one subagent per file and prompt. A
+subagent asked to judge a whole doc reports one or two drifts and silently
+drops the rest, so drift runs as a claim ledger (Rounds 14-15 in
+`eval/REPORT.md`):
 
 1. `doc-chunks.mjs` splits the doc at H2/H3 headings into ranges of at most
    100 lines (one range at 150 lines or fewer; a longer section stays whole).
@@ -81,6 +84,45 @@ runs as a claim ledger (Rounds 14-15 in `eval/REPORT.md`):
    reports a coverage line per file, so "no drift" can be told apart from
    "not checked".
 
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#2f6dab',
+  'primaryTextColor': '#1e1e1e',
+  'primaryBorderColor': '#7c8ba1',
+  'lineColor': '#7c8ba1',
+  'edgeLabelBackground': '#eef2f8',
+  'tertiaryColor': 'transparent',
+  'tertiaryTextColor': '#7c8ba1',
+  'tertiaryBorderColor': '#7c8ba1',
+  'clusterBkg': 'transparent',
+  'clusterBorder': '#7c8ba1',
+  'titleColor': '#7c8ba1',
+  'noteBkgColor': '#eef2f8',
+  'noteTextColor': '#1e1e1e',
+  'fontFamily': 'system-ui, sans-serif'
+}, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
+sequenceDiagram
+  participant O as Orchestrator
+  participant C as doc-chunks.mjs
+  participant X as Extract subagents
+  participant V as Verify subagents
+  O->>C: one doc
+  C-->>O: ranges split at H2/H3
+  par one per range
+    O->>X: range
+    X-->>O: claims typed fact or set
+  end
+  par batches of 20 claims
+    O->>V: claim batch
+    V-->>O: one verdict per claim
+  end
+  loop until every claim has a verdict
+    O->>V: claims missing a verdict
+    V-->>O: verdicts
+  end
+  O->>O: coverage line per file
+```
+
 Lane 2 classifies source with GitHub Linguist's language, vendor, and
 documentation data (vendored at a pinned tag as `scripts/vendor/linguist.json`)
 rather than a hand-maintained marker list. `.taskfiles/scripts/build-linguist-data.mjs`
@@ -92,7 +134,8 @@ if every language that lists it is programming or markup. A path is never
 source if it is vendored, documentation, or under a dot-directory.
 
 `check-staleness.mjs` classifies by path name, so a commit that deletes a
-source file, or only resolves a merge conflict in one (surfaced via `--cc`),
+source file, or only resolves a merge conflict in one (the script's `git
+log` passes `--cc` so merge commits list those paths),
 still counts as a source change. When no commit ever touched a source path,
 staleness is unknown, not clean — the script reports `STALENESS_NOT_ASSESSED`
 rather than a silent pass.
@@ -135,7 +178,7 @@ nothing outside `formats/` imports it.
 Convention 2 in `AGENTS.md` — developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
 
-### Path mode and document mode
+## Path mode and document mode
 
 `/docs-audit <path>...` skips repo enumeration: `doc-files.mjs` expands the
 arguments into one explicit file list that every lane receives, so no lane can
@@ -149,6 +192,44 @@ its source of truth from where it lives:
   compares the doc against the sources it cites. Diagram drift and the hero
   demo prompt (the Lane 6 check that suggests a recorded demo for a runnable
   tool's README, `MISSING_DEMO`) are skipped.
+
+That one per-file test decides four things at once:
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#2f6dab',
+  'primaryTextColor': '#1e1e1e',
+  'primaryBorderColor': '#7c8ba1',
+  'lineColor': '#7c8ba1',
+  'edgeLabelBackground': '#eef2f8',
+  'tertiaryColor': 'transparent',
+  'tertiaryTextColor': '#7c8ba1',
+  'tertiaryBorderColor': '#7c8ba1',
+  'clusterBkg': 'transparent',
+  'clusterBorder': '#7c8ba1',
+  'titleColor': '#7c8ba1',
+  'noteBkgColor': '#eef2f8',
+  'noteTextColor': '#1e1e1e',
+  'fontFamily': 'system-ui, sans-serif'
+}, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
+flowchart TD
+  Args["/docs-audit path..."] --> Expand["doc-files.mjs expands to a file list"]
+  Expand --> Git{"file inside a git work tree?"}
+  Git -->|yes| Repo["repo-scoped: code is the truth"]
+  Git -->|no| Doc["document: cited sources are the truth"]
+  Repo --> RSkip["skip Lanes 1 and 2"]
+  Repo --> RRefs["check-refs: tracked set if tracked, else disk"]
+  Doc --> DSkip["skip diagram drift and hero demo"]
+  Doc --> DRefs["check-refs: on disk"]
+  Doc --> Fetch["fetch-citations.mjs --root"]
+  Fetch --> Update["/docs-update re-derives sources from the Mode: line root"]
+  classDef sysA fill:#2f6dab,color:#ffffff,stroke:#7c8ba1
+  classDef sysB fill:#1d7848,color:#ffffff,stroke:#7c8ba1
+  classDef sysC fill:#7457b8,color:#ffffff,stroke:#7c8ba1
+  class Args,Expand sysA
+  class Repo,RSkip,RRefs sysB
+  class Doc,DSkip,DRefs,Fetch,Update sysC
+```
 
 `check-refs.mjs` makes the same choice per file rather than once per run. A
 tracked doc is checked against the tracked set, as before. A doc outside
@@ -177,7 +258,7 @@ Two checks apply at different points, on purpose:
 `/docs-update` re-derives a finding's local sources the same way before
 re-reading any file — it runs `fetch-citations.mjs --offline --root <root>`
 and never `--out`, so it never fetches. `<root>` comes from the audit's
-`Mode:` line, which the punch list prints per group in path mode and which
+`Mode:` line, which the audit's findings report (its punch list) prints per group in path mode and which
 names every root the audit passed to `fetch-citations.mjs`, e.g.
 ``Mode: document; root: `/home/me/drafts` — 2 file(s); skipped: …``.
 
@@ -292,6 +373,12 @@ adapter turns one format into the model:
 | `formats/markdown.mjs` | markdown-it + footnote, container (`:::`), admon (`!!!`) plugins | front matter blanked before parsing; GFM alerts detected on the blockquote; inline lines from `formats/md-lines.mjs` |
 | `formats/asciidoc.mjs` | Asciidoctor.js 4 in `secure` mode | block lines from the public API; inline references from regexes over raw source lines (no inline AST, and text getters return HTML) |
 
+Both adapters count lines through `formats/text.mjs` (`splitLines`,
+`countLines`, `lineStarts`), which holds the one line-break rule —
+markdown-it's `/\r\n?|\n/`. That is why LF, CRLF, and CR-only files report
+the same line numbers whichever parser read them; an adapter that splits
+lines its own way breaks that.
+
 The model, in one example — this Markdown:
 
 ```markdown
@@ -345,21 +432,7 @@ Accepted on review, not planned fixes:
 - Any regex span (URL, link text, attribute list) longer than 2000
   characters is dropped, not truncated. This keeps scanning linear.
 
-### Adding a format
-
-1. Vendor a parser if one is needed: pin it in `.taskfiles/vendor/package.json`,
-   add an entry in `.taskfiles/scripts/build-vendor.sh` and its package to the
-   LICENSES list, run `task vendor`.
-2. Write `scripts/formats/<name>.mjs` exporting `{ name, extensions,
-   readmeNames, parse }`; `parse` returns the model with exact 1-based lines.
-3. Add it to `FORMATS` in `scripts/formats/index.mjs`.
-4. Write `tests/scripts/docs-organization/__fixtures__/formats/sample.<ext>`
-   as the same document as `sample.md`, line for line. The conformance test
-   picks it up automatically and fails until the model matches.
-5. Write `tests/scripts/docs-organization/format-<name>.test.mjs` for the
-   format's own constructs, with negative cases.
-6. Add the format to `reference/supported-formats.md` and the README's
-   "Supported formats" table.
+To add a format, follow [Add a document format](maintaining.md#add-a-document-format).
 
 ## The palette system
 
@@ -379,7 +452,8 @@ CSS named colors, whose table (`css-named-colors.mjs`) is extracted from
 [CSS Color Module Level 4 §6.1](https://www.w3.org/TR/css-color-4/#named-colors)
 rather than typed by hand.
 
-Only the syntax verdict comes from merval's parse. The header, class-name and
+Only the syntax verdict comes from merval's parse (`@aj-archipelago/merval`,
+the vendored mermaid validator). The header, class-name and
 contrast checks are regexes over the diagram text, so they run even when
 merval rejects the block. merval's flowchart grammar knows only four bracket
 shapes (`[]`, `()`, `(())`, `{}`) plus the slash-delimited forms such as
@@ -439,122 +513,7 @@ vendored — see the next section.
 
 ## Vendored dependencies
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {
-  'primaryColor': '#2f6dab',
-  'primaryTextColor': '#1e1e1e',
-  'primaryBorderColor': '#7c8ba1',
-  'lineColor': '#7c8ba1',
-  'edgeLabelBackground': '#eef2f8',
-  'tertiaryColor': 'transparent',
-  'tertiaryTextColor': '#7c8ba1',
-  'tertiaryBorderColor': '#7c8ba1',
-  'clusterBkg': 'transparent',
-  'clusterBorder': '#7c8ba1',
-  'titleColor': '#7c8ba1',
-  'noteBkgColor': '#eef2f8',
-  'noteTextColor': '#1e1e1e',
-  'fontFamily': 'system-ui, sans-serif'
-}, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
-flowchart LR
-  subgraph npmpath["npm packages"]
-    Bot["Dependabot bump"] --> Pkg["package.json pins merval, markdown-it"]
-    Pkg --> Esb["esbuild bundles"]
-  end
-  subgraph lingpath["GitHub Linguist data"]
-    Hand["maintainer edits by hand, no bump bot"] --> Pin["TAG and PINNED hashes"]
-    Pin --> Raw["fetch from raw.githubusercontent.com"]
-    Raw --> Yaml["js-yaml converts, trimmed to JSON"]
-  end
-  List["build-vendor.sh package list"] --> Lic["LICENSES.md"]
-  Esb --> Vendor["scripts/vendor/"]
-  Yaml --> Vendor
-  Lic --> Vendor
-  Vendor --> CI{"CI: git diff clean after task vendor?"}
-  CI -->|yes| Ship["lola ships vendor/ verbatim"]
-  CI -->|no| Red["build fails until rebuilt"]
-  classDef sysA fill:#2f6dab,color:#ffffff,stroke:#7c8ba1
-  classDef sysB fill:#1d7848,color:#ffffff,stroke:#7c8ba1
-  classDef sysC fill:#7457b8,color:#ffffff,stroke:#7c8ba1
-  classDef sysF fill:#5c6a82,color:#ffffff,stroke:#7c8ba1
-  class Bot,Pkg,Esb sysA
-  class Hand,Pin,Raw,Yaml sysC
-  class Vendor,Ship sysB
-  class Red sysF
-```
-
-The skill shells out to several npm packages: `@aj-archipelago/merval` for
-mermaid validation; `markdown-it` plus its `markdown-it-footnote`,
-`markdown-it-container`, and `markdown-it-admon` plugins for the Markdown
-adapter; and `@asciidoctor/core` for the AsciiDoc adapter. None would survive
-an install as npm packages — lola strips any directory named `node_modules`
-from the copy it ships. The staleness lane also needs GitHub Linguist's
-language, vendor, and documentation data; that isn't an npm package but a
-build-time fetch, trimmed to what `check-staleness.mjs` needs. All four land
-in `scripts/vendor/`, which lola ships verbatim.
-
-The name is the entire constraint. lola's `ALWAYS_IGNORE` is a fixed set of
-directory names (`node_modules` among them, `vendor` not), not a rule about
-dependencies in general, so a `vendor/` directory ships verbatim at any depth.
-The npm packages are MIT and bundle cleanly, and Linguist's data (also MIT) is
-trimmed to what `check-staleness.mjs` needs, so all four ship pre-built,
-alongside the licence file that covers them:
-
-```text
-scripts/vendor/merval.mjs        92K   @aj-archipelago/merval, no deps
-scripts/vendor/markdown-it.mjs  256K   markdown-it + footnote/container/admon plugins + 6 transitive deps
-scripts/vendor/asciidoctor.mjs  864K   @asciidoctor/core, no deps
-scripts/vendor/linguist.json     20K   extensions, filenames, exclude patterns from GitHub Linguist
-scripts/vendor/LICENSES.md             license texts for all twelve packages plus Linguist (MIT, except argparse: Python-2.0, entities: BSD-2-Clause)
-```
-
-`.taskfiles/vendor/package.json` keeps the six bundled npm packages as
-`devDependencies` — they are
-build inputs, not runtime imports — alongside a pinned `esbuild` and `js-yaml`
-(used only to convert Linguist's YAML sources to JSON at build time).
-`task vendor` installs that toolchain and regenerates all five files in
-`scripts/vendor/`. CI reruns it and fails on a non-empty `git diff` of that
-directory, so a committed bundle
-can never drift from the version `package.json` pins. A Dependabot bump
-therefore arrives red until the bundles are rebuilt, which is the intended
-signal.
-
-That toolchain, and the scripts' unit tests and fixtures (under
-`tests/scripts/<skill>/`), live outside `module/` on purpose. lola copies every
-git-tracked file under the module and ignores only `.gitignore` plus its fixed
-`ALWAYS_IGNORE` set, so anything development-only left in a skill's `scripts/`
-lands in the user's `.claude/skills/`. esbuild resolves bare specifiers from
-the entry file's directory, so `build-vendor.sh` writes its temporary entry
-points inside `.taskfiles/vendor/`. The bundles embed each module's path
-relative to the repo root (`.taskfiles/vendor/node_modules/...`), so moving the
-toolchain again means rerunning `task vendor` and committing the result.
-
-GitHub Linguist's data is pinned separately: `.taskfiles/scripts/build-linguist-data.mjs`
-hardcodes the fetched tag (`TAG`) and a SHA-256 per file (`PINNED`).
-Dependabot's `npm` entry covers the vendor toolchain's `package.json` (the two
-shipped packages plus esbuild and js-yaml), so it never opens a bump PR for the
-Linguist fetch. `task vendor`, which CI also runs, needs
-network access to `raw.githubusercontent.com`, not just the npm registry. To
-bump it:
-
-1. Edit `TAG`.
-2. Update every hash in `PINNED` to match the files at the new tag.
-3. Run `task vendor`.
-
-`LICENSES.md` is assembled by `build-vendor.sh` from the installed packages'
-own metadata and licence files, because esbuild only preserves `/*! */` legal
-comments and neither package uses them. The list of packages to walk is
-hardcoded in that script, so a new transitive dependency has to be added there
-by hand.
-
-Two consequences worth knowing. `MERVAL_NOT_INSTALLED` no longer exists — the
-gap it reported cannot occur. And the install oracle asserts that every file
-under a source skill directory arrives in the installed copy, which is what
-would catch lola widening `ALWAYS_IGNORE` to swallow `vendor/`.
-
-The alternative was a `module/lola.yaml` `post-install` hook running `npm
-install` at the destination. It is blocked anyway: in lola v0.7.0 the hook
-runner passes an empty `cwd` at user scope, so the hook dies with
-`FileNotFoundError` and lola misreports it as "script is not executable".
-Hooks work at project scope. Even fixed, a hook would need network and npm at
-every install; vendoring needs neither.
+The skill's npm packages and GitHub Linguist's data ship pre-bundled under
+`scripts/vendor/`, so an install needs no `npm install` and no network. How
+the bundles are built, pinned, licensed, and kept in sync is in
+[vendoring.md](vendoring.md).
