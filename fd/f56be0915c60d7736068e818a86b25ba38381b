@@ -1,0 +1,24 @@
+tests/scripts/docs-organization/__fixtures__/formats/sample.md
+  s_2fe5c7579ceb59::t_cee7d61d259efb 1-28
+tests/scripts/docs-organization/__fixtures__/formats/sample.adoc
+  s_2fe5c7579ceb59::t_91405690d32838 23
+  s_2fe5c7579ceb59::t_91258391ccaa6f 1-22,24-28
+tests/scripts/docs-organization/format-conformance.test.mjs
+  s_2fe5c7579ceb59::t_4a79ae91c01c73 1-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fdf56be0915c60d7736068e818a86b25ba38381b",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
