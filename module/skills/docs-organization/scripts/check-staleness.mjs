@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Staleness: README.md and docs/*.md whose last commit is a strict ancestor,
-// in the actual commit graph, of the project's latest source commit.
+// Staleness: the README (any registered README name) and doc files in any
+// registered format under docs/ whose last commit is a strict ancestor, in
+// the actual commit graph, of the project's latest source commit.
 //
 // Staleness is judged by ancestry (`git merge-base --is-ancestor <doc-sha>
 // <source-sha>`), not by comparing `%ct` timestamps: two commits landing in
@@ -55,7 +56,7 @@
 // the same dedupe Lanes 3 and 4 (check-prose.mjs, check-refs.mjs) apply to
 // symlinked docs. ADRs under docs/dev/adr/ or docs/adr/ are dated records,
 // not descriptions that drift, so they are excluded from STALE_DOC (this
-// does not apply to STALE_README, which only ever names README.md).
+// does not apply to STALE_README, which only ever names the README).
 //
 // Output: JSON {status, findings:[{code, severity, file, message}]} on
 // stdout. STALE_README and STALE_DOC findings also carry sourceCommit (the
@@ -70,6 +71,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './is-main.mjs';
+import { formatFor, readmeNames } from './formats/index.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const LINGUIST = JSON.parse(readFileSync(join(HERE, 'vendor', 'linguist.json'), 'utf8'));
@@ -193,28 +195,30 @@ async function main() {
   if (latestSource === null) {
     return emit([{
       code: 'STALENESS_NOT_ASSESSED', severity: 'warning',
-      message: `No source recognized: no commit touches a file that GitHub Linguist (${LINGUIST.source}) classifies as programming- or markup-language source outside vendored, documentation, and dot-directory paths. README.md and docs/ were NOT checked for staleness.`,
+      message: `No source recognized: no commit touches a file that GitHub Linguist (${LINGUIST.source}) classifies as programming- or markup-language source outside vendored, documentation, and dot-directory paths. The README and docs/ were NOT checked for staleness.`,
     }]);
   }
   const { sha: sourceSha, path: sourcePath } = latestSource;
   const sourceShort = shortSha(root, sourceSha);
   const findings = [];
-  const tracked = git(['ls-files', '-z', '--', 'README.md', 'docs/'], root).split('\0').filter(Boolean);
-  if (tracked.includes('README.md')) {
-    const docSha = lastCommitShaFor(root, 'README.md');
+  const readmes = readmeNames();
+  const tracked = git(['ls-files', '-z', '--', ...readmes, 'docs/'], root).split('\0').filter(Boolean);
+  for (const readme of readmes) {
+    if (!tracked.includes(readme)) continue;
+    const docSha = lastCommitShaFor(root, readme);
     if (isStale(root, docSha, sourceSha)) {
       const since = commitsSince(root, docSha, sourceSha);
       findings.push({
-        code: 'STALE_README', severity: 'warning', file: 'README.md',
+        code: 'STALE_README', severity: 'warning', file: readme,
         sourceCommit: sourceShort, sourcePath, commitsSince: since,
-        message: `README.md last touched before latest source change: ${sourcePath} changed ${since} commit${since === 1 ? '' : 's'} since (latest ${sourceShort}). Re-read for drift.`,
+        message: `${readme} last touched before latest source change: ${sourcePath} changed ${since} commit${since === 1 ? '' : 's'} since (latest ${sourceShort}). Re-read for drift.`,
       });
     }
   }
   const rootReal = realpathSync(root);
   const seenDocs = new Set();
   for (const f of tracked) {
-    if (!f.startsWith('docs/') || !f.endsWith('.md')) continue;
+    if (!f.startsWith('docs/') || !formatFor(f)) continue;
     if (f.startsWith('docs/superpowers/')) continue;
     const parts = f.split('/');
     if (parts.slice(0, -1).some((d) => d.startsWith('.'))) continue;

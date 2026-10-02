@@ -58,7 +58,7 @@ would be faster.
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven); `md-chunks.mjs` for the drift claim ledger; `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures; cited-source snapshots |
+| 6 LLM | — (subagent-driven); `doc-chunks.mjs` for the drift claim ledger; `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures; cited-source snapshots |
 
 Lane 6 is the model-owned exception: a grounding subagent classifies each
 file's Diátaxis mode first, then a separate subagent runs each applicable
@@ -69,7 +69,7 @@ Content drift is the exception to that rule. A subagent asked to judge a
 whole doc reports one or two drifts and silently drops the rest, so drift
 runs as a claim ledger (Rounds 14-15 in `eval/REPORT.md`):
 
-1. `md-chunks.mjs` splits the doc at H2/H3 headings into ranges of at most
+1. `doc-chunks.mjs` splits the doc at H2/H3 headings into ranges of at most
    100 lines (one range at 150 lines or fewer; a longer section stays whole).
 2. An extract subagent per range lists every checkable claim, typed `fact`
    (one thing) or `set` (a count, an only/both/all, or a list that names its
@@ -118,23 +118,26 @@ keeps the worst case (a repo whose only source commit is the first one) to
 about 1s per ~35k commits of history (measured on django), and far less
 whenever source was touched recently.
 
-Lanes 3 and 4 walk the documentation tree with the shared `md-files.mjs`
-helper, which is symlink-aware: a symlinked `.md` file is included, a
+Lanes 3 and 4 walk the documentation tree with the shared `doc-files.mjs`
+helper, which is symlink-aware: a symlinked doc file is included, a
 symlinked directory is not descended. Lane 3 dedupes a symlink and its
 target into one document, reported at the target's path; Lane 4 checks
 links from every path a doc is reached by, symlinks included, so a
 relative link is verified from wherever a reader actually opens it. Both
 report `scanned` in their JSON, so an empty result can be told apart from a
-lane that read nothing. Lane 4 and `fetch-citations.mjs` share `md-lines.mjs`,
-which stamps every markdown-it inline token with its exact source line, so a
-link and a cited URL are reported on the line a reader finds them.
+lane that read nothing. Lane 4 and `fetch-citations.mjs` both read the model
+`formats/index.mjs` returns; for a Markdown file that model comes from
+`formats/md-lines.mjs`, which stamps every markdown-it inline token with its
+exact source line so a link and a cited URL are reported on the line a
+reader finds them. `md-lines.mjs` is internal to the Markdown adapter —
+nothing outside `formats/` imports it.
 
 Convention 2 in `AGENTS.md` — developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
 
 ### Path mode and document mode
 
-`/docs-audit <path>...` skips repo enumeration: `md-files.mjs` expands the
+`/docs-audit <path>...` skips repo enumeration: `doc-files.mjs` expands the
 arguments into one explicit file list that every lane receives, so no lane can
 disagree with another about what a directory contains. Each file then picks
 its source of truth from where it lives:
@@ -278,6 +281,86 @@ harness measures each lane's recall and false-positive rate against fixtures
 with known ground truth; `eval/REPORT.md` records the results that justified
 wiring each lane in.
 
+## Document formats
+
+Every script that reads a doc reads a `DocModel`, never a parser's tokens.
+`scripts/formats/index.mjs` maps file extensions to adapters, and each
+adapter turns one format into the model:
+
+| Adapter | Parser | Notes |
+| --- | --- | --- |
+| `formats/markdown.mjs` | markdown-it + footnote, container (`:::`), admon (`!!!`) plugins | front matter blanked before parsing; GFM alerts detected on the blockquote; inline lines from `formats/md-lines.mjs` |
+| `formats/asciidoc.mjs` | Asciidoctor.js 4 in `secure` mode | block lines from the public API; inline references from regexes over raw source lines (no inline AST, and text getters return HTML) |
+
+The model, in one example — this Markdown:
+
+```markdown
+# Guide
+
+See [setup](setup.md) and §2.
+```
+
+parses to (abridged):
+
+```json
+{
+  "lines": 3,
+  "headings": [{ "level": 1, "line": 1, "title": "Guide" }],
+  "paragraphs": [{ "line": 3, "text": "See [setup](setup.md) and §2.", "context": "top" }],
+  "links": [{ "kind": "link", "target": "setup.md", "line": 3, "block": 1, "bare": false }],
+  "texts": [
+    { "text": "Guide", "line": 1, "block": 0 },
+    { "text": "See ", "line": 3, "block": 1 },
+    { "text": " and §2.", "line": 3, "block": 1 }
+  ]
+}
+```
+
+The full field list is the header comment of `formats/index.mjs`.
+
+Decisions:
+
+- **Adapters, not per-script branches.** A new format touches one file and
+  the registry, not seven scripts.
+- **`secure` mode for AsciiDoc.** Audited docs may be untrusted. Secure mode
+  never reads an `include::` target or any other file; the adapter still
+  reports the include so `check-refs` can verify the target exists.
+- **No Asciidoctor internals.** Raw list-item and title text lives only in
+  internal fields in Asciidoctor 4, so the adapter derives it from source
+  lines and node start lines.
+- **`.mdx` excluded.** Linguist classifies it as source, and markdown-it
+  cannot parse JSX.
+- **`.asc` not claimed.** PGP armor uses it too.
+
+### Known limitations of the AsciiDoc adapter
+
+Accepted on review, not planned fixes:
+
+- `ifeval::[]` content is treated as kept; expressions are not evaluated.
+- The single-line `ifdef::a[content]` form is always treated as excluded.
+- Conditionals inside an AsciiDoc-style (`a|`) table cell get approximate
+  line numbers. Nothing is dropped.
+- A `link:` inside a `format=dsv` (colon-separated) table is not reported,
+  because the `:` separator splits the macro.
+- Any regex span (URL, link text, attribute list) longer than 2000
+  characters is dropped, not truncated. This keeps scanning linear.
+
+### Adding a format
+
+1. Vendor a parser if one is needed: pin it in `.taskfiles/vendor/package.json`,
+   add an entry in `.taskfiles/scripts/build-vendor.sh` and its package to the
+   LICENSES list, run `task vendor`.
+2. Write `scripts/formats/<name>.mjs` exporting `{ name, extensions,
+   readmeNames, parse }`; `parse` returns the model with exact 1-based lines.
+3. Add it to `FORMATS` in `scripts/formats/index.mjs`.
+4. Write `tests/scripts/docs-organization/__fixtures__/formats/sample.<ext>`
+   as the same document as `sample.md`, line for line. The conformance test
+   picks it up automatically and fails until the model matches.
+5. Write `tests/scripts/docs-organization/format-<name>.test.mjs` for the
+   format's own constructs, with negative cases.
+6. Add the format to `reference/supported-formats.md` and the README's
+   "Supported formats" table.
+
 ## The palette system
 
 Four palettes ship in `reference/palettes/`: Solar (default), Federation,
@@ -308,7 +391,7 @@ grammar fails loudly instead of leaving the hint and the house-style table
 stale.
 
 `apply-palette.mjs` and `swap-palette.sh` rewrite an existing diagram to a
-different palette. For a `.md`, `apply-palette.mjs --swap` finds fences with
+different palette. For a doc file, `apply-palette.mjs --swap` finds fences with
 `lint-mermaid.mjs`'s own `extractMermaidBlocks` and splices by its offsets, so
 its optional block argument (`swap-palette.sh --block N`) addresses exactly the
 block a finding's 1-based `block` field names and no byte outside a swapped
@@ -400,33 +483,36 @@ flowchart LR
   class Red sysF
 ```
 
-The skill shells out to two npm packages: `@aj-archipelago/merval` for mermaid
-validation, and `markdown-it` for the `/docs-audit` prose and reference lanes.
-Neither would survive an install as npm packages — lola strips any directory
-named `node_modules` from the copy it ships. The staleness lane also needs
-GitHub Linguist's language, vendor, and documentation data; that isn't an npm
-package but a build-time fetch, trimmed to what `check-staleness.mjs` needs.
-All three land in `scripts/vendor/`, which lola ships verbatim.
+The skill shells out to several npm packages: `@aj-archipelago/merval` for
+mermaid validation; `markdown-it` plus its `markdown-it-footnote`,
+`markdown-it-container`, and `markdown-it-admon` plugins for the Markdown
+adapter; and `@asciidoctor/core` for the AsciiDoc adapter. None would survive
+an install as npm packages — lola strips any directory named `node_modules`
+from the copy it ships. The staleness lane also needs GitHub Linguist's
+language, vendor, and documentation data; that isn't an npm package but a
+build-time fetch, trimmed to what `check-staleness.mjs` needs. All four land
+in `scripts/vendor/`, which lola ships verbatim.
 
 The name is the entire constraint. lola's `ALWAYS_IGNORE` is a fixed set of
 directory names (`node_modules` among them, `vendor` not), not a rule about
 dependencies in general, so a `vendor/` directory ships verbatim at any depth.
 The npm packages are MIT and bundle cleanly, and Linguist's data (also MIT) is
-trimmed to what `check-staleness.mjs` needs, so all three ship pre-built,
+trimmed to what `check-staleness.mjs` needs, so all four ship pre-built,
 alongside the licence file that covers them:
 
 ```text
-scripts/vendor/merval.mjs        90K   @aj-archipelago/merval, no deps
-scripts/vendor/markdown-it.mjs  240K   markdown-it + 6 transitive deps
-scripts/vendor/linguist.json     19K   extensions, filenames, exclude patterns from GitHub Linguist
-scripts/vendor/LICENSES.md             license texts for all eight packages plus Linguist (MIT, except argparse: Python-2.0, entities: BSD-2-Clause)
+scripts/vendor/merval.mjs        92K   @aj-archipelago/merval, no deps
+scripts/vendor/markdown-it.mjs  256K   markdown-it + footnote/container/admon plugins + 6 transitive deps
+scripts/vendor/asciidoctor.mjs  864K   @asciidoctor/core, no deps
+scripts/vendor/linguist.json     20K   extensions, filenames, exclude patterns from GitHub Linguist
+scripts/vendor/LICENSES.md             license texts for all twelve packages plus Linguist (MIT, except argparse: Python-2.0, entities: BSD-2-Clause)
 ```
 
-`.taskfiles/vendor/package.json` keeps the two npm packages as
+`.taskfiles/vendor/package.json` keeps the six bundled npm packages as
 `devDependencies` — they are
 build inputs, not runtime imports — alongside a pinned `esbuild` and `js-yaml`
 (used only to convert Linguist's YAML sources to JSON at build time).
-`task vendor` installs that toolchain and regenerates all four files in
+`task vendor` installs that toolchain and regenerates all five files in
 `scripts/vendor/`. CI reruns it and fails on a non-empty `git diff` of that
 directory, so a committed bundle
 can never drift from the version `package.json` pins. A Dependabot bump

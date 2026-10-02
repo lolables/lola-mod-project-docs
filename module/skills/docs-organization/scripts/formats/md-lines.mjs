@@ -14,11 +14,10 @@
 // contains no "\n" (the newline rule always flushes first), so it shares that
 // line. The one flush outside any rule — trailing text at the end of the
 // top-level tokenize — is stamped by a post-process rule with the last line.
-// Only *inline* rules are wrapped: a token a core rule creates after inline
-// parsing (markdown-it's fuzzy linkify) is never stamped, so a caller that
-// enables `linkify` must disable fuzzy links.
-
-import MarkdownIt from './vendor/markdown-it.mjs';
+// Only *inline* rules are wrapped: any token a core rule creates after inline
+// parsing (markdown-it's linkify for schemes the inline rule skips, such as
+// fuzzy links, `mailto:`, and `//`) is never stamped, so a caller that
+// enables `linkify` must turn those off.
 
 const lineAt = (src, pos) => {
   let n = 0;
@@ -26,11 +25,12 @@ const lineAt = (src, pos) => {
   return n;
 };
 
-// Returns `inlineBlocks(content)`: every inline block of `content` paired with
-// `lineOf(child)`, the 1-based source line of one of its child tokens. Table
-// cells have no map of their own; their row (`tr_open`) does.
-export function lineAwareMarkdown(options = {}) {
-  const md = new MarkdownIt(options);
+// Wraps a configured markdown-it instance — plugins already applied, so their
+// inline rules are wrapped too — and returns `lineOf(blockLine0, token)`: the
+// 1-based source line of an inline child token, given the 0-based first line
+// of the block it came from. Table cells have no map of their own; the caller
+// passes the row's (`tr_open`).
+export function stampInlineLines(md) {
   const tokenLine = new WeakMap();
   const stampNew = (state, from, line) => {
     for (let i = from; i < state.tokens.length; i++) {
@@ -50,14 +50,5 @@ export function lineAwareMarkdown(options = {}) {
   md.inline.ruler2.before('balance_pairs', 'stamp_trailing_text', (state) => {
     stampNew(state, 0, lineAt(state.src, state.src.length));
   });
-  function* inlineBlocks(content) {
-    let rowStart = null;
-    for (const b of md.parse(content, {})) {
-      if (b.type === 'tr_open') rowStart = b.map[0];
-      if (b.type !== 'inline' || !b.children) continue;
-      const base = b.map ? b.map[0] : rowStart;
-      yield { block: b, lineOf: (tok) => base + tokenLine.get(tok) + 1 };
-    }
-  }
-  return { md, inlineBlocks };
+  return (blockLine0, tok) => blockLine0 + tokenLine.get(tok) + 1;
 }

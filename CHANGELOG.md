@@ -6,6 +6,34 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **AsciiDoc support.** Every check — structure, staleness, readability,
+  references, content-drift chunking, citations, mermaid lint, and palette
+  swap — runs on `.adoc`/`.asciidoc` files, and `README.adoc` satisfies the
+  README rule. Asciidoctor parses in `secure` mode, so `include::` targets
+  are checked but never read.
+- **Broader Markdown.** `.markdown`, `.mdown`, `.mkd`, and `.mkdn` files are
+  audited. Front matter is skipped, not audited. Footnotes, GFM alerts,
+  MkDocs `!!!` admonitions, and `:::` containers are understood, so links
+  and diagrams inside them are checked.
+- **`PARSE_WARNING`** (info, `/docs-audit` Lane 4, AsciiDoc only) reports
+  parser warnings such as an unterminated block — Markdown never produces
+  it.
+
+### Changed
+
+- `md-files.mjs` and `md-chunks.mjs` are now `doc-files.mjs` and
+  `doc-chunks.mjs`.
+- `WALL_OF_TEXT` now also checks callouts (GFM alerts, admonitions); plain
+  quotations are still exempt.
+- `SPLIT_CANDIDATE`'s file size, and now its section spans too, no longer
+  count a trailing newline as a line.
+- Front matter is no longer audited; links and URLs inside it were checked
+  before.
+- Doc extensions match case-insensitively (`GUIDE.MD` is audited).
+- `MISSING_README` names every accepted README file.
+
 ## [0.1.0] - 2026-10-01
 
 Initial release.

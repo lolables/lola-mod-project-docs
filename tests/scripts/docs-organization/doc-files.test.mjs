@@ -11,7 +11,7 @@ after(() => {
   for (const d of tmpDirs) rmSync(d, { recursive: true, force: true });
 });
 
-const SCRIPT = fileURLToPath(new URL('../../../module/skills/docs-organization/scripts/md-files.mjs', import.meta.url));
+const SCRIPT = fileURLToPath(new URL('../../../module/skills/docs-organization/scripts/doc-files.mjs', import.meta.url));
 
 function cli(cwd, ...args) {
   try {
@@ -25,7 +25,7 @@ function cli(cwd, ...args) {
 //   .issue-draft/ISSUE.md, .issue-draft/notes.txt, .issue-draft/.cache/x.md
 //   CLAUDE.md
 function tree() {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'md-files-')));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'doc-files-')));
   tmpDirs.push(dir);
   mkdirSync(join(dir, '.issue-draft', '.cache'), { recursive: true });
   writeFileSync(join(dir, '.issue-draft', 'ISSUE.md'), '# i\n');
@@ -40,12 +40,12 @@ test('CLI: a dot-directory given as the root is walked; nested dot-dirs are not'
   assert.deepEqual(cli(dir, '.issue-draft'), { code: 0, out: [join('.issue-draft', 'ISSUE.md')] });
 });
 
-test('CLI: an explicit markdown file is listed even when it is an LLM-config file', () => {
+test('CLI: an explicit doc file is listed even when it is an LLM-config file', () => {
   const dir = tree();
   assert.deepEqual(cli(dir, 'CLAUDE.md'), { code: 0, out: ['CLAUDE.md'] });
 });
 
-test('CLI: an explicit non-markdown file yields nothing', () => {
+test('CLI: an explicit non-doc file yields nothing', () => {
   const dir = tree();
   assert.deepEqual(cli(dir, join('.issue-draft', 'notes.txt')), { code: 0, out: [] });
 });
@@ -93,7 +93,7 @@ test('CLI: invocable via a script path containing a space', () => {
   const targetDir = join(spaceParent, 'sp ace');
   copyScriptsDirTo(targetDir);
 
-  const { code, out } = runScriptAt(join(targetDir, 'md-files.mjs'), tree(), ['.issue-draft']);
+  const { code, out } = runScriptAt(join(targetDir, 'doc-files.mjs'), tree(), ['.issue-draft']);
   assert.equal(code, 0);
   assert.deepEqual(out, [join('.issue-draft', 'ISSUE.md')]);
 });
@@ -103,7 +103,7 @@ test('CLI: invocable through a symlinked directory', () => {
   const linkDir = join(parent, 'link');
   symlinkSync(SCRIPTS_DIR, linkDir, 'dir');
 
-  const { code, out } = runScriptAt(join(linkDir, 'md-files.mjs'), tree(), ['.issue-draft']);
+  const { code, out } = runScriptAt(join(linkDir, 'doc-files.mjs'), tree(), ['.issue-draft']);
   assert.equal(code, 0);
   assert.deepEqual(out, [join('.issue-draft', 'ISSUE.md')]);
 });
@@ -117,7 +117,34 @@ test('CLI: invocable through a symlinked directory under node --preserve-symlink
   const linkDir = join(parent, 'link');
   symlinkSync(SCRIPTS_DIR, linkDir, 'dir');
 
-  const { code, out } = runScriptAt(join(linkDir, 'md-files.mjs'), tree(), ['.issue-draft'], ['--preserve-symlinks-main']);
+  const { code, out } = runScriptAt(join(linkDir, 'doc-files.mjs'), tree(), ['.issue-draft'], ['--preserve-symlinks-main']);
   assert.equal(code, 0);
   assert.deepEqual(out, [join('.issue-draft', 'ISSUE.md')]);
+});
+
+test('CLI: every registered Markdown extension is listed; .mdx and .txt are not', () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'doc-files-')));
+  tmpDirs.push(dir);
+  for (const n of ['a.md', 'b.markdown', 'c.mdown', 'd.mkd', 'e.mkdn', 'F.MD', 'g.mdx', 'h.txt']) writeFileSync(join(dir, n), '# x\n');
+  const { code, out } = cli(dir, '.');
+  assert.equal(code, 0);
+  assert.deepEqual(out.map((p) => p.replace(/^\.\//, '')).sort(), ['F.MD', 'a.md', 'b.markdown', 'c.mdown', 'd.mkd', 'e.mkdn']);
+});
+
+test('CLI: AsciiDoc extensions are listed; .asc is not (it is also PGP armor)', () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'doc-files-')));
+  tmpDirs.push(dir);
+  for (const n of ['a.adoc', 'b.asciidoc', 'c.asc', 'd.txt']) writeFileSync(join(dir, n), '= x\n');
+  const { code, out } = cli(dir, '.');
+  assert.equal(code, 0);
+  assert.deepEqual(out.map((p) => p.replace(/^\.\//, '')).sort(), ['a.adoc', 'b.asciidoc']);
+});
+
+test('CLI: a KEYS.asc file is not listed (PGP-armored keys, not AsciiDoc)', () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'doc-files-')));
+  tmpDirs.push(dir);
+  writeFileSync(join(dir, 'KEYS.asc'), '-----BEGIN PGP PUBLIC KEY BLOCK-----\n');
+  const { code, out } = cli(dir, '.');
+  assert.equal(code, 0);
+  assert.deepEqual(out, []);
 });

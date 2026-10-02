@@ -381,6 +381,49 @@ fi
 popd > /dev/null
 rm -rf "$dir"
 
+# README.markdown satisfies the README rule
+dir=$(mktmp); pushd "$dir" > /dev/null
+git init -q
+echo "# Test" > README.markdown
+out=$(bash "$SCRIPT" 2>&1 || true)
+refute_grep 'MISSING_README' "$out" "README.markdown satisfies the README rule"
+popd > /dev/null; rm -rf "$dir"
+
+# An empty README.markdown does not
+dir=$(mktmp); pushd "$dir" > /dev/null
+git init -q
+: > README.markdown
+out=$(bash "$SCRIPT" 2>&1 || true)
+assert_grep '"code": *"MISSING_README"' "$out" "empty README.markdown flags MISSING_README"
+popd > /dev/null; rm -rf "$dir"
+
+# FORKED_COPY covers every registered doc extension, and exempts index.<ext>
+dir=$(mktmp); pushd "$dir" > /dev/null
+git init -q
+echo "# Test" > README.md
+mkdir canon mod
+for n in a b; do echo "# $n" > "canon/$n.md"; done
+echo "canon" > canon/guide.markdown
+echo "canon" > canon/index.markdown
+ln -s ../canon/a.md mod/a.md
+ln -s ../canon/b.md mod/b.md
+echo "forked" > mod/guide.markdown
+echo "forked" > mod/index.markdown
+git add README.md canon mod
+git -c user.name=check-structure-test -c user.email=check-structure-test@invalid commit -qm init
+out=$(bash "$SCRIPT" 2>&1 || true)
+assert_grep 'mod/guide.markdown' "$out" "a diverged .markdown copy flags FORKED_COPY"
+refute_grep 'mod/index.markdown' "$out" "index.markdown is exempt like index.md"
+popd > /dev/null; rm -rf "$dir"
+
+# README.adoc satisfies the README rule
+dir=$(mktmp); pushd "$dir" > /dev/null
+git init -q
+echo "= Test" > README.adoc
+out=$(bash "$SCRIPT" 2>&1 || true)
+refute_grep 'MISSING_README' "$out" "README.adoc satisfies the README rule"
+popd > /dev/null; rm -rf "$dir"
+
 echo ""
 echo "Results: $pass_count passed, $fail_count failed"
 if [ "$fail_count" -gt 0 ]; then

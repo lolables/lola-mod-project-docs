@@ -1,0 +1,30 @@
+= Fenced blocks
+
+Prose before the first diagram.
+
+[mermaid]
+....
+flowchart LR
+  A[Input] --> B[Output]
+....
+
+More prose. The next block opens with a blank line.
+
+[source,mermaid]
+----
+
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#2f6dab',
+  'primaryTextColor': '#1e1e1e',
+  'primaryBorderColor': '#7c8ba1',
+  'lineColor': '#7c8ba1',
+  'edgeLabelBackground': '#eef2f8',
+  'clusterBkg': 'transparent',
+  'clusterBorder': '#7c8ba1',
+  'titleColor': '#7c8ba1',
+  'fontFamily': 'system-ui, sans-serif'
+}}}%%
+flowchart LR
+  A[Input] --> B[(store)]
+  classDef myCustomClass fill:#3e6fa0,color:#ffffff
+----

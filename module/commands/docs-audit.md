@@ -44,8 +44,8 @@ faster:
 - Lane 3: `node "$SKILL_DIR/scripts/check-prose.mjs" <in-scope-files>`
 - Lane 4: `node "$SKILL_DIR/scripts/check-refs.mjs" <in-scope-files>`
 - Lane 5: `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <in-scope-files>`
-- Path mode, directory expansion: `node "$SKILL_DIR/scripts/md-files.mjs" <path>...`
-- Lane 6 content-drift chunks: `node "$SKILL_DIR/scripts/md-chunks.mjs" <file>`
+- Path mode, directory expansion: `node "$SKILL_DIR/scripts/doc-files.mjs" <path>...`
+- Lane 6 content-drift chunks: `node "$SKILL_DIR/scripts/doc-chunks.mjs" <file>`
 - Document mode, citations: `node "$SKILL_DIR/scripts/fetch-citations.mjs" --root <root>`
   (`--offline`, or `--out <dir>` under `--fetch`)
 
@@ -83,18 +83,20 @@ hardcode `.claude/skills/...` or search candidate paths.
   exactly as the steps below describe. If `--fetch` was given without paths,
   stop and tell the user `--fetch` needs at least one path; run nothing.
 - **One or more paths — path mode.** Expand each path argument separately
-  with `node "$SKILL_DIR/scripts/md-files.mjs" '<path>'` (JSON array), and
+  with `node "$SKILL_DIR/scripts/doc-files.mjs" '<path>'` (JSON array), and
   keep track of which argument each file came from (the citations step needs
   it); a file two arguments reach is audited once, under the first. An
-  explicit `.md` file is always audited, even `CLAUDE.md` or a gitignored
+  explicit doc file (any extension a registered format owns — `.md`,
+  `.markdown`, `.adoc`, … — see `$SKILL_DIR/SKILL.md` § "Supported
+  formats") is always audited, even `CLAUDE.md` or a gitignored
   draft; a directory is walked with its own root honored even when it is a
   dot-directory (`.issue-draft/`), nested dot-directories skipped. The
-  default scope exclusions do **not** apply in path mode. `md-files.mjs`
+  default scope exclusions do **not** apply in path mode. `doc-files.mjs`
   returns nothing for an explicit file with any other extension, so name
   every path argument that produced no files in the report (see step 8).
   `.mmd` diagram files, named or found, are not audited in path mode;
   `/diagram-test` lints them. If
-  no argument produced a file, tell the user no markdown files were found
+  no argument produced a file, tell the user no doc files were found
   and stop. If no file lands in document mode (below), `--fetch` has no
   effect; say so in the `Mode:` lines.
 - For each expanded file, run `git -C '<dir>' rev-parse --show-toplevel`,
@@ -121,7 +123,7 @@ Which lanes run:
 | 6 Grounding, Cold read, Completeness for type, Structure for procedures, Missing diagrams | run | run | run |
 | 6 Content drift | vs. repo code | vs. repo code | vs. cited sources |
 | 6 Diagram drift | run | run | skip |
-| 6 Hero demo | README / landing | only the repo's root `README.md` | skip |
+| 6 Hero demo | README / landing | only the repo's root README | skip |
 
 A skipped lane is listed as skipped in the report, never presented as a
 pass.
@@ -142,9 +144,10 @@ pass.
    - In path mode, `<in-scope-file>...` is the group's expanded file list
      from "Invocation and modes"; skip the enumeration rule below.
    - In a repo sweep, enumerate project documentation files per the scope rules in
-     `$SKILL_DIR/SKILL.md` (§ "Scope of audit"): `README.md`, every `.md`
-     under `docs/`, and (for lola module repos) project-shipped docs under
-     `module/`. **Exclude** `.gitignore`-matched paths, dot-directories
+     `$SKILL_DIR/SKILL.md` (§ "Scope of audit"): the root README (`README.md`,
+     `README.adoc`, or any registered README
+     name), every doc file under `docs/`, and (for lola module repos)
+     project-shipped docs under `module/`. **Exclude** `.gitignore`-matched paths, dot-directories
      (`.git/`, `.claude/`, `.opencode/`, `.lola/`, etc.), and LLM-config
      files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursorrules`). Prefer
      the host's built-in Glob tool; if the host has none, use `git -c
@@ -155,16 +158,16 @@ pass.
      symlinked paths in the list — see the scope rules on symlinks.
    - Run `node "$SKILL_DIR/scripts/check-prose.mjs" <in-scope-file>...` and
      parse the JSON. Collect its findings:
-     - `WALL_OF_TEXT` — a top-level paragraph over ~120 words unbroken; split
+     - `WALL_OF_TEXT` — a top-level or callout (alert, admonition) paragraph over ~120 words unbroken; split
        at a topic seam.
      - `DENSE_BULLET` — a *flat* list item (no sub-bullets) over ~90 words;
        fix by decomposing into a short lead-in plus nested sub-bullets. This
        is the class the per-paragraph rule misses because it excludes lists.
-     - `SPLIT_CANDIDATE` — the whole file, or one H2 section, over the size
+     - `SPLIT_CANDIDATE` — the whole file, or one level-2 section (`##` / `==`), over the size
        budget; consider extracting an audience-specific how-to under `docs/`.
-   - This lane is **deterministic**: it counts words and line spans over a real
-     markdown AST (fenced code, tables, blockquotes, and nested lists are
-     distinguished by node type), so it enumerates every violation
+   - This lane is **deterministic**: it counts words and line spans over each
+     file's parsed structure (code blocks, tables, quotations, and nested
+     lists are distinguished by the format's parser), so it enumerates every violation
      exhaustively and returns byte-identical results every run. Do **not**
      ask an LLM to hunt for wall-of-text or dense bullets — an LLM
      under-reports on long files (its recall fades toward the end) and the
@@ -195,9 +198,9 @@ pass.
 5. **Lane 4 — Reference integrity (fast, deterministic):**
    - Run `node "$SKILL_DIR/scripts/check-refs.mjs" <in-scope-file>...` (same scope
      as Lane 3) and parse the JSON. Collect its findings:
-     - `REF_BROKEN` — a markdown link or image to a local path that resolves to nothing.
+     - `REF_BROKEN` — a link, image, cross-reference, or include to a local path that resolves to nothing.
        **Warning.** Fix the path or link the real target.
-     - `REF_NOT_IN_GIT` — a markdown link or image to a file that exists but git does not
+     - `REF_NOT_IN_GIT` — a link, image, cross-reference, or include to a file that exists but git does not
        track (gitignored/unstaged), so it dangles for anyone who clones.
        **Warning.** Commit it, or make it an explicit external link if it is
        intentionally private.
@@ -206,6 +209,9 @@ pass.
        A cheap deterministic tell for a reference (often to an external/internal
        spec) the reader can't follow. The fix is to *link* it or confirm the
        target ships — **never strip the citation**.
+     - `PARSE_WARNING` — the AsciiDoc parser warned (an unterminated block, a
+       malformed list) — Markdown never produces it; the doc may render
+       differently from what the checks read. **Info.** Fix the markup.
    - The rule is "a reference should be *followable*", not "everything
      referenced must be committed" — some references are legitimately private or
      external. The script only surfaces danglers; the author resolves them (link,
@@ -222,19 +228,23 @@ pass.
    - Lane 4 gets **every** path, symlinks included (see the scope rules). A
      finding whose message says the path is a symlink is broken from that
      path only; the fix still goes in the canonical file it names.
-   - Only markdown links are resolved (unambiguous, doc-relative). Inline-code
+   - Only references written as links are resolved (links, images, AsciiDoc
+     `xref:`/`<<…>>` cross-references and `include::` targets —
+     unambiguous, doc-relative). Inline-code
      mentions of source paths are deliberately not resolved — they are
      repo-root-relative and riddled with placeholders, so resolving them
      heuristically is mostly false positives; stale source citations are Lane 6's
      content-drift job.
 
 6. **Lane 5 — Mermaid (fast, deterministic):**
-   - Enumerate every `.mmd` file and fenced ```mermaid block within the
+   - Enumerate every `.mmd` file and every mermaid block (a ```mermaid fence
+     in Markdown, a `[mermaid]` or `[source,mermaid]` block in AsciiDoc)
+     within the
      in-scope documentation files (same scope as Lane 3).
    - Run `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <in-scope-files>`
      and parse the JSON. Collect each finding by its `severity` and `line`
-     (1-based; a fenced block's line is relative to the containing `.md`
-     file, an `.mmd` file's line is relative to itself).
+     (1-based; a block's line is relative to the containing doc file,
+     an `.mmd` file's line is relative to itself).
    - Codes this lane emits: `SYNTAX_ERROR` and `INLINE_CLASS_NOT_SUPPORTED`
      (blocker — the diagram fails validation), `MISSING_HOUSE_STYLE_HEADER`
      (blocker — no `%%{init}%%` block), `LEGACY_HOUSE_STYLE_HEADER` (warning
@@ -324,7 +334,7 @@ pass.
           gets several of them — the one exception to one subagent per prompt
           per file. Prefix them with the read-only rule only, not the
           grounding note (Round 15 measured them that way).
-          1. **Chunk.** Run `node "$SKILL_DIR/scripts/md-chunks.mjs" <file>`;
+          1. **Chunk.** Run `node "$SKILL_DIR/scripts/doc-chunks.mjs" <file>`;
              `chunks` holds heading-aligned line ranges (one range for a doc
              of 150 lines or fewer).
           2. **Extract**, one subagent per range:
@@ -500,7 +510,8 @@ pass.
        6. **Hero demo (README/landing only, info-level encouragement, strict
           bar):** Run this ONLY for the repository README or a doc grounding
           classified as `landing`; skip every other file. In repo-scoped mode
-          run it only for the repo's root `README.md`; never in document mode.
+          run it only for the repo's root README (any registered README
+          name); never in document mode.
           "Read <file>. Judge
           whether this landing page would be meaningfully improved by a DEMO — an
           animated terminal recording (asciinema / GIF) or a short screen capture
@@ -520,7 +531,7 @@ pass.
           charmbracelet, for a terminal; a screen capture for a GUI). When in
           doubt return empty — a false nag is worse than a miss. Reply in under
           150 words."
-   - For each `.mmd` file or fenced ```mermaid block found within the
+   - For each `.mmd` file or mermaid block found within the
      enumerated documentation files (same scope rules apply; skipped in
      document mode, where there is no code to compare against):
      - Dispatch an `Explore`-type subagent: "Read-only: verify by reading
@@ -560,7 +571,7 @@ pass.
 
      After the `Mode:` lines, print `Snapshots: <dir>...` naming each
      snapshot directory only when `--fetch` wrote any snapshots, and
-     `No markdown files: <path>` for each path argument that produced no
+     `No doc files: <path>` for each path argument that produced no
      files. All groups share one set of severity tables; the `File` column
      (see below) tells them apart.
    - For each non-empty severity, a markdown table with these columns:
@@ -571,7 +582,7 @@ pass.
          `SUPERPOWERS_IN_GIT`, `MISSING_ADR_INDEX`, `FORKED_COPY`.
        - Lane 2: `STALENESS_NOT_ASSESSED`, `STALE_README`, `STALE_DOC`.
        - Lane 3: `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE`.
-       - Lane 4: `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`.
+       - Lane 4: `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`, `PARSE_WARNING`.
        - Lane 5: `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`,
          `MISSING_HOUSE_STYLE_HEADER`, `LEGACY_HOUSE_STYLE_HEADER`,
          `UNAPPROVED_CLASSNAME`, `UNAPPROVED_STYLE`, `LOW_CONTRAST_TEXT`,
@@ -637,6 +648,8 @@ pass.
          `/docs-update` (repoint, commit, or make it an explicit external link).
        - `UNLINKED_REF`: the `§` citation snippet. Info. Fix is to add a link
          to the referenced section — never strip the citation.
+       - `PARSE_WARNING`: the parser's message. Info. Fixable by correcting
+         the markup the parser names.
        - `SYNTAX_ERROR`: merval's error message and line/column, plus a hint
          naming the likely unsupported shape when one is detected. Blocker.
          Fix requires rewriting the diagram source; consult
@@ -821,9 +834,9 @@ Then: "Run /docs-update to fix these findings interactively."
   Also record a
   `LANE_FAILED` **Warning** with `File` `—` naming the lane (`check-prose` /
   `check-refs`), so a crashed lane never reads as clean.
-- If `md-files.mjs` exits 2 (a missing path, a dangling `.md` symlink, or an
+- If `doc-files.mjs` exits 2 (a missing path, a dangling doc symlink, or an
   unreadable directory): surface the error and stop before any lane runs.
-- If `md-chunks.mjs` exits 2 for a file: record a `LANE_FAILED` **Warning**
+- If `doc-chunks.mjs` exits 2 for a file: record a `LANE_FAILED` **Warning**
   for that file's content drift; never guess the ranges yourself.
 - `fetch-citations.mjs` exits 1 whenever it reports a finding; that is a
   result. On exit 2, surface the error, record a `LANE_FAILED` **Warning**

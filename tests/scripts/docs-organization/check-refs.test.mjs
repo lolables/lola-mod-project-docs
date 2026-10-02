@@ -49,16 +49,16 @@ function makeRepo(files, tracked, links = {}) {
   return { root, trackedSet };
 }
 
-test('a tracked link, an external URL, and an anchor are all clean', () => {
+test('a tracked link, an external URL, and an anchor are all clean', async () => {
   const doc = 'See [arch](docs/arch.md), the [site](https://example.com), and [top](#intro).';
   const { root, trackedSet } = makeRepo(
     { 'README.md': doc, 'docs/arch.md': '# arch\n' },
     ['README.md', 'docs/arch.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a link to a gitignored file flags REF_NOT_IN_GIT', () => {
+test('a link to a gitignored file flags REF_NOT_IN_GIT', async () => {
   const { root, trackedSet } = makeRepo(
     {
       '.gitignore': 'docs/private/\n',
@@ -67,29 +67,34 @@ test('a link to a gitignored file flags REF_NOT_IN_GIT', () => {
     },
     ['.gitignore', 'README.md'],
   );
-  assert.deepEqual(codes(analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_NOT_IN_GIT']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_NOT_IN_GIT']);
 });
 
-test('a link to a nonexistent file flags REF_BROKEN', () => {
+test('a link to a nonexistent file flags REF_BROKEN', async () => {
   const { root, trackedSet } = makeRepo({ 'README.md': 'See [gone](docs/gone.md).' }, ['README.md']);
-  assert.deepEqual(codes(analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_BROKEN']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_BROKEN']);
 });
 
-test('an inline-code source path is NOT flagged (mentions are not links)', () => {
+test('a leading horizontal rule is not front matter, so a broken link after it is still flagged REF_BROKEN', async () => {
+  const { root, trackedSet } = makeRepo({ 'README.md': '---\n\n[broken](nope.md)\n\n---\n\nBody.\n' }, ['README.md']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_BROKEN']);
+});
+
+test('an inline-code source path is NOT flagged (mentions are not links)', async () => {
   // The repo has no such file, but `internal/x.go` is a mention, not a link.
   const { root, trackedSet } = makeRepo({ 'README.md': 'The entry point is `internal/x.go`.' }, ['README.md']);
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a link to a tracked directory is followable (not flagged)', () => {
+test('a link to a tracked directory is followable (not flagged)', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'See the [agents](module/agents/).', 'module/agents/a.md': '# a\n' },
     ['README.md', 'module/agents/a.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a link to a gitignored directory flags REF_NOT_IN_GIT', () => {
+test('a link to a gitignored directory flags REF_NOT_IN_GIT', async () => {
   const { root, trackedSet } = makeRepo(
     {
       '.gitignore': 'build/\n',
@@ -98,34 +103,34 @@ test('a link to a gitignored directory flags REF_NOT_IN_GIT', () => {
     },
     ['.gitignore', 'README.md'],
   );
-  assert.deepEqual(codes(analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_NOT_IN_GIT']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_NOT_IN_GIT']);
 });
 
-test('a bare § citation with no link flags UNLINKED_REF', () => {
+test('a bare § citation with no link flags UNLINKED_REF', async () => {
   const { root, trackedSet } = makeRepo({ 'README.md': 'This follows spec §10.9 E-3.' }, ['README.md']);
-  assert.deepEqual(codes(analyzeFile(join(root, 'README.md'), root, trackedSet)), ['UNLINKED_REF']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['UNLINKED_REF']);
 });
 
-test('a § inside a resolvable link is not flagged', () => {
+test('a § inside a resolvable link is not flagged', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'See [§10.9](docs/arch.md).', 'docs/arch.md': '# arch\n' },
     ['README.md', 'docs/arch.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a § citation whose inline block also links a document is not flagged', () => {
+test('a § citation whose inline block also links a document is not flagged', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'Per §3.2 of the [spec](spec.md), retries back off.', 'spec.md': '# spec\n' },
     ['README.md', 'spec.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a § citation is still flagged when the only link is in a different block', () => {
+test('a § citation is still flagged when the only link is in a different block', async () => {
   const doc = 'Per §3.2, retries back off.\n\nSee the [spec](spec.md).\n';
   const { root, trackedSet } = makeRepo({ 'README.md': doc, 'spec.md': '# spec\n' }, ['README.md', 'spec.md']);
-  assert.deepEqual(lines(analyzeFile(join(root, 'README.md'), root, trackedSet)), [['UNLINKED_REF', 1]]);
+  assert.deepEqual(lines(await analyzeFile(join(root, 'README.md'), root, trackedSet)), [['UNLINKED_REF', 1]]);
 });
 
 // --- exact line numbers: markdown-it only maps whole blocks, so every
@@ -133,7 +138,7 @@ test('a § citation is still flagged when the only link is in a different block'
 
 const lines = (f) => f.map((x) => [x.code, x.line]);
 
-test('every finding reports the exact line its link or citation is on', () => {
+test('every finding reports the exact line its link or citation is on', async () => {
   const doc = [
     '# Title [h](gone-h.md)', //                     1
     '',
@@ -175,13 +180,13 @@ test('every finding reports the exact line its link or citation is on', () => {
   ].join('\n');
   const { root, trackedSet } = makeRepo({ 'README.md': doc }, ['README.md']);
   const B = 'REF_BROKEN';
-  assert.deepEqual(lines(analyzeFile(join(root, 'README.md'), root, trackedSet)), [
+  assert.deepEqual(lines(await analyzeFile(join(root, 'README.md'), root, trackedSet)), [
     [B, 1], [B, 5], [B, 8], [B, 10], [B, 12], [B, 15], [B, 19], [B, 20],
     [B, 23], [B, 26], [B, 30], [B, 32], [B, 33], ['UNLINKED_REF', 36],
   ]);
 });
 
-test('reference-style links and images report the line they are used on, not the definition', () => {
+test('reference-style links and images report the line they are used on, not the definition', async () => {
   const doc = [
     'Intro.',
     '',
@@ -194,7 +199,7 @@ test('reference-style links and images report the line they are used on, not the
     '',
   ].join('\n');
   const { root, trackedSet } = makeRepo({ 'README.md': doc }, ['README.md']);
-  const f = analyzeFile(join(root, 'README.md'), root, trackedSet);
+  const f = await analyzeFile(join(root, 'README.md'), root, trackedSet);
   assert.deepEqual(lines(f), [['REF_BROKEN', 3], ['REF_BROKEN', 4], ['REF_BROKEN', 4]]);
   assert.match(f[0].message, /gone-ref\.md/);
   assert.match(f[1].message, /gone-short\.md/);
@@ -203,22 +208,22 @@ test('reference-style links and images report the line they are used on, not the
 
 // --- images are references too: a broken `![](x.png)` renders as nothing. ---
 
-test('an image with a missing src flags REF_BROKEN naming the src', () => {
+test('an image with a missing src flags REF_BROKEN naming the src', async () => {
   const { root, trackedSet } = makeRepo({ 'README.md': 'Intro.\n\n![](missing.png)\n' }, ['README.md']);
-  const f = analyzeFile(join(root, 'README.md'), root, trackedSet);
+  const f = await analyzeFile(join(root, 'README.md'), root, trackedSet);
   assert.deepEqual(lines(f), [['REF_BROKEN', 3]]);
   assert.match(f[0].message, /missing\.png/);
 });
 
-test('an image that exists but is gitignored flags REF_NOT_IN_GIT', () => {
+test('an image that exists but is gitignored flags REF_NOT_IN_GIT', async () => {
   const { root, trackedSet } = makeRepo(
     { '.gitignore': '*.png\n', 'README.md': '![diagram](arch.png)', 'arch.png': 'png' },
     ['.gitignore', 'README.md'],
   );
-  assert.deepEqual(codes(analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_NOT_IN_GIT']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_NOT_IN_GIT']);
 });
 
-test('a tracked image, a percent-encoded tracked image, an external image, and a data: URI are clean', () => {
+test('a tracked image, a percent-encoded tracked image, an external image, and a data: URI are clean', async () => {
   const doc = [
     '![a](img/a.png)',
     '![b](img/my%20pic.png)',
@@ -229,15 +234,15 @@ test('a tracked image, a percent-encoded tracked image, an external image, and a
     { 'README.md': doc, 'img/a.png': 'a', 'img/my pic.png': 'b' },
     ['README.md', 'img/a.png', 'img/my pic.png'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a broken image nested inside a working link is still flagged', () => {
+test('a broken image nested inside a working link is still flagged', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': '[![badge](gone.svg)](docs/a.md)', 'docs/a.md': '# a\n' },
     ['README.md', 'docs/a.md'],
   );
-  const f = analyzeFile(join(root, 'README.md'), root, trackedSet);
+  const f = await analyzeFile(join(root, 'README.md'), root, trackedSet);
   assert.deepEqual(lines(f), [['REF_BROKEN', 1]]);
   assert.match(f[0].message, /gone\.svg/);
 });
@@ -247,61 +252,61 @@ test('a broken image nested inside a working link is still flagged', () => {
 // so the raw href never matches a tracked filesystem path without decoding
 // it first. ---
 
-test('a percent-encoded space in a link target resolves against the tracked file', () => {
+test('a percent-encoded space in a link target resolves against the tracked file', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'See [x](my%20file.md).', 'my file.md': '# f\n' },
     ['README.md', 'my file.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('an angle-bracket link target with a literal space resolves against the tracked file', () => {
+test('an angle-bracket link target with a literal space resolves against the tracked file', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'See [x](<my file.md>).', 'my file.md': '# f\n' },
     ['README.md', 'my file.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a non-ASCII link target resolves against the tracked file', () => {
+test('a non-ASCII link target resolves against the tracked file', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'See [x](café.md).', 'café.md': '# c\n' },
     ['README.md', 'café.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a percent-encoded UTF-8 link target resolves against the same tracked file', () => {
+test('a percent-encoded UTF-8 link target resolves against the same tracked file', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'See [x](caf%C3%A9.md).', 'café.md': '# c\n' },
     ['README.md', 'café.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
-test('a broken link with a percent-encoded space reports the decoded target in the message', () => {
+test('a broken link with a percent-encoded space reports the decoded target in the message', async () => {
   const { root, trackedSet } = makeRepo({ 'README.md': 'See [x](my%20file.md).' }, ['README.md']);
-  const findings = analyzeFile(join(root, 'README.md'), root, trackedSet);
+  const findings = await analyzeFile(join(root, 'README.md'), root, trackedSet);
   assert.deepEqual(codes(findings), ['REF_BROKEN']);
   assert.match(findings[0].message, /`my file\.md`/);
 });
 
-test('an invalid percent-escape (%zz) is treated literally and flagged REF_BROKEN, not crashed', () => {
+test('an invalid percent-escape (%zz) is treated literally and flagged REF_BROKEN, not crashed', async () => {
   const { root, trackedSet } = makeRepo({ 'README.md': 'See [x](bad%zz.md).' }, ['README.md']);
-  assert.deepEqual(codes(analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_BROKEN']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_BROKEN']);
 });
 
-test('a percent-escape that is not valid UTF-8 falls back to the raw target without crashing', () => {
+test('a percent-escape that is not valid UTF-8 falls back to the raw target without crashing', async () => {
   const { root, trackedSet } = makeRepo({ 'README.md': 'See [x](%FF%FE.md).' }, ['README.md']);
-  assert.deepEqual(codes(analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_BROKEN']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['REF_BROKEN']);
 });
 
-test('%2F in a link target decodes to a path separator, resolving against the nested tracked file', () => {
+test('%2F in a link target decodes to a path separator, resolving against the nested tracked file', async () => {
   const { root, trackedSet } = makeRepo(
     { 'README.md': 'See [x](a%2Fb.md).', 'a/b.md': '# b\n' },
     ['README.md', 'a/b.md'],
   );
-  assert.deepEqual(analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
 const SCRIPTS_DIR = fileURLToPath(new URL('../../../module/skills/docs-organization/scripts', import.meta.url));
@@ -326,7 +331,7 @@ function aliasedRepo(body) {
   );
 }
 
-test('CLI: a link broken only from the symlink path is flagged there, naming the canonical file', () => {
+test('CLI: a link broken only from the symlink path is flagged there, naming the canonical file', async () => {
   const { root } = aliasedRepo('See [x](voices/x.md).\n');
   const { code, out } = runCli(root, 'canon', 'mod');
   assert.equal(code, 1);
@@ -335,13 +340,13 @@ test('CLI: a link broken only from the symlink path is flagged there, naming the
   assert.match(out.findings[0].message, /canon\/ref\/a\.md/);
 });
 
-test('CLI: a content-only finding (UNLINKED_REF) is reported once per real file', () => {
+test('CLI: a content-only finding (UNLINKED_REF) is reported once per real file', async () => {
   const { root } = aliasedRepo('Per §4.2 of the spec.\n');
   const { out } = runCli(root, 'canon', 'mod');
   assert.deepEqual(codes(out.findings), ['UNLINKED_REF']);
 });
 
-test('CLI: a content-only finding is attributed to the canonical path regardless of arg order', () => {
+test('CLI: a content-only finding is attributed to the canonical path regardless of arg order', async () => {
   const { root } = aliasedRepo('Per §4.2 of the spec.\n');
   const { out } = runCli(root, 'mod', 'canon');
   assert.equal(out.findings.length, 1);
@@ -349,7 +354,7 @@ test('CLI: a content-only finding is attributed to the canonical path regardless
   assert.doesNotMatch(out.findings[0].message, /must work from both/);
 });
 
-test('CLI: an untracked doc reached by walking a directory is skipped', () => {
+test('CLI: an untracked doc reached by walking a directory is skipped', async () => {
   const { root } = makeRepo({ 'README.md': '# r\n', 'drafts/notes.md': 'See [gone](gone.md).\n' }, ['README.md']);
   const { code, out } = runCli(root, 'drafts');
   assert.equal(code, 0);
@@ -358,16 +363,16 @@ test('CLI: an untracked doc reached by walking a directory is skipped', () => {
 
 // --- on-disk mode: docs outside git, and explicit untracked docs ---
 
-test('on-disk mode (tracked = null): an existing target is clean, a missing one is REF_BROKEN', () => {
+test('on-disk mode (tracked = null): an existing target is clean, a missing one is REF_BROKEN', async () => {
   const dir = mktemp();
   writeFileSync(join(dir, 'doc.md'), 'See [here](here.md), [gone](gone.md), and [up](../).\n');
   writeFileSync(join(dir, 'here.md'), '# here\n');
-  const findings = analyzeFile(join(dir, 'doc.md'), null, null);
+  const findings = await analyzeFile(join(dir, 'doc.md'), null, null);
   assert.deepEqual(codes(findings), ['REF_BROKEN']);
   assert.match(findings[0].message, /`gone\.md` — no such file on disk/);
 });
 
-test('CLI: a doc outside any git repo is checked on disk, reported by absolute path', () => {
+test('CLI: a doc outside any git repo is checked on disk, reported by absolute path', async () => {
   const dir = mktemp();
   mkdirSync(join(dir, '.issue-draft'));
   const doc = join(dir, '.issue-draft', 'ISSUE.md');
@@ -379,7 +384,7 @@ test('CLI: a doc outside any git repo is checked on disk, reported by absolute p
   assert.deepEqual(out.findings.map((f) => [f.code, f.file]), [['REF_BROKEN', doc], ['UNLINKED_REF', doc]]);
 });
 
-test('CLI: outside git, a link to a file that exists never flags REF_NOT_IN_GIT', () => {
+test('CLI: outside git, a link to a file that exists never flags REF_NOT_IN_GIT', async () => {
   const dir = mktemp();
   writeFileSync(join(dir, 'doc.md'), 'See [x](x.md).\n');
   writeFileSync(join(dir, 'x.md'), '# x\n');
@@ -399,7 +404,7 @@ function runCliRaw(cwd, env, ...args) {
   }
 }
 
-test('CLI: a corrupted git config exits 2 with the git error, not silently treated as outside git', () => {
+test('CLI: a corrupted git config exits 2 with the git error, not silently treated as outside git', async () => {
   const { root } = makeRepo({ 'README.md': 'See [gone](gone.md).\n' }, ['README.md']);
   writeFileSync(join(root, '.git', 'config'), '[broken\n', { flag: 'a' });
   const { status, stderr } = runCliRaw(root, GENV, 'README.md');
@@ -407,7 +412,7 @@ test('CLI: a corrupted git config exits 2 with the git error, not silently treat
   assert.match(stderr, /bad config/);
 });
 
-test('CLI: a missing git binary exits 2 rather than silently checking on disk', () => {
+test('CLI: a missing git binary exits 2 rather than silently checking on disk', async () => {
   const dir = mktemp();
   writeFileSync(join(dir, 'doc.md'), 'See [gone](gone.md).\n');
   const fakeBin = mktemp('check-refs-fakebin-');
@@ -416,7 +421,7 @@ test('CLI: a missing git binary exits 2 rather than silently checking on disk', 
   assert.equal(status, 2);
 });
 
-test('CLI: an explicit gitignored doc in a repo is checked on disk, reported repo-relative', () => {
+test('CLI: an explicit gitignored doc in a repo is checked on disk, reported repo-relative', async () => {
   const { root } = makeRepo(
     {
       '.gitignore': 'drafts/\n',
@@ -432,7 +437,7 @@ test('CLI: an explicit gitignored doc in a repo is checked on disk, reported rep
   assert.deepEqual(out.findings.map((f) => [f.code, f.file]), [['REF_BROKEN', 'drafts/ISSUE.md']]);
 });
 
-test('CLI: an explicit doc outside the cwd repo is judged by its own location', () => {
+test('CLI: an explicit doc outside the cwd repo is judged by its own location', async () => {
   const { root } = makeRepo({ 'README.md': '# r\n' }, ['README.md']);
   const outside = mktemp();
   writeFileSync(join(outside, 'doc.md'), 'See [gone](gone.md).\n');
@@ -457,7 +462,7 @@ function repoViaSymlinkedDir() {
   return { root, link };
 }
 
-test('CLI: a tracked doc reached through a symlinked directory is checked in git mode', () => {
+test('CLI: a tracked doc reached through a symlinked directory is checked in git mode', async () => {
   const { root, link } = repoViaSymlinkedDir();
   const viaReal = runCli(root, join(root, 'docs', 'guide.md'));
   const viaLink = runCli(root, join(link, 'docs', 'guide.md'));
@@ -466,7 +471,7 @@ test('CLI: a tracked doc reached through a symlinked directory is checked in git
   assert.deepEqual(viaLink.out, viaReal.out);
 });
 
-test('CLI: a directory argument through a symlinked directory scans the tracked docs', () => {
+test('CLI: a directory argument through a symlinked directory scans the tracked docs', async () => {
   const { root, link } = repoViaSymlinkedDir();
   const { code, out } = runCli(root, join(link, 'docs'));
   assert.equal(code, 1);
@@ -474,7 +479,7 @@ test('CLI: a directory argument through a symlinked directory scans the tracked 
   assert.deepEqual(out.findings.map((f) => [f.code, f.file]), [['REF_NOT_IN_GIT', 'docs/guide.md']]);
 });
 
-test('CLI: a symlinked doc outside git names its canonical absolute path', () => {
+test('CLI: a symlinked doc outside git names its canonical absolute path', async () => {
   const dir = mktemp();
   mkdirSync(join(dir, 'canon'));
   mkdirSync(join(dir, 'mod'));
@@ -489,7 +494,7 @@ test('CLI: a symlinked doc outside git names its canonical absolute path', () =>
 // Outside git, `../` resolves from the path the doc was reached by, as a
 // reader's viewer does and as fetch-citations.mjs does. Only git mode needs
 // the physical directory (git reports the physical root).
-test('CLI: outside git, a doc reached through a symlinked directory resolves ../ from that path', () => {
+test('CLI: outside git, a doc reached through a symlinked directory resolves ../ from that path', async () => {
   const dir = mktemp();
   mkdirSync(join(dir, 'A', 'real'), { recursive: true });
   mkdirSync(join(dir, 'B'));
@@ -525,7 +530,7 @@ function brokenRefRepo() {
   return makeRepo({ 'README.md': 'See [gone](docs/gone.md).' }, ['README.md']).root;
 }
 
-test('CLI: invocable via a script path containing a space', () => {
+test('CLI: invocable via a script path containing a space', async () => {
   const spaceParent = mktemp();
   const targetDir = join(spaceParent, 'sp ace');
   copyScriptsDirTo(targetDir);
@@ -535,7 +540,7 @@ test('CLI: invocable via a script path containing a space', () => {
   assert.deepEqual(codes(out.findings), ['REF_BROKEN']);
 });
 
-test('CLI: invocable through a symlinked directory', () => {
+test('CLI: invocable through a symlinked directory', async () => {
   const parent = mktemp();
   const linkDir = join(parent, 'link');
   symlinkSync(SCRIPTS_DIR, linkDir, 'dir');
@@ -543,4 +548,60 @@ test('CLI: invocable through a symlinked directory', () => {
   const { code, out } = runScriptAt(join(linkDir, 'check-refs.mjs'), brokenRefRepo(), ['README.md']);
   assert.equal(code, 1);
   assert.deepEqual(codes(out.findings), ['REF_BROKEN']);
+});
+
+test('a bare URL does not count as a link for a § citation in the same paragraph', async () => {
+  const { root, trackedSet } = makeRepo({ 'README.md': 'See §2 at https://example.com/spec.\n' }, ['README.md']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'README.md'), root, trackedSet)), ['UNLINKED_REF']);
+});
+
+test('a link inside a GFM alert or admonition is resolved', async () => {
+  const doc = '> [!NOTE]\n> See [gone](gone.md).\n\n!!! tip\n    Also [missing](missing.md).\n';
+  const { root, trackedSet } = makeRepo({ 'README.md': doc }, ['README.md']);
+  const findings = await analyzeFile(join(root, 'README.md'), root, trackedSet);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 2], ['REF_BROKEN', 5]]);
+});
+
+test('a link in front matter is not a reference', async () => {
+  const { root, trackedSet } = makeRepo({ 'README.md': '---\nsee: "[x](gone.md)"\n---\n# T\n' }, ['README.md']);
+  assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
+});
+
+test('a .markdown file is checked like a .md file', async () => {
+  const { root, trackedSet } = makeRepo({ 'guide.markdown': '[x](gone.md)\n' }, ['guide.markdown']);
+  assert.deepEqual(codes(await analyzeFile(join(root, 'guide.markdown'), root, trackedSet)), ['REF_BROKEN']);
+});
+
+test('AsciiDoc: links, includes, and xrefs resolve; anchors, unresolved attributes are skipped; parse warnings surface', async () => {
+  const doc = [
+    '= Project',                                                   // 1
+    ':docs: docs/',                                                // 2
+    '',
+    'See link:{docs}guide.adoc[the guide] and link:gone.adoc[gone].', // 4
+    '',
+    'include::partials/missing.adoc[]',                            // 6
+    '',
+    'Jump to xref:other.adoc#setup[setup] or <<local-anchor>>.',   // 8
+    '',
+    'Unresolved link:{nope}x.adoc[x] is skipped.',                 // 10
+    '',
+    'Spec §4.1 has no link here.',                                 // 12
+    '',
+    '----',                                                        // 14
+    'unterminated',
+  ].join('\n');
+  const { root, trackedSet } = makeRepo(
+    { 'README.adoc': doc, 'docs/guide.adoc': '= Guide\n', 'other.adoc': '= Other\n' },
+    ['README.adoc', 'docs/guide.adoc', 'other.adoc'],
+  );
+  const findings = await analyzeFile(join(root, 'README.adoc'), root, trackedSet);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [
+    ['REF_BROKEN', 4], ['REF_BROKEN', 6], ['UNLINKED_REF', 12], ['PARSE_WARNING', 14],
+  ]);
+  assert.match(findings[1].message, /include of `partials\/missing\.adoc`/);
+});
+
+test('AsciiDoc: an include of an absolute path outside the repo is neither read nor flagged', async () => {
+  const { root, trackedSet } = makeRepo({ 'README.adoc': 'include::/etc/passwd[]\n' }, ['README.adoc']);
+  assert.deepEqual(await analyzeFile(join(root, 'README.adoc'), root, trackedSet), []);
 });

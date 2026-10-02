@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { applyPalette, initHeader, classDefs } from '../../../module/skills/docs-organization/scripts/apply-palette.mjs';
+import { applyPalette, initHeader, classDefs, swapBlocks } from '../../../module/skills/docs-organization/scripts/apply-palette.mjs';
 import { contrastRatio } from '../../../module/skills/docs-organization/scripts/contrast.mjs';
 
 const SCRIPTS_DIR = fileURLToPath(new URL('../../../module/skills/docs-organization/scripts', import.meta.url));
@@ -138,4 +138,38 @@ test('CLI: invocable through a symlinked directory', () => {
   const out = execFileSync('node', [join(linkDir, 'apply-palette.mjs'), paletteFile, bodyFile], { encoding: 'utf8' });
   assert.match(out, /^%%\{init:/);
   assert.match(out, /classDef sysA/);
+});
+
+// --- swapBlocks: the swap's line ending comes from the opening fence line,
+// not a scan of the body, which a stray \r inside the diagram text (not a
+// line break) or a one-line body can fool. ---
+
+test('swapBlocks: a stray CR inside the diagram body survives untouched, not turned into a line break', async () => {
+  const palette = palettes.find(p => p.name === 'solar').data;
+  const src = '# T\n\n```mermaid\nflowchart LR\n  A --> B %% a\rb\n```\n';
+  const out = await swapBlocks(palette, src, 'x.md');
+  // Only the doc's own EOL (\n here) is converted; every other character,
+  // including a stray \r that is not part of a line ending, is untouched.
+  assert.ok(out.includes('%% a\rb'), `expected the stray CR to survive byte for byte, got: ${JSON.stringify(out)}`);
+  // No new line break was introduced where the stray CR sits.
+  assert.ok(!out.split('\n').includes('b'), 'expected no new line break where the stray CR was');
+});
+
+test('swapBlocks: a CRLF doc whose body is a single unclosed line still gets CRLF, not LF', async () => {
+  const palette = palettes.find(p => p.name === 'solar').data;
+  const src = '# T\r\n\r\n```mermaid\r\nflowchart LR';
+  const out = await swapBlocks(palette, src, 'x.md');
+  const breaks = out.match(/\r\n|\r|\n/g) ?? [];
+  assert.ok(breaks.length > 0, 'expected at least one line break in the output');
+  assert.ok(breaks.every((b) => b === '\r\n'), `expected every line break to be CRLF, got: ${JSON.stringify(breaks)}`);
+});
+
+test('swapBlocks: a stray CR inside a CRLF doc\'s body also survives untouched', async () => {
+  const palette = palettes.find(p => p.name === 'solar').data;
+  const src = '# T\r\n\r\n```mermaid\r\nflowchart LR\r\n  A --> B %% a\rb\r\n```\r\n';
+  const out = await swapBlocks(palette, src, 'x.md');
+  assert.ok(out.includes('%% a\rb'), `expected the stray CR to survive byte for byte, got: ${JSON.stringify(out)}`);
+  // Every OTHER \r in the output is the first half of a real CRLF break.
+  const withoutStray = out.replace('%% a\rb', '%% aXb');
+  assert.ok(!/\r(?!\n)/.test(withoutStray), 'expected every remaining CR to be part of a CRLF break');
 });

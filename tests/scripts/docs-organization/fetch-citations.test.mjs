@@ -11,6 +11,9 @@ import { fileURLToPath } from 'node:url';
 import {
   extractCitations, isBlockedAddress, checkUrl, fetchCitation, snapshotName, snapshotContent, run, LIMITS,
 } from '../../../module/skills/docs-organization/scripts/fetch-citations.mjs';
+import { parseDoc } from '../../../module/skills/docs-organization/scripts/formats/index.mjs';
+
+const cites = async (src, name = 'doc.md') => extractCitations(await parseDoc(name, src));
 
 const tmpDirs = [];
 after(() => {
@@ -58,7 +61,7 @@ const redirect = (location) => ({ addrs: [PUBLIC], status: 301, headers: { locat
 
 // --- extraction ---
 
-test('extracts link, image, autolink, bare, and table-cell URLs with their lines', () => {
+test('extracts link, image, autolink, bare, and table-cell URLs with their lines', async () => {
   const doc = [
     '# Title',
     'See https://bare.example/a and',
@@ -69,7 +72,7 @@ test('extracts link, image, autolink, bare, and table-cell URLs with their lines
     '|---|',
     '| https://cell.example/e |',
   ].join('\n');
-  assert.deepEqual(extractCitations(doc), [
+  assert.deepEqual(await cites(doc), [
     { url: 'https://bare.example/a', line: 2 },
     { url: 'https://link.example/b', line: 3 },
     { url: 'https://auto.example/c', line: 3 },
@@ -81,45 +84,72 @@ test('extracts link, image, autolink, bare, and table-cell URLs with their lines
 // markdown-it percent-encodes link targets (`[`→%5B), which would make an
 // IPv6 literal an invalid URL. Citations carry the WHATWG canonical href:
 // IPv6 brackets survive, non-ASCII is percent-encoded, %2F stays encoded.
-test('citations are reported in WHATWG canonical form: IPv6 brackets, non-ASCII, reserved escapes', () => {
-  assert.deepEqual(extractCitations('[a](https://[::1]/) [b](https://ex.example/é?q=ü) [c](https://ex.example/a%2Fb)').map((c) => c.url),
+test('citations are reported in WHATWG canonical form: IPv6 brackets, non-ASCII, reserved escapes', async () => {
+  assert.deepEqual((await cites('[a](https://[::1]/) [b](https://ex.example/é?q=ü) [c](https://ex.example/a%2Fb)')).map((c) => c.url),
     ['https://[::1]/', 'https://ex.example/%C3%A9?q=%C3%BC', 'https://ex.example/a%2Fb']);
 });
 
 // The citation URL becomes a snapshot header line, so it must never carry a
 // raw newline, control character, or bidi override that could forge or
 // visually disguise provenance.
-test('control and bidi characters in a cited URL never appear raw', () => {
+test('control and bidi characters in a cited URL never appear raw', async () => {
   const doc = '[a](https://ex.example/a‮b) [b](https://ex.example/c%E2%80%AEd) [c](https://ex.example/e%0Af%01g%7F) https://ex.example/h‮i';
-  const urls = extractCitations(doc).map((c) => c.url);
+  const urls = (await cites(doc)).map((c) => c.url);
   assert.equal(urls.length, 4);
   for (const url of urls) assert.doesNotMatch(url, /[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/);
 });
 
-test('an unparseable citation keeps the percent-encoded target so the filter reports it', () => {
-  const [c] = extractCitations('[a](https://exa%20mple.com/)');
+// decodeURI turns %5C into \, and the URL parser turns a \ in an https URL
+// into /, so decoding before parsing would canonicalize this to
+// https://evil.com/@127.0.0.1/ — a different host than a browser opens.
+// The raw string must be tried first, so the cited host matches what a
+// browser (and checkUrl, and the fetch itself) actually resolves.
+test('a URL that decodes to a different host is cited by its raw host, not a decoded one', async () => {
+  const [c] = await cites('[a](https://evil.com%5C@127.0.0.1/)');
+  assert.equal(new URL(c.url).hostname, '127.0.0.1');
+});
+
+test('an unparseable citation keeps the percent-encoded target so the filter reports it', async () => {
+  const [c] = await cites('[a](https://exa%20mple.com/)');
   assert.equal(c.url, 'https://exa%20mple.com/');
   assert.match(checkUrl(c.url).reason, /not a valid URL/);
 });
 
-test('URLs in code spans and fenced blocks are examples, not citations', () => {
+test('URLs in code spans and fenced blocks are examples, not citations', async () => {
   const doc = 'Run `curl https://span.example/`.\n\n```\nhttps://fence.example/\n```\n';
-  assert.deepEqual(extractCitations(doc), []);
+  assert.deepEqual(await cites(doc), []);
 });
 
-test('relative links, anchors, and mailto: are not citations', () => {
-  assert.deepEqual(extractCitations('[a](./x.md) [b](#top) [c](mailto:me@example.com)'), []);
+test('relative links, anchors, and mailto: are not citations', async () => {
+  assert.deepEqual(await cites('[a](./x.md) [b](#top) [c](mailto:me@example.com)'), []);
 });
 
 // markdown-it's validateLink never turns file:, javascript:, vbscript:, or
 // non-image data: targets into links, so those can never become citations.
-test('non-https absolute URLs are extracted so the filter can report them', () => {
-  assert.deepEqual(extractCitations('[a](http://plain.example/) [b](ftp://files.example/x)').map((c) => c.url),
+test('non-https absolute URLs are extracted so the filter can report them', async () => {
+  assert.deepEqual((await cites('[a](http://plain.example/) [b](ftp://files.example/x)')).map((c) => c.url),
     ['http://plain.example/', 'ftp://files.example/x']);
 });
 
-test('fuzzy links without a scheme are not citations', () => {
-  assert.deepEqual(extractCitations('Visit www.example.com today.'), []);
+test('fuzzy links without a scheme are not citations', async () => {
+  assert.deepEqual(await cites('Visit www.example.com today.'), []);
+});
+
+test('URLs inside admonitions and footnotes are citations; front matter is not', async () => {
+  const doc = '---\nurl: https://fm.example/\n---\n!!! note\n    See https://adm.example/a.\n\nText[^1].\n\n[^1]: From [x](https://fn.example/b).\n';
+  assert.deepEqual(await cites(doc), [
+    { url: 'https://adm.example/a', line: 5 },
+    { url: 'https://fn.example/b', line: 9 },
+  ]);
+});
+
+test('AsciiDoc: URL macros, bare URLs, and attribute URLs are citations; links in listings are not', async () => {
+  const doc = '= T\n:site: https://attr.example\n\nSee https://macro.example/a[A], https://bare.example/b, and {site}/c.\n\n----\nhttps://listing.example/\n----\n';
+  assert.deepEqual(await cites(doc, 'doc.adoc'), [
+    { url: 'https://macro.example/a', line: 4 },
+    { url: 'https://bare.example/b', line: 4 },
+    { url: 'https://attr.example/c', line: 4 },
+  ]);
 });
 
 // --- address filter (negative cases first) ---
@@ -138,7 +168,7 @@ for (const address of ['8.8.8.8', PUBLIC, '2606:4700::1111', '64:ff9b::808:808']
   test(`allows public ${address}`, () => assert.equal(isBlockedAddress(address), false));
 }
 
-test('a string that is not an IP address is blocked', () => {
+test('a string that is not an IP address is blocked', async () => {
   assert.equal(isBlockedAddress('example.com'), true);
 });
 
@@ -163,7 +193,7 @@ for (const [raw, reason] of [
   });
 }
 
-test('checkUrl accepts a public https URL and an explicit :443', () => {
+test('checkUrl accepts a public https URL and an explicit :443', async () => {
   assert.equal(checkUrl('https://example.com/a?b=1').ok, true);
   assert.equal(checkUrl('https://example.com:443/').ok, true);
 });
@@ -412,12 +442,12 @@ test('requests send no credentials or cookies', async () => {
 
 // --- snapshots ---
 
-test('snapshot name is the sha256 of the cited URL', () => {
+test('snapshot name is the sha256 of the cited URL', async () => {
   assert.equal(snapshotName('https://example.com/'),
     '0f115db062b7c0dd030b16878c99dea5c354b49dc37b38eb8846179c7783e9d7.txt');
 });
 
-test('snapshot content is the documented header then the raw body', () => {
+test('snapshot content is the documented header then the raw body', async () => {
   const buf = snapshotContent('https://a.example/', {
     finalUrl: 'https://b.example/', status: 200, contentType: 'text/plain', body: Buffer.from('BODY'),
   }, '2026-09-29T00:00:00.000Z');
@@ -807,14 +837,14 @@ function cliIn(cwd, ...args) {
 }
 const cli = (...args) => cliIn(undefined, ...args);
 
-test('CLI: --offline exits 1 with findings JSON', () => {
+test('CLI: --offline exits 1 with findings JSON', async () => {
   const { dir, file } = docWith('See https://example.com/.\n');
   const r = cli('--root', dir, '--offline', file);
   assert.equal(r.code, 1);
   assert.equal(JSON.parse(r.stdout).findings[0].code, 'CITATIONS_NOT_FETCHED');
 });
 
-test('CLI: blocked-only citations need no network and exit 1', () => {
+test('CLI: blocked-only citations need no network and exit 1', async () => {
   const { dir, file } = docWith('[a](http://example.com/) [b](https://10.0.0.1/) [c](https://[::1]/)\n');
   const out = join(dir, 'snap');
   mkdirSync(out);
@@ -828,7 +858,7 @@ test('CLI: blocked-only citations need no network and exit 1', () => {
 // agent: false keeps an environment proxy from carrying the request past the
 // lookup guard. The proxy port is closed, so honoring it would surface as
 // ECONNREFUSED instead of a block.
-test('CLI: environment proxies do not bypass the lookup guard', () => {
+test('CLI: environment proxies do not bypass the lookup guard', async () => {
   const { dir, file } = docWith('[a](https://localhost/)\n');
   const out = join(dir, 'snap');
   mkdirSync(out);
@@ -848,27 +878,27 @@ test('CLI: environment proxies do not bypass the lookup guard', () => {
   assert.match(f.message, /resolves to/);
 });
 
-test('CLI: usage error exits 2', () => {
+test('CLI: usage error exits 2', async () => {
   const r = cli();
   assert.equal(r.code, 2);
   assert.match(r.stderr, /usage:/);
 });
 
-test('CLI: a missing --root exits 2 with usage', () => {
+test('CLI: a missing --root exits 2 with usage', async () => {
   const { file } = docWith('x\n');
   const r = cli('--offline', file);
   assert.equal(r.code, 2);
   assert.match(r.stderr, /usage:.*--root/);
 });
 
-test('CLI: a doc outside --root exits 2', () => {
+test('CLI: a doc outside --root exits 2', async () => {
   const { file } = docWith('x\n');
   const r = cli('--root', mktemp(), '--offline', file);
   assert.equal(r.code, 2);
   assert.match(r.stderr, /internal error: .*is not inside --root/);
 });
 
-test('CLI: relative doc paths, one a symlink out of --root, exit 0', () => {
+test('CLI: relative doc paths, one a symlink out of --root, exit 0', async () => {
   const { top, a } = symlinkedDocTree();
   writeFileSync(join(a, 'sibling.md'), '# sibling\n');
   const r = cliIn(top, '--root', 'a', '--offline', 'a/doc.md', 'a/link.md');
@@ -878,7 +908,7 @@ test('CLI: relative doc paths, one a symlink out of --root, exit 0', () => {
   assert.deepEqual(res.localSources, [{ file: 'a/link.md', line: 1, target: 'sibling.md', path: join(a, 'sibling.md') }]);
 });
 
-test('CLI: a local source outside --root is listed as unread, never read', () => {
+test('CLI: a local source outside --root is listed as unread, never read', async () => {
   const top = mktemp();
   const dir = join(top, 'draft');
   mkdirSync(dir);
@@ -891,7 +921,7 @@ test('CLI: a local source outside --root is listed as unread, never read', () =>
   assert.doesNotMatch(r.stdout, /TOP-SECRET-CONTENT/);
 });
 
-test('CLI: a missing doc exits 2', () => {
+test('CLI: a missing doc exits 2', async () => {
   const r = cli('--root', tmpdir(), '--offline', '/nonexistent/doc.md');
   assert.equal(r.code, 2);
   assert.match(r.stderr, /internal error/);

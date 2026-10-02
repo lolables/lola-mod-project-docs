@@ -203,10 +203,10 @@ That path is for a project-scope install; a user-scope install lives under
 `~/.claude/skills/`. Write to a new file and move it into place — redirecting
 straight onto the input empties it before the script reads it.
 
-Given a `.md`, the script prints the whole document with every
-` ```mermaid ` fence swapped and every byte outside the fences unchanged, so
-use the same write-then-move. `--block N` swaps only the N-th fence
-(1-based):
+Given a doc file in any registered format, the script prints the whole
+document with every mermaid diagram swapped and every byte outside those
+diagrams unchanged, so use the same write-then-move. `--block N` swaps only
+the N-th diagram (1-based):
 
 ```bash
 bash .claude/skills/docs-organization/scripts/swap-palette.sh --block 2 citrus docs/guide.md > docs/guide.md.new
@@ -235,12 +235,26 @@ repo root; both are `task`-only, so they require the full dev checkout.
    `%%{init}%%` block for one of the four palettes above) and uses palette
    classes with WCAG-verified contrast.
 
+## Supported formats
+
+Markdown and AsciiDoc, each with its own README name. Every check —
+structure, staleness, readability, references, content-drift chunking,
+citations, mermaid lint, and palette swap — runs on both. See
+[`reference/supported-formats.md`](module/skills/docs-organization/reference/supported-formats.md)
+for the exact extensions and README names each format claims.
+
+In AsciiDoc, mermaid diagrams are `[mermaid]` or `[source,mermaid]` blocks,
+and the scripts check `include::` targets exist but never read them.
+`/docs-init` writes Markdown templates and leaves an existing `README.adoc`
+alone.
+
 ## Project structure
 
 ```text
 module/AGENTS.md                            module instructions, injected at install
 module/skills/docs-organization/SKILL.md    the docs-organization skill
-module/skills/docs-organization/scripts/    node + bash helpers (lint-mermaid.mjs, check-structure.sh, fetch-citations.mjs, …)
+module/skills/docs-organization/scripts/    node + bash helpers (doc-files.mjs, doc-chunks.mjs, lint-mermaid.mjs, check-structure.sh, fetch-citations.mjs, …)
+module/skills/docs-organization/scripts/formats/  format registry and adapters (markdown.mjs, asciidoc.mjs)
 module/skills/docs-organization/scripts/vendor/  pre-built MIT dependency bundles that ship with the skill
 module/skills/docs-organization/reference/  house-style references, README/docs templates, palettes
 module/skills/adr/SKILL.md                  the adr skill

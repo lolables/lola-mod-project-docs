@@ -140,7 +140,7 @@ refuses "--block 0" 'positive integer' --block 0 solar "$two"
 refuses "--block non-numeric" 'positive integer' --block x solar "$two"
 refuses "--block empty" 'positive integer' --block "" solar "$two"
 refuses "--block without a value" 'usage' solar "$two" --block
-refuses "--block on a .mmd" '\.md' --block 1 solar "$FIXTURES/good.mmd"
+refuses "--block on a .mmd" 'whole diagram' --block 1 solar "$FIXTURES/good.mmd"
 refuses "unknown option" 'unknown option' --blocks 1 solar "$two"
 refuses "extra argument" 'usage' solar "$two" extra
 printf '# No diagrams\n' > "$dir/none.md"
@@ -167,6 +167,80 @@ check "mmd: low-contrast sysA fill gone" bash -c "! grep -q 'fill:#ffff00' '$dir
 printf "%%%%{ init: {'theme': 'base'}}%%%%\nflowchart LR\n  A --> B\n" > "$dir/spaced.mmd"
 bash "$SCRIPT" solar "$dir/spaced.mmd" > "$dir/spaced.out"
 check "mmd: spaced init header replaced" test "$(grep -c 'init' "$dir/spaced.out")" -eq 1
+
+# --- .markdown is swapped like .md ---
+cp "$FIXTURES/fenced-low-contrast.md" "$dir/same.markdown"
+rc=0; bash "$SCRIPT" solar "$dir/same.markdown" > "$dir/same.out" 2>/dev/null || rc=$?
+check ".markdown: exits 0" test "$rc" -eq 0
+check ".markdown: swapped like .md" cmp -s "$dir/swapped.md" "$dir/same.out"
+
+# A fence inside an admonition is nested: refused, not corrupted.
+# shellcheck disable=SC2016 # literal markdown fences, nothing to expand
+printf -- '!!! note\n    ```mermaid\n    flowchart LR\n      A --> B\n    ```\n' > "$dir/admon.md"
+refuses "fence in an admonition" 'indented' solar "$dir/admon.md"
+
+# A closing fence indented 1-3 spaces is valid CommonMark; the swap keeps it
+# (and the rest of the file) byte for byte, only the body in between changes.
+# shellcheck disable=SC2016 # literal markdown fences, nothing to expand
+printf -- '# T\n\n```mermaid\nflowchart LR\n  A --> B\n  ```\n' > "$dir/indented-closer.md"
+rc=0; bash "$SCRIPT" solar "$dir/indented-closer.md" > "$dir/indented-closer.out" 2>"$dir/err" || rc=$?
+check "indented closer: exits 0" test "$rc" -eq 0
+check "indented closer: closing fence line preserved byte for byte" \
+  cmp -s <(tail -n1 "$dir/indented-closer.md") <(tail -n1 "$dir/indented-closer.out")
+
+# An unclosed fence with no final newline swaps successfully and idempotently.
+# (The output of each swap is itself fed back in as a .md — extractMermaidBlocks
+# and swap-palette.sh both key off the extension, not the content.)
+# shellcheck disable=SC2016 # literal markdown fences, nothing to expand
+printf '# T\n\n```mermaid\nflowchart LR\n  A --> B' > "$dir/unclosed.md"
+rc=0; bash "$SCRIPT" solar "$dir/unclosed.md" > "$dir/unclosed.out.md" 2>"$dir/err" || rc=$?
+check "unclosed fence (no final newline): exits 0" test "$rc" -eq 0
+rc=0; bash "$SCRIPT" solar "$dir/unclosed.out.md" > "$dir/unclosed.out2.md" 2>/dev/null || rc=$?
+check "unclosed fence: second swap exits 0" test "$rc" -eq 0
+check "unclosed fence: idempotent (second swap byte-identical)" cmp -s "$dir/unclosed.out.md" "$dir/unclosed.out2.md"
+
+# --- CRLF / CR-only docs keep their own line endings after a swap ---
+
+# shellcheck disable=SC2016 # literal markdown fences, nothing to expand
+printf '# T\r\n\r\n```mermaid\r\nflowchart LR\r\n  A --> B\r\n```\r\ntail\r\n' > "$dir/crlf.md"
+rc=0; bash "$SCRIPT" solar "$dir/crlf.md" > "$dir/crlf.out.md" 2>"$dir/err" || rc=$?
+check "CRLF: exits 0" test "$rc" -eq 0
+check "CRLF: no bare-LF line endings" bash -c "! grep -qP '(?<!\r)\n' '$dir/crlf.out.md'"
+rc=0; bash "$SCRIPT" solar "$dir/crlf.out.md" > "$dir/crlf.out2.md" 2>/dev/null || rc=$?
+check "CRLF: second swap exits 0" test "$rc" -eq 0
+check "CRLF: second swap is byte-identical" cmp -s "$dir/crlf.out.md" "$dir/crlf.out2.md"
+
+# shellcheck disable=SC2016 # literal markdown fences, nothing to expand
+printf '# T\r\r```mermaid\rflowchart LR\r  A --> B\r```\rtail\r' > "$dir/cr.md"
+rc=0; bash "$SCRIPT" solar "$dir/cr.md" > "$dir/cr.out.md" 2>"$dir/err" || rc=$?
+check "CR-only: exits 0" test "$rc" -eq 0
+check "CR-only: no bare-LF line endings" bash -c "! grep -qP '\n' '$dir/cr.out.md'"
+rc=0; bash "$SCRIPT" solar "$dir/cr.out.md" > "$dir/cr.out2.md" 2>/dev/null || rc=$?
+check "CR-only: second swap exits 0" test "$rc" -eq 0
+check "CR-only: second swap is byte-identical" cmp -s "$dir/cr.out.md" "$dir/cr.out2.md"
+
+# --- .adoc: swap delimited mermaid blocks in place ---
+outside_adoc_blocks() { awk '/^(\.\.\.\.|----)$/ {print; skip=!skip; next} !skip {print}' "$1"; }
+adoc="$FIXTURES/fenced-low-contrast.adoc"
+rc=0; bash "$SCRIPT" solar "$adoc" > "$dir/swapped.adoc" 2>"$dir/err" || rc=$?
+check "adoc: exits 0" test "$rc" -eq 0
+check "adoc: first line is still the title" test "$(head -n1 "$dir/swapped.adoc")" = "= Title"
+check "adoc: lines outside the block byte-identical" cmp -s <(outside_adoc_blocks "$adoc") <(outside_adoc_blocks "$dir/swapped.adoc")
+check "adoc: init header directly follows the opening delimiter" \
+  test "$(grep -A1 '^\.\.\.\.$' "$dir/swapped.adoc" | sed -n 2p | cut -c1-8)" = '%%{init:'
+check "adoc: old low-contrast classDef is gone" bash -c "! grep -q 'fill:#ffff00' '$dir/swapped.adoc'"
+rc=0; node "$LINT" "$dir/swapped.adoc" >/dev/null 2>&1 || rc=$?
+check "adoc: swapped file lints clean" test "$rc" -eq 0
+
+two_adoc="$FIXTURES/fenced-blocks.adoc"
+rc=0; bash "$SCRIPT" --block 2 citrus "$two_adoc" > "$dir/b2.adoc" 2>/dev/null || rc=$?
+check "adoc --block 2: exits 0" test "$rc" -eq 0
+check "adoc --block 2: first block untouched" cmp -s <(head -n 9 "$two_adoc") <(head -n 9 "$dir/b2.adoc")
+check "adoc --block 2: exactly one init header" test "$(grep -c '^%%{init:' "$dir/b2.adoc")" -eq 1
+check "adoc --block 2: custom classDef is kept" grep -q 'classDef myCustomClass fill:#3e6fa0' "$dir/b2.adoc"
+
+printf '[mermaid]\nflowchart LR\n  A --> B\n' > "$dir/para.adoc"
+refuses "adoc [mermaid] paragraph" 'indented or nested' solar "$dir/para.adoc"
 
 echo ""
 echo "Results: $pass_count passed, $fail_count failed"

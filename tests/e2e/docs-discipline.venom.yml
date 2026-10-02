@@ -205,7 +205,7 @@ testcases:
           mkdir -p "$DOCDIR/.issue-draft"
           printf '# Draft\n\nSee [spec](spec.md) and [gone](gone.md).\n' > "$DOCDIR/.issue-draft/ISSUE.md"
           printf '# Spec\n' > "$DOCDIR/.issue-draft/spec.md"
-          node {{.WORKDIR}}/module/skills/docs-organization/scripts/md-files.mjs "$DOCDIR/.issue-draft"
+          node {{.WORKDIR}}/module/skills/docs-organization/scripts/doc-files.mjs "$DOCDIR/.issue-draft"
         assertions:
           - result.code ShouldEqual 0
           - result.systemout ShouldContainSubstring "ISSUE.md"
@@ -280,6 +280,40 @@ testcases:
         assertions:
           - result.code ShouldEqual 0
           - result.systemoutjson.scanned ShouldEqual 1
+
+  - name: asciidoc-doc-checks
+    steps:
+      - type: exec
+        script: |
+          #!/bin/bash
+          set -euo pipefail
+          source /tmp/docs-discipline-e2e.env
+          cd "$WORKDIR"
+          mkdir -p adoc
+          cat > adoc/guide.adoc <<'ADOC_EOF'
+          = Guide
+
+          See link:missing.adoc[the missing page].
+
+          [mermaid]
+          ....
+          flowchart LR
+            A --> B
+          ....
+          ADOC_EOF
+          files=$(node {{.WORKDIR}}/module/skills/docs-organization/scripts/doc-files.mjs adoc)
+          echo "FILES=$files"
+          rc=0; node {{.WORKDIR}}/module/skills/docs-organization/scripts/check-refs.mjs adoc/guide.adoc || rc=$?
+          echo "REFS_RC=$rc"
+          rc=0; node {{.WORKDIR}}/module/skills/docs-organization/scripts/lint-mermaid.mjs --json adoc/guide.adoc || rc=$?
+          echo "LINT_RC=$rc"
+        assertions:
+          - result.code ShouldEqual 0
+          - result.systemout ShouldContainSubstring "adoc/guide.adoc"
+          - result.systemout ShouldContainSubstring "REF_BROKEN"
+          - result.systemout ShouldContainSubstring "REFS_RC=1"
+          - result.systemout ShouldContainSubstring "MISSING_HOUSE_STYLE_HEADER"
+          - result.systemout ShouldContainSubstring "LINT_RC=1"
 
   - name: cleanup
     steps:

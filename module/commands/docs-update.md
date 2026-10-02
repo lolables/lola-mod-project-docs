@@ -72,6 +72,7 @@ present, skip the `adr` activation.
    - **Semantic:** `CONTENT_DRIFT` (content and diagram drift), `FORKED_COPY`,
      `STALE_README`, `STALE_DOC`, `WALL_OF_TEXT`, `DENSE_BULLET`,
      `SPLIT_CANDIDATE`, `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`,
+     `PARSE_WARNING` (fix: correct the markup the parser names),
      `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
      `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`, `UNAPPROVED_CLASSNAME`,
      `UNAPPROVED_STYLE` findings, and anything else needing judgment. Exclude "Other" lines
@@ -118,21 +119,23 @@ present, skip the `adr` activation.
           Solar if it cannot be determined, or ask).
        2. For a `.mmd`, run
           `bash "$SKILL_DIR/scripts/swap-palette.sh" <palette> <file> > <file>.new`.
-          For a fenced block in a `.md`, run
+          For a mermaid block in a doc file (a Markdown fence or an
+          AsciiDoc `[mermaid]` / `[source,mermaid]` block), run
           `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <file>` and
           run `bash "$SKILL_DIR/scripts/swap-palette.sh" --block <block>
           <palette> <file> > <file>.new`, where `<block>` is the `block`
           field from `lint-mermaid --json` of the finding at that `line`.
-          Only that fence changes; every byte outside it is kept.
+          Only that block changes; every byte outside it is kept.
        3. On exit 0, move `<file>.new` over `<file>`. Never redirect
           straight onto `<file>`: the shell empties it before the script
-          reads it. On exit 2 (for example a fence indented inside a list
-          item), delete `<file>.new`, leave `<file>` untouched, and move the
+          reads it. On exit 2 (for example a block indented or nested inside
+          a list item, quote, or admonition, or an AsciiDoc `[mermaid]`
+          paragraph with no delimiters), delete `<file>.new`, leave `<file>` untouched, and move the
           finding to the semantic bucket with the script's stderr message.
      - Missing template files: read the relevant template from `reference/`
        and write it.
    - **Lint before commit:** if any mechanical fix modified a `.mmd` file
-     or a `.md` file containing a fenced ```mermaid block, run
+     or a doc file containing a mermaid block, run
      `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <file>`
      and confirm `status: ok` before staging.
    - Commit as a batch: `docs: apply structural fixes from /docs-audit`.
@@ -172,8 +175,10 @@ present, skip the `adr` activation.
         reflect relationships it already describes. **Do not emit
         generic `A --> B` placeholders** — a grounded skeleton is much
         faster for the author to refine than an empty one.
-     3. Insert the fenced ```mermaid block immediately after the section
-        heading, before any prose in the section body.
+     3. Insert a mermaid block immediately after the section
+        heading — a ```mermaid fence in Markdown; in AsciiDoc, `[mermaid]`
+        on the line above a `....` delimited block — before any prose in
+        the section body.
      4. **Lint before commit:** run
         `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <file>`
         and confirm `status: ok`. If a `SYNTAX_ERROR` appears, consult
@@ -293,7 +298,10 @@ present, skip the `adr` activation.
        Default to *not* splitting a maintainer design doc unless the user asks.
      - For `REF_BROKEN` / `REF_NOT_IN_GIT` / `UNLINKED_REF`: a reference should
        be *followable*, but how to make it so is the author's call — present
-       options, do not auto-pick. Offer: (a) repoint/add a link to the correct
+       options, do not auto-pick. Link fixes are format-neutral; when writing
+       a replacement link, use the file's own syntax: `[text](path)` in
+       Markdown, `link:path[text]` or `xref:path[text]` in AsciiDoc. Offer:
+       (a) repoint/add a link to the correct
        in-repo target; (b) commit the referenced file if it belongs in the repo;
        (c) convert it to an explicit external link if it is intentionally
        private/external. For `UNLINKED_REF` (a `§` citation), the fix is to add a
@@ -344,7 +352,7 @@ present, skip the `adr` activation.
    - Ask: "Apply this fix?" Wait for yes/no/skip.
    - On yes, apply the edit.
    - **Lint before commit:** if the edit touches a `.mmd` file or a
-     fenced ```mermaid block, run
+     mermaid block, run
      `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <file>`
      and confirm `status: ok`.
    - Commit individually with a message referencing the finding. For
