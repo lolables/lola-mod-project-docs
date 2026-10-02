@@ -1,0 +1,23 @@
+AGENTS.md
+  s_2fe5c7579ceb59::t_47a1c564610e13 19
+module/skills/docs-organization/SKILL.md
+  s_2fe5c7579ceb59::t_3f2c1f642b81da 132-134
+module/skills/docs-organization/reference/scripts.md
+  s_2fe5c7579ceb59::t_da359323038218 1-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "990ea12708803c152082c82d65375df3d2eb0884",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
