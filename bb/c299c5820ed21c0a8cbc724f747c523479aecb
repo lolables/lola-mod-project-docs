@@ -1,0 +1,22 @@
+module/skills/docs-organization/reference/mermaid-house-style.md
+  s_2fe5c7579ceb59::t_859b16bf4bb6f5 35-37
+  s_2fe5c7579ceb59::t_3eb02b0be6d856 194
+  s_2fe5c7579ceb59::t_fcc92d1ca4f07f 58-83
+  s_2fe5c7579ceb59::t_575b4741905f3f 143-148,150-152,156,163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bbc299c5820ed21c0a8cbc724f747c523479aecb",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
