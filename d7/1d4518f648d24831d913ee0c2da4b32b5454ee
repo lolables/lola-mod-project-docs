@@ -1,0 +1,48 @@
+tests/scripts/docs-organization/fetch-citations.test.mjs
+  s_2fe5c7579ceb59::t_994d8330beaea9 102-111
+tests/scripts/docs-organization/__fixtures__/formats/sample.md
+  s_2fe5c7579ceb59::t_8cef6d1876bf3e 29-31
+tests/scripts/docs-organization/format-conformance.test.mjs
+  s_2fe5c7579ceb59::t_38d4fe4276cda3 46
+tests/scripts/docs-organization/format-markdown.test.mjs
+  s_2fe5c7579ceb59::t_86584d7cc0a13a 37-51
+  s_2fe5c7579ceb59::t_e886b9360b49e1 229-233
+module/skills/docs-organization/scripts/fetch-citations.mjs
+  s_2fe5c7579ceb59::t_da1651c1f66213 73-83,89-90
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_2fe5c7579ceb59::t_12be5f39eac1b9 78-82
+module/skills/docs-organization/scripts/formats/text.mjs
+  s_2fe5c7579ceb59::t_e6b5df833b77a4 6,10
+module/skills/docs-organization/scripts/formats/markdown.mjs
+  s_2fe5c7579ceb59::t_c83a411e364990 163
+  s_2fe5c7579ceb59::t_e8163999e601ed 197-202
+  s_2fe5c7579ceb59::t_ec2f6301f77920 14-18
+  s_2fe5c7579ceb59::t_61b3a215285f18 144-147
+  s_2fe5c7579ceb59::t_3d7865f18237f7 65-69,74-77,81-82
+tests/scripts/docs-organization/__fixtures__/formats/sample.adoc
+  s_2fe5c7579ceb59::t_affaf2f5399f83 29-31
+tests/scripts/docs-organization/doc-files.test.mjs
+  s_2fe5c7579ceb59::t_7de7f7c754f384 134,140-149
+module/skills/docs-organization/scripts/formats/asciidoc.mjs
+  s_2fe5c7579ceb59::t_9885a4cbca34f7 376
+tests/scripts/docs-organization/format-asciidoc.test.mjs
+  s_2fe5c7579ceb59::t_6d07ced4f8b226 12
+tests/scripts/docs-organization/format-registry.test.mjs
+  s_2fe5c7579ceb59::t_e0bb94645f7438 63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d71d4518f648d24831d913ee0c2da4b32b5454ee",
+  "prompts": {},
+  "sessions": {
+    "s_2fe5c7579ceb59": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e392d8a8-1144-4153-bf2c-e6024896efd3",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
