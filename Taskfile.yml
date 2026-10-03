@@ -25,6 +25,15 @@ tasks:
       - cd {{.TOOLCHAIN_DIR}} && npm install
       - bash "{{.ROOT_DIR}}/.taskfiles/scripts/build-vendor.sh"
 
+  deps:bump:
+    desc: Bump every npm toolchain pin (majors included) and the Linguist data pin to latest, then rebuild vendor/. Review the diff and run `task check` before committing.
+    cmds:
+      # The package list comes from package.json, so a new dependency needs no
+      # edit here. --package-lock=true overrides a user npmrc that disables it.
+      - cd {{.TOOLCHAIN_DIR}} && npm install --save-exact --package-lock=true $(node -p "Object.keys(require('./package.json').devDependencies).map((p) => p + '@latest').join(' ')")
+      - node .taskfiles/scripts/bump-linguist-pin.mjs
+      - task: vendor
+
   lint:
     desc: 'Structural lint of the module. MODE=llm for errors-only.'
     cmd: bash "{{.ROOT_DIR}}/.taskfiles/scripts/lint-structure.sh" --module . --mode {{.MODE}}
