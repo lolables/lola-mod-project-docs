@@ -9,7 +9,7 @@
   "devDependencies": {
     "@aj-archipelago/merval": "1.0.7",
     "@asciidoctor/core": "4.1.0",
-    "esbuild": "0.25.12",
+    "esbuild": "0.28.2",
     "js-yaml": "5.4.2",
     "markdown-it": "14.1.0",
     "markdown-it-admon": "1.0.1",
