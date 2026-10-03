@@ -111,13 +111,15 @@ const URL_SCHEME_RE = /^(?:https?|ftp|irc):\/\//;
 // AsciiDoc target, attrlist, or xref id is anywhere near this long; the cap
 // only ever bites on input built to defeat it.
 const MAX_SPAN = 2000;
+// Each macro alternative needs its own group names: reusing one name across
+// alternatives is ES2025 and a SyntaxError on Node 20, the supported floor.
 const INLINE_RE = new RegExp([
   String.raw`\\(?:link|xref|image|mailto):[^\s\[]{0,${MAX_SPAN}}\[[^\]]{0,${MAX_SPAN}}\]`,
   String.raw`\\<<[^>]{0,${MAX_SPAN}}>>`,
   String.raw`\\(?:https?|ftp|irc):\/\/\S{0,${MAX_SPAN}}`,
-  String.raw`(?<macro>link|image):(?<mtarget>[^\s\[:][^\s\[]{0,${MAX_SPAN}})\[(?<mattrs>[^\]]{0,${MAX_SPAN}})\]`,
-  String.raw`(?<macro>xref):(?<mtarget>[^\s\[:][^\[]{0,${MAX_SPAN}})\[(?<mattrs>[^\]]{0,${MAX_SPAN}})\]`,
-  String.raw`^(?<macro>image)::(?<mtarget>[^\s\[][^\s\[]{0,${MAX_SPAN}})\[(?<mattrs>[^\]]{0,${MAX_SPAN}})\]`,
+  String.raw`(?<macro>link|image):(?<mtarget>[^\s\[:][^\s\[]{0,${MAX_SPAN}})\[[^\]]{0,${MAX_SPAN}}\]`,
+  String.raw`(?<xmacro>xref):(?<xtarget>[^\s\[:][^\[]{0,${MAX_SPAN}})\[[^\]]{0,${MAX_SPAN}}\]`,
+  String.raw`^(?<bmacro>image)::(?<btarget>[^\s\[][^\s\[]{0,${MAX_SPAN}})\[[^\]]{0,${MAX_SPAN}}\]`,
   String.raw`<<(?<xref>[^,><]{1,${MAX_SPAN}}?)(?:,[^>]{0,${MAX_SPAN}})?>>`,
   String.raw`(?<=^|[\s\u00a0<>()\[\];]|link:|[*_#])(?<url>(?:https?|ftp|irc):\/\/[^\s\[\]<]{0,${MAX_SPAN}}[^\s,.?!\[\]<)>"])(?<urltext>\[[^\]]{0,${MAX_SPAN}}\])?`,
 ].join('|'), 'g');
@@ -277,8 +279,9 @@ function scanInline(doc, model, block, lineNumbers, rawLines) {
     for (const m of text.matchAll(INLINE_RE)) {
       const g = m.groups;
       let ref = null;
-      if (g.macro) {
-        ref = { kind: g.macro, target: g.mtarget, bare: false };
+      const macro = g.macro ?? g.xmacro ?? g.bmacro;
+      if (macro) {
+        ref = { kind: macro, target: g.mtarget ?? g.xtarget ?? g.btarget, bare: false };
       } else if (g.xref) {
         ref = { kind: 'xref', target: xrefTarget(g.xref), bare: false };
       } else if (g.url) {
