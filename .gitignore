@@ -41,7 +41,7 @@ docs/superpowers/
 # build-vendor.sh creates esbuild entry points inside the toolchain tree, because
 # esbuild resolves bare specifiers from the entry file's directory. The script
 # removes them on exit; this is the belt to that braces.
-.taskfiles/vendor/.vendor-entry.*
+.taskfiles/vendor/.vendor-entry*
 
 # --- Host context files written by a project-scope lola install ---
 # `lola install --scope project` writes these at the repo root. They are

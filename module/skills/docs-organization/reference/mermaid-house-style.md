@@ -32,8 +32,9 @@ fixed list (use a table), an isolated concept (use prose).
 
 ## Init header (Solar — the default)
 
-Paste this at the top of every `.mmd` file and every fenced ` ```mermaid `
-block:
+Paste this at the top of every `.mmd` file and every mermaid block — a
+` ```mermaid ` fence in Markdown, or the body of a `[mermaid]` /
+`[source,mermaid]` block in AsciiDoc:
 
 ```text
 %%{init: {'theme': 'base', 'themeVariables': {
@@ -52,6 +53,32 @@ block:
   'noteTextColor': '#1e1e1e',
   'fontFamily': 'system-ui, sans-serif'
 }, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
+```
+
+In AsciiDoc, put the header first inside the delimited block:
+
+```asciidoc
+[mermaid]
+....
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#2f6dab',
+  'primaryTextColor': '#1e1e1e',
+  'primaryBorderColor': '#7c8ba1',
+  'lineColor': '#7c8ba1',
+  'edgeLabelBackground': '#eef2f8',
+  'tertiaryColor': 'transparent',
+  'tertiaryTextColor': '#7c8ba1',
+  'tertiaryBorderColor': '#7c8ba1',
+  'clusterBkg': 'transparent',
+  'clusterBorder': '#7c8ba1',
+  'titleColor': '#7c8ba1',
+  'noteBkgColor': '#eef2f8',
+  'noteTextColor': '#1e1e1e',
+  'fontFamily': 'system-ui, sans-serif'
+}, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
+flowchart LR
+  A --> B
+....
 ```
 
 Then for any nodes you want palette-colored, add classDefs at the bottom
@@ -113,25 +140,27 @@ every node, edge, and `class` line are kept. It prints to stdout: write to
 `<file>.new`, then move that over `<file>` — redirecting onto `<file>` empties
 it before the script reads it.
 
-A `.mmd` is one diagram. In a `.md` the script swaps every mermaid fence —
-` ```mermaid ` or `~~~mermaid` — or only `--block <block>` (the `block`
-field from `lint-mermaid --json`, numbered the same way regardless of which
-fence character a diagram uses), and leaves every byte outside the swapped
-fences unchanged. It exits 2 with a reason
+A `.mmd` is one diagram. In a doc file the script swaps every mermaid block —
+Markdown ` ```mermaid ` or `~~~mermaid` fences, AsciiDoc `[mermaid]` /
+`[source,mermaid]` delimited blocks — or only `--block <block>` (the `block`
+field from `lint-mermaid --json`, numbered the same way whatever the
+delimiter), and leaves every byte outside the swapped blocks unchanged. It
+exits 2 with a reason
 and no output for an unknown palette, a `--block` past the last fence, a
-fence with no diagram, an unterminated init header, or a fence indented
-inside a list item or blockquote.
+block with no diagram, an unterminated init header, a block indented or
+nested inside a list item, quote, or admonition, or an AsciiDoc
+`[mermaid]` paragraph (no delimiters to keep the body together).
 
 ### Repairing a palette by hand
 
-For what the script refuses or does not touch — an indented fence, a
+For what the script refuses or does not touch — an indented or nested block, a
 `classDef edgeLabel`:
 
 1. Take the palette's values from `palettes/<palette>.json`: `nodes.sysX`
    `fill`/`text` for a `sysX` class, `edgeLabel` `bg`/`text` for
    `edgeLabel`, and the init header from the tables above.
 2. Replace the init header and the drifted `classDef` inside the diagram
-   only. In an indented fence keep every line's indentation.
+   only. In an indented block keep every line's indentation.
 3. Run `scripts/lint-mermaid.mjs` on the file and confirm no findings.
 
 ## Syntax constraints
@@ -162,7 +191,7 @@ The linter uses merval, a strict subset of mermaid's grammar:
 A syntax error does not hide the other checks: the header, class-name and
 contrast checks read the diagram text, so they still report on a diagram
 merval rejects. Every finding carries a 1-based `line` in its file (for a
-fenced block, lines count from the top of the `.md`).
+block inside a doc file, lines count from the top of that file).
 
 ## ER edge labels — known mermaid quirk
 

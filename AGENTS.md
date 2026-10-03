@@ -15,8 +15,8 @@ sandboxed-install suites.
 | --- | --- |
 | `module/AGENTS.md` | Lola module manifest (injected into the host's AGENTS.md / CLAUDE.md at install time) |
 | `module/skills/docs-organization/SKILL.md` | Skill prompt — invariants, drift detection, diagram authoring |
-| `module/skills/docs-organization/scripts/` | `check-structure.sh`, `check-staleness.mjs`, `check-prose.mjs`, `check-refs.mjs`, `md-files.mjs`, `md-chunks.mjs`, `md-lines.mjs`, `fetch-citations.mjs`, `lint-mermaid.mjs`, `apply-palette.mjs`, `css-named-colors.mjs`, `validate-palette.mjs`, `swap-palette.sh`, `contrast.mjs`, and `vendor/` |
-| `module/skills/docs-organization/reference/` | `mermaid-house-style.md`, `readme-template.md`, `docs-tree-template.md`, palette assets |
+| `module/skills/docs-organization/scripts/` | `check-structure.sh`, `check-staleness.mjs`, `check-prose.mjs`, `check-refs.mjs`, `doc-files.mjs`, `doc-chunks.mjs`, `formats/` (format registry and adapters), `fetch-citations.mjs`, `lint-mermaid.mjs`, `apply-palette.mjs`, `css-named-colors.mjs`, `validate-palette.mjs`, `swap-palette.sh`, `contrast.mjs`, and `vendor/` |
+| `module/skills/docs-organization/reference/` | `mermaid-house-style.md`, `readme-template.md`, `docs-tree-template.md`, `supported-formats.md`, `scripts.md`, palette assets |
 | `module/skills/adr/SKILL.md` | Skill prompt — MADR 4.0 workflow, status transitions |
 | `module/skills/adr/scripts/adr-index.sh` | Regenerates `index.md` whenever a new ADR is added or its status changes |
 | `module/skills/adr/reference/` | `madr-template.md`, `review-rubric.md` |
@@ -26,6 +26,8 @@ sandboxed-install suites.
 | `tests/scripts/<skill>/` | Unit tests (`*.test.mjs`, `*.test.sh`) and `__fixtures__/` for each skill's `scripts/`; kept out of `module/` so they never ship |
 | `tests/` | Structural-linter fixtures and bats suites, mermaid fixtures, Venom e2e |
 | `docs/dev/architecture.md` | How the skills and gates work internally |
+| `docs/dev/vendoring.md` | How the npm bundles and Linguist data are built, pinned, licensed, and shipped |
+| `docs/dev/maintaining.md` | Maintainer procedures: adding a document format, bumping the Linguist data |
 | `eval/` | Headless `/docs-audit` lane evaluation (maintainer research; not installed, not in `task test`). See `eval/README.md`. |
 | `.github/workflows/` | CI and release |
 

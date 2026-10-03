@@ -38,11 +38,14 @@ hardcode `.claude/skills/...` or search candidate paths.
         `core.quotePath=false` keeps non-ASCII names unquoted so they
         match below), and drop any path that no longer exists on disk
         (a deleted-but-tracked file would make the linter exit 2).
-     2. Keep paths equal to `README.md`, or starting with `docs/`, that
-        end in `.md` or `.mmd`.
+     2. Keep paths that are a root README (`node
+        "$SKILL_DIR/scripts/formats/index.mjs" --readmes` lists the names),
+        or start with `docs/` and end in `.mmd` or a doc extension (`node
+        "$SKILL_DIR/scripts/formats/index.mjs" --extensions`, compared
+        case-insensitively).
      3. Drop anything starting with `docs/superpowers/` or with a
         dot-directory path component (`.git/`, `.claude/`, etc.).
-     This naturally includes `README.md` only when it's actually
+     This naturally includes a README only when it's actually
      present — nothing else to special-case there.
 3. Run `node "$SKILL_DIR/scripts/lint-mermaid.mjs" --json <targets>`. The
    `--json` flag returns structured output for parsing; without it, the
@@ -50,16 +53,16 @@ hardcode `.claude/skills/...` or search candidate paths.
    running the script directly, but harder to parse here).
 4. Parse the JSON output. Render findings to the user grouped by file,
    showing the rule code, message, and the finding's `line` (1-based in
-   the file, fenced `.md` blocks included).
+   the file, blocks inside doc files included).
 5. **Do not auto-fix.** Suggest /docs-update, which fixes each finding as
    follows:
    - `MISSING_HOUSE_STYLE_HEADER`: prepends a palette init header.
    - `LEGACY_HOUSE_STYLE_HEADER`, and `LOW_CONTRAST_*` on a `sysA`…`sysF`
      `classDef`: re-applies the diagram's palette with
-     `swap-palette.sh <palette> <file>` — for a fenced block in a `.md`,
+     `swap-palette.sh <palette> <file>` — for a mermaid block in a doc file,
      `swap-palette.sh --block <block> <palette> <file>` (`<block>` is the
      `block` field from `lint-mermaid --json`), which changes only that
-     fence. Output goes to `<file>.new`, then moves over
+     block. Output goes to `<file>.new`, then moves over
      `<file>`.
    - `UNAPPROVED_CLASSNAME`, `UNAPPROVED_STYLE`, and `LOW_CONTRAST_*` on a
      `style` statement or `classDef "edgeLabel"`: a judgment call — map the

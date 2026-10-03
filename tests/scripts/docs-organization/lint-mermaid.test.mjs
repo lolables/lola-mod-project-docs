@@ -160,7 +160,7 @@ test('lintDiagram: classDef findings point at the classDef line', async () => {
   }
 });
 
-test('CLI: .md findings report file lines, offset past the fence and a leading blank', () => {
+test('CLI: .md findings report file lines, offset past the fence and a leading blank', async () => {
   const md = fixturePath('fenced-blocks.md');
   const text = readFileSync(md, 'utf8');
   const { code, out } = runScript(scriptPath, md);
@@ -174,6 +174,20 @@ test('CLI: .md findings report file lines, offset past the fence and a leading b
     { blockIndex: 1, code: 'UNAPPROVED_CLASSNAME', line: lineOf(text, 'classDef myCustomClass') },
   ]);
   assert.equal(lineOf(text, '%%{init', block1Start), block1Start);
+});
+
+test('CLI: .adoc findings report file lines, offset past the delimiter and a leading blank', () => {
+  const adoc = fixturePath('fenced-blocks.adoc');
+  const text = readFileSync(adoc, 'utf8');
+  const { code, out } = runScript(scriptPath, adoc);
+  assert.equal(code, 1);
+  const got = JSON.parse(out).results.flatMap((r) =>
+    r.findings.map((f) => ({ block: r.block, code: f.code, line: f.line })));
+  assert.deepEqual(got, [
+    { block: 1, code: 'MISSING_HOUSE_STYLE_HEADER', line: lineOf(text, 'flowchart LR') },
+    { block: 2, code: 'SYNTAX_ERROR', line: lineOf(text, 'B[(store)]') },
+    { block: 2, code: 'UNAPPROVED_CLASSNAME', line: lineOf(text, 'classDef myCustomClass') },
+  ]);
 });
 
 // --- messages cite paths that exist in an installed skill ---
@@ -270,13 +284,13 @@ test('lintDiagram: no shape hint outside flowchart/graph diagrams', async () => 
   assert.doesNotMatch(err.message, /merval does not support/);
 });
 
-test('extractMermaidBlocks: returns whole file for .mmd', () => {
-  const blocks = extractMermaidBlocks('flowchart LR\n  A --> B', 'foo.mmd');
+test('extractMermaidBlocks: returns whole file for .mmd', async () => {
+  const blocks = await extractMermaidBlocks('flowchart LR\n  A --> B', 'foo.mmd');
   assert.equal(blocks.length, 1);
   assert.equal(blocks[0].source, 'flowchart LR\n  A --> B');
 });
 
-test('extractMermaidBlocks: pulls fenced blocks from .md', () => {
+test('extractMermaidBlocks: pulls fenced blocks from .md', async () => {
   const md = [
     '# Doc',
     '',
@@ -294,19 +308,19 @@ test('extractMermaidBlocks: pulls fenced blocks from .md', () => {
     '  A->>B: hi',
     '```',
   ].join('\n');
-  const blocks = extractMermaidBlocks(md, 'foo.md');
+  const blocks = await extractMermaidBlocks(md, 'foo.md');
   assert.equal(blocks.length, 2);
   assert.match(blocks[0].source, /flowchart LR/);
   assert.match(blocks[1].source, /sequenceDiagram/);
 });
 
-test('extractMermaidBlocks: returns empty for .md with no mermaid blocks', () => {
-  assert.deepEqual(extractMermaidBlocks('# Just prose\nNo diagrams.', 'foo.md'), []);
+test('extractMermaidBlocks: returns empty for .md with no mermaid blocks', async () => {
+  assert.deepEqual(await extractMermaidBlocks('# Just prose\nNo diagrams.', 'foo.md'), []);
 });
 
 // --- CommonMark tilde fences (`~~~mermaid`), same status as ```mermaid ---
 
-test('extractMermaidBlocks: recognizes ~~~mermaid fences', () => {
+test('extractMermaidBlocks: recognizes ~~~mermaid fences', async () => {
   const md = [
     '# Doc',
     '',
@@ -315,13 +329,13 @@ test('extractMermaidBlocks: recognizes ~~~mermaid fences', () => {
     '  A --> B',
     '~~~',
   ].join('\n');
-  const blocks = extractMermaidBlocks(md, 'foo.md');
+  const blocks = await extractMermaidBlocks(md, 'foo.md');
   assert.equal(blocks.length, 1);
   assert.equal(blocks[0].block, 1);
   assert.match(blocks[0].source, /flowchart LR/);
 });
 
-test('extractMermaidBlocks: mixed ``` and ~~~ fences number consistently', () => {
+test('extractMermaidBlocks: mixed ``` and ~~~ fences number consistently', async () => {
   const md = [
     '# Doc',
     '',
@@ -335,7 +349,7 @@ test('extractMermaidBlocks: mixed ``` and ~~~ fences number consistently', () =>
     '  C --> D',
     '~~~',
   ].join('\n');
-  const blocks = extractMermaidBlocks(md, 'foo.md');
+  const blocks = await extractMermaidBlocks(md, 'foo.md');
   assert.equal(blocks.length, 2);
   assert.equal(blocks[0].block, 1);
   assert.match(blocks[0].source, /A --> B/);
@@ -343,7 +357,7 @@ test('extractMermaidBlocks: mixed ``` and ~~~ fences number consistently', () =>
   assert.match(blocks[1].source, /C --> D/);
 });
 
-test('extractMermaidBlocks: a 4-backtick fence around a ```mermaid example is not mermaid', () => {
+test('extractMermaidBlocks: a 4-backtick fence around a ```mermaid example is not mermaid', async () => {
   // A doc explaining how to fence mermaid, demonstrated inside a wider
   // backtick fence so the example's own ``` markers stay literal. The
   // outer fence has no "mermaid" info string, so nothing here is a
@@ -358,10 +372,10 @@ test('extractMermaidBlocks: a 4-backtick fence around a ```mermaid example is no
     '```',
     '````',
   ].join('\n');
-  assert.deepEqual(extractMermaidBlocks(md, 'foo.md'), []);
+  assert.deepEqual(await extractMermaidBlocks(md, 'foo.md'), []);
 });
 
-test('extractMermaidBlocks: a ~~~ fence is not closed by ```', () => {
+test('extractMermaidBlocks: a ~~~ fence is not closed by ```', async () => {
   const md = [
     '# Doc',
     '',
@@ -372,7 +386,7 @@ test('extractMermaidBlocks: a ~~~ fence is not closed by ```', () => {
     '  C --> D',
     '~~~',
   ].join('\n');
-  const blocks = extractMermaidBlocks(md, 'foo.md');
+  const blocks = await extractMermaidBlocks(md, 'foo.md');
   assert.equal(blocks.length, 1);
   // The stray ``` line inside is literal body content, not a closer.
   assert.match(blocks[0].source, /A --> B[\s\S]*```[\s\S]*C --> D/);
@@ -398,7 +412,7 @@ function mktemp(prefix = 'lint-mermaid-') {
 // Per docs-organization SKILL.md ("Scope of audit"), directory traversal
 // must skip dot-directories, node_modules, and LLM-configuration files
 // (CLAUDE.md, AGENTS.md, GEMINI.md, .cursorrules).
-test('walk: skips LLM-config files and agent-runtime dirs in directory mode', () => {
+test('walk: skips LLM-config files and agent-runtime dirs in directory mode', async () => {
   const work = mkdtempSync(join(tmpdir(), 'walk-scope-test-'));
   try {
     writeFileSync(join(work, 'guide.md'), '# guide');
@@ -419,7 +433,7 @@ test('walk: skips LLM-config files and agent-runtime dirs in directory mode', ()
   }
 });
 
-test('walk: skips __fixtures__ during directory traversal', () => {
+test('walk: skips __fixtures__ during directory traversal', async () => {
   // Test fixtures intentionally include broken diagrams. They are test
   // inputs, not project documentation, so directory traversal must skip
   // them — same principle as node_modules and dot-directories.
@@ -437,7 +451,7 @@ test('walk: skips __fixtures__ during directory traversal', () => {
   }
 });
 
-test('walk: still returns explicit file even if its basename is LLM-config', () => {
+test('walk: still returns explicit file even if its basename is LLM-config', async () => {
   // When a user explicitly names a file, we lint it. The scope filter
   // applies during directory traversal, not when a single file is given.
   const work = mkdtempSync(join(tmpdir(), 'walk-explicit-test-'));
@@ -482,13 +496,13 @@ function findsInlineClass(out) {
 const scriptPath = join(SCRIPTS_DIR, 'lint-mermaid.mjs');
 const fixturePath = (name) => join(here, '__fixtures__', name);
 
-test('CLI: exits 0 with status ok when there are no findings', () => {
+test('CLI: exits 0 with status ok when there are no findings', async () => {
   const { code, out } = runScript(scriptPath, fixturePath('good.mmd'));
   assert.equal(code, 0);
   assert.equal(JSON.parse(out).status, 'ok');
 });
 
-test('CLI: exits 1 when the only findings are warnings', () => {
+test('CLI: exits 1 when the only findings are warnings', async () => {
   const { code, out } = runScript(scriptPath, fixturePath('legacy-header.mmd'));
   const parsed = JSON.parse(out);
   assert.equal(parsed.status, 'findings');
@@ -497,20 +511,20 @@ test('CLI: exits 1 when the only findings are warnings', () => {
   assert.equal(code, 1);
 });
 
-test('CLI: exits 1 on blocker findings', () => {
+test('CLI: exits 1 on blocker findings', async () => {
   const { code, out } = runScript(scriptPath, fixturePath('low-contrast.mmd'));
   assert.equal(code, 1);
   assert.ok(JSON.parse(out).blockerCount > 0);
 });
 
-test('CLI: exits 2 on internal error (missing target)', () => {
+test('CLI: exits 2 on internal error (missing target)', async () => {
   assert.throws(
     () => execFileSync('node', [scriptPath, '--json', join(here, 'no-such-file.mmd')], { stdio: 'pipe' }),
     (e) => e.status === 2,
   );
 });
 
-test('CLI: human summary counts distinct files, not blocks', () => {
+test('CLI: human summary counts distinct files, not blocks', async () => {
   const dir = mktemp();
   const md = join(dir, 'two-blocks.md');
   const block = '```mermaid\nflowchart LR\n  A[a] --> B[b]\n```\n';
@@ -526,7 +540,7 @@ test('CLI: human summary counts distinct files, not blocks', () => {
   assert.match(out, /^lint-mermaid: 2 blockers in 2 blocks across 1 file\.$/m);
 });
 
-test('CLI: a ~~~mermaid fence is linted, not skipped — low contrast is flagged', () => {
+test('CLI: a ~~~mermaid fence is linted, not skipped — low contrast is flagged', async () => {
   const dir = mktemp();
   const md = join(dir, 'tilde.md');
   const text = [
@@ -562,7 +576,7 @@ test('CLI: a ~~~mermaid fence is linted, not skipped — low contrast is flagged
   assert.equal(finding.line, wantLine);
 });
 
-test('CLI: invocable via a script path containing a space', () => {
+test('CLI: invocable via a script path containing a space', async () => {
   const spaceParent = mktemp();
   const targetDir = join(spaceParent, 'sp ace');
   copyScriptsDirTo(targetDir);
@@ -574,7 +588,7 @@ test('CLI: invocable via a script path containing a space', () => {
   findsInlineClass(out);
 });
 
-test('CLI: invocable through a symlinked directory', () => {
+test('CLI: invocable through a symlinked directory', async () => {
   const parent = mktemp();
   const linkDir = join(parent, 'link');
   symlinkSync(SCRIPTS_DIR, linkDir, 'dir');
@@ -632,7 +646,7 @@ test('lintDiagram: a passing named color and an unresolvable color raise no cont
   assert.deepEqual(await lintDiagram(src), []);
 });
 
-test('CLI: a named-color style statement in a fenced .md reports file lines', () => {
+test('CLI: a named-color style statement in a fenced .md reports file lines', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'lint-mermaid-style-'));
   tmpDirs.push(dir);
   const md = join(dir, 'doc.md');
@@ -647,13 +661,13 @@ test('CLI: a named-color style statement in a fenced .md reports file lines', ()
 
 // --- `block`: the 1-based fence number swap-palette.sh --block expects ---
 
-test('extractMermaidBlocks: .md blocks carry a 1-based block, .mmd a null one', () => {
+test('extractMermaidBlocks: .md blocks carry a 1-based block, .mmd a null one', async () => {
   const md = '```mermaid\nflowchart LR\n  A --> B\n```\n\n```mermaid\nflowchart LR\n  C --> D\n```\n';
-  assert.deepEqual(extractMermaidBlocks(md, 'x.md').map((b) => b.block), [1, 2]);
-  assert.equal(extractMermaidBlocks('flowchart LR\n  A --> B', 'x.mmd')[0].block, null);
+  assert.deepEqual((await extractMermaidBlocks(md, 'x.md')).map((b) => b.block), [1, 2]);
+  assert.equal((await extractMermaidBlocks('flowchart LR\n  A --> B', 'x.mmd'))[0].block, null);
 });
 
-test('CLI --json: each .md result and finding carries block = blockIndex + 1', () => {
+test('CLI --json: each .md result and finding carries block = blockIndex + 1', async () => {
   const { out } = runScript(scriptPath, fixturePath('fenced-blocks.md'));
   const results = JSON.parse(out).results;
   assert.deepEqual(results.map((r) => [r.blockIndex, r.block]), [[0, 1], [1, 2]]);
@@ -662,14 +676,14 @@ test('CLI --json: each .md result and finding carries block = blockIndex + 1', (
   assert.equal(unapproved.block, 2);
 });
 
-test('CLI --json: an .mmd result has block null', () => {
+test('CLI --json: an .mmd result has block null', async () => {
   const { out } = runScript(scriptPath, fixturePath('low-contrast.mmd'));
   const [r] = JSON.parse(out).results;
   assert.equal(r.block, null);
   for (const f of r.findings) assert.equal(f.block, null, f.code);
 });
 
-test('CLI human output labels every .md fence by its 1-based block', () => {
+test('CLI human output labels every .md fence by its 1-based block', async () => {
   let out;
   try {
     execFileSync('node', [scriptPath, fixturePath('fenced-blocks.md')], { encoding: 'utf8' });
@@ -681,4 +695,28 @@ test('CLI human output labels every .md fence by its 1-based block', () => {
   assert.match(out, /fenced-blocks\.md \(block 1\):/);
   assert.match(out, /fenced-blocks\.md \(block 2\):/);
   assert.doesNotMatch(out, /\(block 0\)/);
+});
+
+test('extractMermaidBlocks: a fence inside an admonition is found and marked not swappable', async () => {
+  const md = '# Doc\n\n!!! note\n    ```mermaid\n    flowchart LR\n      A --> B\n    ```\n';
+  const blocks = await extractMermaidBlocks(md, 'foo.md');
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0].startLine, 5);
+  assert.equal(blocks[0].source, 'flowchart LR\n  A --> B');
+  assert.equal(blocks[0].swappable, false);
+});
+
+test('extractMermaidBlocks: a non-doc, non-.mmd file has no blocks', async () => {
+  assert.deepEqual(await extractMermaidBlocks('```mermaid\ngraph LR\n```\n', 'notes.txt'), []);
+});
+
+test('extractMermaidBlocks: [mermaid] paragraphs and [source,mermaid] listings in .adoc', async () => {
+  const blocks = await extractMermaidBlocks('[mermaid]\ngraph LR\n\n[source,mermaid]\n----\ngraph TD\n----\n', 'x.adoc');
+  assert.deepEqual(blocks.map((b) => [b.block, b.startLine, b.swappable]), [[1, 2, false], [2, 6, true]]);
+});
+
+test('walk: picks up every registered doc extension and .mmd, nothing else', () => {
+  const dir = mktemp();
+  for (const n of ['a.md', 'b.markdown', 'c.mmd', 'd.txt', 'e.mdx']) writeFileSync(join(dir, n), 'x\n');
+  assert.deepEqual(walk(dir).map((p) => p.slice(dir.length + 1)).sort(), ['a.md', 'b.markdown', 'c.mmd']);
 });

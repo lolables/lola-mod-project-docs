@@ -3,6 +3,7 @@ import { validateMermaid } from './vendor/merval.mjs';
 import { readFileSync, statSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './is-main.mjs';
+import { formatFor } from './formats/index.mjs';
 
 const LIGHT_BG = '#ffffff';
 const DARK_BG = '#1e1e1e';
@@ -288,94 +289,37 @@ export async function lintDiagram(source) {
   return findings;
 }
 
-// CommonMark fenced code block delimiters: a run of 3+ backticks or 3+
-// tildes, indented at most 3 spaces. A backtick-fenced info string may not
-// itself contain a backtick (that would be ambiguous with inline code); a
-// tilde-fenced one has no such restriction. `lang` is the info string's
-// first whitespace-delimited word — the fence is a mermaid fence iff
-// `lang === 'mermaid'`.
-const FENCE_OPEN_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
-
-function matchFenceOpen(line) {
-  const m = FENCE_OPEN_RE.exec(line);
-  if (!m) return null;
-  const [, run, rest] = m;
-  const char = run[0];
-  if (char === '`' && rest.includes('`')) return null;
-  const trimmed = rest.trim();
-  return {
-    char,
-    len: run.length,
-    lang: trimmed ? trimmed.split(/\s+/)[0] : '',
-    indentLen: m[0].length - run.length - rest.length,
-  };
-}
-
-// A closing fence is a line holding only (up to 3 spaces indent, then) a
-// run of the *same* character as the opener, at least as long, then
-// optional trailing whitespace — no info string.
-const FENCE_CLOSE_RE = /^ {0,3}(`+|~+)[ \t]*$/;
-
-function matchFenceClose(line, char, minLen) {
-  const m = FENCE_CLOSE_RE.exec(line);
-  return !!m && m[1][0] === char && m[1].length >= minLen;
-}
-
-// `startLine` is the 1-based file line of the block's first diagram line
-// (blank lines after the opening fence are skipped by `\s*`). For a .md,
-// `fenceStart` is the offset of the opening fence and [bodyStart, bodyEnd)
-// the untrimmed diagram text — swap-palette.sh splices by these offsets, so
-// it numbers blocks exactly as the findings do. `block` is the 1-based
-// fence number `swap-palette.sh --block` takes; null for a .mmd (one
-// diagram). Fences are scanned line-by-line (not with a single regex) so a
-// non-mermaid fence's body — including any ```/~~~-looking text inside it —
-// is skipped wholesale rather than matched as a nested mermaid fence.
-export function extractMermaidBlocks(content, filename) {
+// A .mmd is one whole diagram. Any other file is parsed by its format adapter
+// (formats/index.mjs), whose diagrams carry `startLine` (the 1-based file line
+// of the first diagram line), `blockStart` and [bodyStart, bodyEnd) offsets
+// into the original text, and `swappable` — swap-palette.sh splices by these,
+// so it numbers blocks exactly as the findings do. `block` is the 1-based
+// number `swap-palette.sh --block` takes; null for a .mmd. A file no format
+// owns has no blocks.
+export async function extractMermaidBlocks(content, filename) {
   if (filename.endsWith('.mmd')) {
     return [{ source: content, blockIndex: 0, block: null, startLine: 1 }];
   }
-  const lines = content.split('\n');
-  const offsets = [0];
-  for (let k = 0; k < content.length; k++) {
-    if (content[k] === '\n') offsets.push(k + 1);
-  }
-
-  const blocks = [];
-  let idx = 0;
-  let i = 0;
-  while (i < lines.length) {
-    const open = matchFenceOpen(lines[i]);
-    if (!open) {
-      i++;
-      continue;
-    }
-    let j = i + 1;
-    while (j < lines.length && !matchFenceClose(lines[j], open.char, open.len)) j++;
-    const closed = j < lines.length;
-    if (open.lang === 'mermaid') {
-      const bodyStartLineIdx = i + 1;
-      const bodyStart = bodyStartLineIdx < lines.length ? offsets[bodyStartLineIdx] : content.length;
-      const bodyEnd = closed ? offsets[j] : content.length;
-      blocks.push({
-        source: content.slice(bodyStart, bodyEnd).trimEnd(),
-        blockIndex: idx,
-        block: ++idx,
-        startLine: bodyStartLineIdx + 1,
-        fenceStart: offsets[i] + open.indentLen,
-        bodyStart,
-        bodyEnd,
-      });
-    }
-    i = closed ? j + 1 : lines.length;
-  }
-  return blocks;
+  const format = formatFor(filename);
+  if (!format) return [];
+  const { diagrams } = await format.parse(content);
+  return diagrams.map((d, i) => ({
+    source: d.source,
+    blockIndex: i,
+    block: i + 1,
+    startLine: d.startLine,
+    blockStart: d.blockStart,
+    bodyStart: d.bodyStart,
+    bodyEnd: d.bodyEnd,
+    swappable: d.swappable,
+  }));
 }
 
 export function walk(target) {
   const out = [];
   const stat = statSync(target);
   if (stat.isFile()) {
-    if (target.endsWith('.mmd') || target.endsWith('.md')) out.push(target);
+    if (target.endsWith('.mmd') || formatFor(target)) out.push(target);
     return out;
   }
   for (const entry of readdirSync(target, { withFileTypes: true })) {
@@ -414,7 +358,7 @@ function formatHuman(results, blockerCount) {
   const parts = [];
   if (blockerCount) parts.push(`${blockerCount} blocker${blockerCount === 1 ? '' : 's'}`);
   if (warningCount) parts.push(`${warningCount} warning${warningCount === 1 ? '' : 's'}`);
-  // `results` has one entry per block with findings; a .md can hold several.
+  // `results` has one entry per block with findings; a doc can hold several.
   const blocks = results.length;
   const files = new Set(results.map((r) => r.file)).size;
   lines.push(
@@ -437,7 +381,7 @@ async function main(argv) {
   for (const target of targets) {
     for (const file of walk(target)) {
       const content = readFileSync(file, 'utf8');
-      const blocks = extractMermaidBlocks(content, file);
+      const blocks = await extractMermaidBlocks(content, file);
       for (const block of blocks) {
         const findings = (await lintDiagram(block.source)).map((f) => ({
           ...f,

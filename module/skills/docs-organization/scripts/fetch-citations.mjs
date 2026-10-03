@@ -28,12 +28,13 @@
 // LIMITS.deadlineMs; a hop never outlives the run deadline, and no hop starts
 // after it.
 //
-// Local sources: every relative link or image target is resolved against
-// its doc's directory and judged by realpath against `--root` (the audited
-// path argument's directory). Accepted: a regular file inside --root with no
-// dot-named component below it. Anything else is listed as unread with its
-// reason; a missing target is left to REF_BROKEN. The script only stats and
-// realpaths local sources — it never reads their contents.
+// Local sources: every relative link, image, cross-reference, or include
+// target is resolved against its doc's directory and judged by realpath
+// against `--root` (the audited path argument's directory). Accepted: a
+// regular file inside --root with no dot-named component below it. Anything
+// else is listed as unread with its reason; a missing target is left to
+// REF_BROKEN. The script only stats and realpaths local sources — it never
+// reads their contents.
 //
 // Output: JSON {status, scanned, fetched, findings:[{code, severity, file,
 // line, message}], citations:[{url, file, line, snapshot}],
@@ -49,66 +50,68 @@ import { BlockList, isIP } from 'node:net';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, readdirSync, statSync, realpathSync } from 'node:fs';
 import { join, dirname, resolve, relative, isAbsolute, sep } from 'node:path';
-import { lineAwareMarkdown } from './md-lines.mjs';
+import { parseDoc } from './formats/index.mjs';
 import { isMain } from './is-main.mjs';
 
 export const LIMITS = { maxUrls: 50, maxBytes: 2 * 1024 * 1024, timeoutMs: 10_000, deadlineMs: 90_000, maxRedirects: 3 };
 const KEPT_TYPE = /^(text\/[\w.+-]+|application\/json|application\/xhtml\+xml)\s*(;|$)/i;
 const USER_AGENT = 'docs-discipline-fetch-citations';
 
-const { md, inlineBlocks } = lineAwareMarkdown({ linkify: true });
-md.linkify.set({ fuzzyLink: false, fuzzyEmail: false });
-
 // A citation is an absolute URL with an authority (`scheme://`). mailto:/tel:
 // are contact details, and relative targets are local sources.
 const ABSOLUTE = /^[a-z][a-z0-9+.-]*:\/\//i;
 const NOT_LOCAL = /^(#|mailto:|tel:|data:)/i;
 
-// Every absolute URL cited in `content` — link, image, autolink, or bare —
+// Every absolute URL cited in a parsed doc — link, image, autolink, or bare —
 // with the 1-based line it appears on, in document order. Code spans and code
-// blocks never produce link tokens, so examples are not citations.
+// blocks never produce links, so examples are not citations.
 //
 // Each URL is reported in WHATWG canonical form (`new URL(…).href`), because
-// it becomes a snapshot header line: normalizeLinkText alone would decode
-// `%0A` into a real newline (forging header lines) and let bidi controls
-// through, while the canonical form strips tabs and newlines and
-// percent-encodes every other control character. normalizeLinkText still
-// runs first because markdown-it percent-encodes every target, and `[::1]` as
-// `%5B::1%5D` is an invalid URL. A target that does not parse stays in
-// markdown-it's percent-encoded form, which has no control characters, so
-// checkUrl reports it as not a valid URL.
-export function extractCitations(content) {
+// it becomes a snapshot header line: the canonical form strips tabs and
+// newlines and percent-encodes every other control character, so a `%0A` in
+// the source can never forge a header line or smuggle a bidi control. The
+// RAW target is parsed first, so the cited URL is never a different one than
+// what a browser would open: decodeURI turns `%5C` into `\`, and the URL
+// parser turns a `\` in an https URL into `/`, so decoding before parsing
+// would canonicalize `https://evil.com%5C@127.0.0.1/` to
+// `https://evil.com/@127.0.0.1/` — a different host. Decoding is the
+// fallback, only for a target the raw string can't parse as given (adapters
+// may hand one over percent-encoded, e.g. markdown-it encodes `[::1]` as
+// `%5B::1%5D`, an invalid URL on its own); decodeURI leaves reserved escapes
+// like `%2F` alone. A target that parses neither way stays as given, which
+// carries no raw control characters, so checkUrl reports it as not a valid
+// URL.
+export function extractCitations(model) {
   const out = [];
-  for (const { block, lineOf } of inlineBlocks(content)) {
-    for (const c of block.children) {
-      const target = c.type === 'link_open' ? c.attrGet('href') : c.type === 'image' ? c.attrGet('src') : null;
-      if (!target || !ABSOLUTE.test(target)) continue;
-      let url;
-      try { url = new URL(md.normalizeLinkText(target)).href; } catch { url = target; }
-      out.push({ url, line: lineOf(c) });
-    }
+  for (const l of model.links) {
+    if (!l.target || !ABSOLUTE.test(l.target)) continue;
+    let url;
+    try { url = new URL(l.target).href; }
+    catch { try { url = new URL(decodeUri(l.target)).href; } catch { url = l.target; } }
+    out.push({ url, line: l.line });
   }
   return out;
 }
 
-// markdown-it percent-encodes every href; decode it as check-refs.mjs does,
+function decodeUri(t) {
+  try { return decodeURI(t); } catch { return t; }
+}
+
+// Targets may be percent-encoded; decode as check-refs.mjs does,
 // keeping the raw string when an escape is malformed.
 function decodeTarget(t) {
   try { return decodeURIComponent(t); } catch { return t; }
 }
 
-// Every relative link or image target in `content` with its line, in document
-// order: {target, file} where `target` is the decoded href and `file` the
+// Every relative reference target in a parsed doc with its line, in document
+// order: {target, file} where `target` is the decoded target and `file` the
 // decoded path with any #fragment stripped. Absolute URLs, pure anchors,
-// mailto:, tel:, and data: are not local. Code never produces link tokens.
-function extractLocalTargets(content) {
+// mailto:, tel:, and data: are not local. Code never produces references.
+function extractLocalTargets(model) {
   const out = [];
-  for (const { block, lineOf } of inlineBlocks(content)) {
-    for (const c of block.children) {
-      const target = c.type === 'link_open' ? c.attrGet('href') : c.type === 'image' ? c.attrGet('src') : null;
-      if (!target || ABSOLUTE.test(target) || NOT_LOCAL.test(target)) continue;
-      out.push({ target: decodeTarget(target), file: decodeTarget(target.replace(/#.*$/, '')), line: lineOf(c) });
-    }
+  for (const l of model.links) {
+    if (!l.target || ABSOLUTE.test(l.target) || NOT_LOCAL.test(l.target)) continue;
+    out.push({ target: decodeTarget(l.target), file: decodeTarget(l.target.replace(/#.*$/, '')), line: l.line });
   }
   return out;
 }
@@ -321,8 +324,8 @@ export function snapshotContent(url, result, fetchedAt) {
 }
 
 function usage() {
-  process.stderr.write('usage: fetch-citations.mjs --root <dir> --out <empty-dir> <doc.md>...\n'
-    + '       fetch-citations.mjs --root <dir> --offline <doc.md>...\n');
+  process.stderr.write('usage: fetch-citations.mjs --root <dir> --out <empty-dir> <doc>...\n'
+    + '       fetch-citations.mjs --root <dir> --offline <doc>...\n');
   process.exit(2);
 }
 
@@ -356,10 +359,10 @@ export async function run(argv, transport = {}) {
   const localSources = [];
   const unreadSources = [];
   for (const file of docs) {
-    const content = readFileSync(file, 'utf8');
-    for (const c of extractCitations(content)) citations.push({ ...c, file });
+    const model = await parseDoc(file, readFileSync(file, 'utf8'));
+    for (const c of extractCitations(model)) citations.push({ ...c, file });
     const seen = new Set();
-    for (const t of extractLocalTargets(content)) {
+    for (const t of extractLocalTargets(model)) {
       const verdict = classifyLocal(realRoot, dirname(file), t.file);
       if (!verdict || seen.has(verdict.path)) continue;
       seen.add(verdict.path);

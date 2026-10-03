@@ -3,20 +3,20 @@
 # Strips the current init header and the palette's own classDef lines, then
 # re-applies the named palette via apply-palette.mjs.
 #
-# A .md is swapped in place: every mermaid fence — ```mermaid or ~~~mermaid,
-# numbered the same way lint-mermaid does (or only --block N, the 1-based
-# `block` field of a lint-mermaid --json finding) — gets the new palette and
-# every byte outside those fences is left untouched. Any other file is taken
-# as one whole diagram (.mmd).
+# A doc file (any format formats/index.mjs registers) is swapped in place:
+# every mermaid diagram — numbered the same way lint-mermaid does (or only
+# --block N, the 1-based `block` field of a lint-mermaid --json finding) —
+# gets the new palette and every byte outside those diagrams is left
+# untouched. Any other file is taken as one whole diagram (.mmd).
 #
-# Usage: swap-palette.sh [--block N] <palette-name> <path/to/diagram.mmd|doc.md>
-# Refusals (unknown palette, bad --block, no diagram body, an indented
-# fence) print a reason on stderr and exit 2 with nothing on stdout.
+# Usage: swap-palette.sh [--block N] <palette-name> <path/to/diagram.mmd|doc>
+# Refusals (unknown palette, bad --block, no diagram body, an indented or
+# nested block) print a reason on stderr and exit 2 with nothing on stdout.
 set -euo pipefail
 
-USAGE="usage: swap-palette.sh [--block N] <palette-name> <path/to/diagram.mmd|doc.md>"
+USAGE="usage: swap-palette.sh [--block N] <palette-name> <path/to/diagram.mmd|doc>"
 
-# Unset (not empty) means "every fence"; `--block ""` must still be refused.
+# Unset (not empty) means "every diagram"; `--block ""` must still be refused.
 unset BLOCK
 while [[ $# -gt 0 && "$1" == --* ]]; do
   case "$1" in
@@ -62,11 +62,7 @@ fi
 SWAP_ARGS=(--swap "$PALETTE_JSON" "$INPUT")
 if [[ -n "${BLOCK+set}" ]]; then
   if [[ ! "$BLOCK" =~ ^[1-9][0-9]*$ ]]; then
-    echo "--block needs a positive integer (1 = first mermaid fence), got: $BLOCK" >&2
-    exit 2
-  fi
-  if [[ "$INPUT" != *.md ]]; then
-    echo "--block selects a fence in a .md; $INPUT is a whole diagram" >&2
+    echo "--block needs a positive integer (1 = first mermaid diagram), got: $BLOCK" >&2
     exit 2
   fi
   SWAP_ARGS+=("$BLOCK")

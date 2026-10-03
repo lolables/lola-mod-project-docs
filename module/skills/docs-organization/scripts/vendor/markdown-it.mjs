@@ -267,6 +267,132 @@ var require_punycode = __commonJS({
   }
 });
 
+// .taskfiles/vendor/node_modules/markdown-it-admon/index.js
+var require_markdown_it_admon = __commonJS({
+  ".taskfiles/vendor/node_modules/markdown-it-admon/index.js"(exports, module) {
+    var capitalize = ([first, ...rest], lowerRest = false) => first.toUpperCase() + rest.join("");
+    function getTag(params) {
+      const [tag = "", ..._title] = params.trim().split(" ");
+      if (!tag) {
+        return {};
+      }
+      const joined = _title.join(" ");
+      const title = !joined ? capitalize(tag) : joined === '""' ? "" : joined;
+      return { tag: tag.toLowerCase(), title };
+    }
+    function validate(params) {
+      const [tag = ""] = params.trim().split(" ", 1);
+      return !!tag;
+    }
+    function renderDefault(tokens, idx, _options, env, slf) {
+      return slf.renderToken(tokens, idx, _options, env, slf);
+    }
+    var minMarkers = 3;
+    var markerStr = "!";
+    var markerChar = markerStr.charCodeAt(0);
+    var markerLen = markerStr.length;
+    function admonition(state, startLine, endLine, silent) {
+      let pos;
+      let nextLine;
+      let token;
+      const start = state.bMarks[startLine] + state.tShift[startLine];
+      let max = state.eMarks[startLine];
+      if (markerChar !== state.src.charCodeAt(start)) {
+        return false;
+      }
+      for (pos = start + 1; pos <= max; pos++) {
+        if (markerStr[(pos - start) % markerLen] !== state.src[pos]) {
+          break;
+        }
+      }
+      const markerCount = Math.floor((pos - start) / markerLen);
+      if (markerCount < minMarkers) {
+        return false;
+      }
+      const markerPos = pos - (pos - start) % markerLen;
+      const params = state.src.slice(markerPos, max);
+      const markup = state.src.slice(start, markerPos);
+      if (!validate(params)) {
+        return false;
+      }
+      if (silent) {
+        return true;
+      }
+      const oldParent = state.parentType;
+      const oldLineMax = state.lineMax;
+      const oldIndent = state.blkIndent;
+      let blkStart = pos;
+      for (; blkStart < max; blkStart += 1) {
+        if (state.src[blkStart] !== " ") {
+          break;
+        }
+      }
+      state.parentType = "admonition";
+      state.blkIndent += blkStart - start;
+      let wasEmpty = false;
+      nextLine = startLine;
+      for (; ; ) {
+        nextLine++;
+        if (nextLine >= endLine) {
+          break;
+        }
+        pos = state.bMarks[nextLine] + state.tShift[nextLine];
+        max = state.eMarks[nextLine];
+        const isEmpty2 = state.sCount[nextLine] < state.blkIndent;
+        if (isEmpty2 && wasEmpty) {
+          break;
+        }
+        wasEmpty = isEmpty2;
+        if (pos < max && state.sCount[nextLine] < state.blkIndent) {
+          break;
+        }
+      }
+      state.lineMax = nextLine;
+      const { tag, title } = getTag(params);
+      token = state.push("admonition_open", "div", 1);
+      token.markup = markup;
+      token.block = true;
+      token.attrs = [["class", `admonition ${tag}`]];
+      token.meta = tag;
+      token.content = title;
+      token.info = params;
+      token.map = [startLine, nextLine];
+      if (title) {
+        const titleMarkup = markup + " " + tag;
+        token = state.push("admonition_title_open", "p", 1);
+        token.markup = titleMarkup;
+        token.attrs = [["class", "admonition-title"]];
+        token.map = [startLine, startLine + 1];
+        token = state.push("inline", "", 0);
+        token.content = title;
+        token.map = [startLine, startLine + 1];
+        token.children = [];
+        token = state.push("admonition_title_close", "p", -1);
+        token.markup = titleMarkup;
+      }
+      state.md.block.tokenize(state, startLine + 1, nextLine);
+      token = state.push("admonition_close", "div", -1);
+      token.markup = state.src.slice(start, pos);
+      token.block = true;
+      state.parentType = oldParent;
+      state.lineMax = oldLineMax;
+      state.blkIndent = oldIndent;
+      state.line = nextLine;
+      return true;
+    }
+    module.exports = function admonitionPlugin(md, options = {}) {
+      const render = options.render || renderDefault;
+      md.renderer.rules.admonition_open = render;
+      md.renderer.rules.admonition_close = render;
+      md.renderer.rules.admonition_title_open = render;
+      md.renderer.rules.admonition_title_close = render;
+      md.block.ruler.before("fence", "admonition", admonition, {
+        alt: ["paragraph", "reference", "blockquote", "list"]
+      });
+    };
+  }
+});
+
 // .taskfiles/vendor/node_modules/markdown-it/lib/common/utils.mjs
 var utils_exports = {};
 __export(utils_exports, {
@@ -5466,6 +5592,374 @@ MarkdownIt.prototype.renderInline = function(src, env) {
   return this.renderer.render(this.parseInline(src, env), this.options, env);
 };
 var lib_default = MarkdownIt;
+
+// .taskfiles/vendor/node_modules/markdown-it-footnote/index.mjs
+function render_footnote_anchor_name(tokens, idx, options, env) {
+  const n = Number(tokens[idx].meta.id + 1).toString();
+  let prefix = "";
+  if (typeof env.docId === "string") prefix = `-${env.docId}-`;
+  return prefix + n;
+}
+function render_footnote_caption(tokens, idx) {
+  let n = Number(tokens[idx].meta.id + 1).toString();
+  if (tokens[idx].meta.subId > 0) n += `:${tokens[idx].meta.subId}`;
+  return `[${n}]`;
+}
+function render_footnote_ref(tokens, idx, options, env, slf) {
+  const id = slf.rules.footnote_anchor_name(tokens, idx, options, env, slf);
+  const caption = slf.rules.footnote_caption(tokens, idx, options, env, slf);
+  let refid = id;
+  if (tokens[idx].meta.subId > 0) refid += `:${tokens[idx].meta.subId}`;
+  return `<sup class="footnote-ref"><a href="#fn${id}" id="fnref${refid}">${caption}</a></sup>`;
+}
+function render_footnote_block_open(tokens, idx, options) {
+  return (options.xhtmlOut ? '<hr class="footnotes-sep" />\n' : '<hr class="footnotes-sep">\n') + '<section class="footnotes">\n<ol class="footnotes-list">\n';
+}
+function render_footnote_block_close() {
+  return "</ol>\n</section>\n";
+}
+function render_footnote_open(tokens, idx, options, env, slf) {
+  let id = slf.rules.footnote_anchor_name(tokens, idx, options, env, slf);
+  if (tokens[idx].meta.subId > 0) id += `:${tokens[idx].meta.subId}`;
+  return `<li id="fn${id}" class="footnote-item">`;
+}
+function render_footnote_close() {
+  return "</li>\n";
+}
+function render_footnote_anchor(tokens, idx, options, env, slf) {
+  let id = slf.rules.footnote_anchor_name(tokens, idx, options, env, slf);
+  if (tokens[idx].meta.subId > 0) id += `:${tokens[idx].meta.subId}`;
+  return ` <a href="#fnref${id}" class="footnote-backref">\u21A9\uFE0E</a>`;
+}
+function footnote_plugin(md) {
+  const parseLinkLabel2 = md.helpers.parseLinkLabel;
+  const isSpace2 = md.utils.isSpace;
+  md.renderer.rules.footnote_ref = render_footnote_ref;
+  md.renderer.rules.footnote_block_open = render_footnote_block_open;
+  md.renderer.rules.footnote_block_close = render_footnote_block_close;
+  md.renderer.rules.footnote_open = render_footnote_open;
+  md.renderer.rules.footnote_close = render_footnote_close;
+  md.renderer.rules.footnote_anchor = render_footnote_anchor;
+  md.renderer.rules.footnote_caption = render_footnote_caption;
+  md.renderer.rules.footnote_anchor_name = render_footnote_anchor_name;
+  function footnote_def(state, startLine, endLine, silent) {
+    const start = state.bMarks[startLine] + state.tShift[startLine];
+    const max = state.eMarks[startLine];
+    if (start + 4 > max) return false;
+    if (state.src.charCodeAt(start) !== 91) return false;
+    if (state.src.charCodeAt(start + 1) !== 94) return false;
+    let pos;
+    for (pos = start + 2; pos < max; pos++) {
+      if (state.src.charCodeAt(pos) === 32) return false;
+      if (state.src.charCodeAt(pos) === 93) {
+        break;
+      }
+    }
+    if (pos === start + 2) return false;
+    if (pos + 1 >= max || state.src.charCodeAt(++pos) !== 58) return false;
+    if (silent) return true;
+    pos++;
+    if (!state.env.footnotes) state.env.footnotes = {};
+    if (!state.env.footnotes.refs) state.env.footnotes.refs = {};
+    const label = state.src.slice(start + 2, pos - 2);
+    state.env.footnotes.refs[`:${label}`] = -1;
+    const token_fref_o = new state.Token("footnote_reference_open", "", 1);
+    token_fref_o.meta = { label };
+    token_fref_o.level = state.level++;
+    state.tokens.push(token_fref_o);
+    const oldBMark = state.bMarks[startLine];
+    const oldTShift = state.tShift[startLine];
+    const oldSCount = state.sCount[startLine];
+    const oldParentType = state.parentType;
+    const posAfterColon = pos;
+    const initial = state.sCount[startLine] + pos - (state.bMarks[startLine] + state.tShift[startLine]);
+    let offset = initial;
+    while (pos < max) {
+      const ch = state.src.charCodeAt(pos);
+      if (isSpace2(ch)) {
+        if (ch === 9) {
+          offset += 4 - offset % 4;
+        } else {
+          offset++;
+        }
+      } else {
+        break;
+      }
+      pos++;
+    }
+    state.tShift[startLine] = pos - posAfterColon;
+    state.sCount[startLine] = offset - initial;
+    state.bMarks[startLine] = posAfterColon;
+    state.blkIndent += 4;
+    state.parentType = "footnote";
+    if (state.sCount[startLine] < state.blkIndent) {
+      state.sCount[startLine] += state.blkIndent;
+    }
+    state.md.block.tokenize(state, startLine, endLine, true);
+    state.parentType = oldParentType;
+    state.blkIndent -= 4;
+    state.tShift[startLine] = oldTShift;
+    state.sCount[startLine] = oldSCount;
+    state.bMarks[startLine] = oldBMark;
+    const token_fref_c = new state.Token("footnote_reference_close", "", -1);
+    token_fref_c.level = --state.level;
+    state.tokens.push(token_fref_c);
+    return true;
+  }
+  function footnote_inline(state, silent) {
+    const max = state.posMax;
+    const start = state.pos;
+    if (start + 2 >= max) return false;
+    if (state.src.charCodeAt(start) !== 94) return false;
+    if (state.src.charCodeAt(start + 1) !== 91) return false;
+    const labelStart = start + 2;
+    const labelEnd = parseLinkLabel2(state, start + 1);
+    if (labelEnd < 0) return false;
+    if (!silent) {
+      if (!state.env.footnotes) state.env.footnotes = {};
+      if (!state.env.footnotes.list) state.env.footnotes.list = [];
+      const footnoteId = state.env.footnotes.list.length;
+      const tokens = [];
+      state.md.inline.parse(
+        state.src.slice(labelStart, labelEnd),
+        state.md,
+        state.env,
+        tokens
+      );
+      const token = state.push("footnote_ref", "", 0);
+      token.meta = { id: footnoteId };
+      state.env.footnotes.list[footnoteId] = {
+        content: state.src.slice(labelStart, labelEnd),
+        tokens
+      };
+    }
+    state.pos = labelEnd + 1;
+    state.posMax = max;
+    return true;
+  }
+  function footnote_ref(state, silent) {
+    const max = state.posMax;
+    const start = state.pos;
+    if (start + 3 > max) return false;
+    if (!state.env.footnotes || !state.env.footnotes.refs) return false;
+    if (state.src.charCodeAt(start) !== 91) return false;
+    if (state.src.charCodeAt(start + 1) !== 94) return false;
+    let pos;
+    for (pos = start + 2; pos < max; pos++) {
+      if (state.src.charCodeAt(pos) === 32) return false;
+      if (state.src.charCodeAt(pos) === 10) return false;
+      if (state.src.charCodeAt(pos) === 93) {
+        break;
+      }
+    }
+    if (pos === start + 2) return false;
+    if (pos >= max) return false;
+    pos++;
+    const label = state.src.slice(start + 2, pos - 1);
+    if (typeof state.env.footnotes.refs[`:${label}`] === "undefined") return false;
+    if (!silent) {
+      if (!state.env.footnotes.list) state.env.footnotes.list = [];
+      let footnoteId;
+      if (state.env.footnotes.refs[`:${label}`] < 0) {
+        footnoteId = state.env.footnotes.list.length;
+        state.env.footnotes.list[footnoteId] = { label, count: 0 };
+        state.env.footnotes.refs[`:${label}`] = footnoteId;
+      } else {
+        footnoteId = state.env.footnotes.refs[`:${label}`];
+      }
+      const footnoteSubId = state.env.footnotes.list[footnoteId].count;
+      state.env.footnotes.list[footnoteId].count++;
+      const token = state.push("footnote_ref", "", 0);
+      token.meta = { id: footnoteId, subId: footnoteSubId, label };
+    }
+    state.pos = pos;
+    state.posMax = max;
+    return true;
+  }
+  function footnote_tail(state) {
+    let tokens;
+    let current;
+    let currentLabel;
+    let insideRef = false;
+    const refTokens = {};
+    if (!state.env.footnotes) {
+      return;
+    }
+    state.tokens = state.tokens.filter(function(tok) {
+      if (tok.type === "footnote_reference_open") {
+        insideRef = true;
+        current = [];
+        currentLabel = tok.meta.label;
+        return false;
+      }
+      if (tok.type === "footnote_reference_close") {
+        insideRef = false;
+        refTokens[":" + currentLabel] = current;
+        return false;
+      }
+      if (insideRef) {
+        current.push(tok);
+      }
+      return !insideRef;
+    });
+    if (!state.env.footnotes.list) {
+      return;
+    }
+    const list2 = state.env.footnotes.list;
+    state.tokens.push(new state.Token("footnote_block_open", "", 1));
+    for (let i = 0, l = list2.length; i < l; i++) {
+      const token_fo = new state.Token("footnote_open", "", 1);
+      token_fo.meta = { id: i, label: list2[i].label };
+      state.tokens.push(token_fo);
+      if (list2[i].tokens) {
+        tokens = [];
+        const token_po = new state.Token("paragraph_open", "p", 1);
+        token_po.block = true;
+        tokens.push(token_po);
+        const token_i = new state.Token("inline", "", 0);
+        token_i.children = list2[i].tokens;
+        token_i.content = list2[i].content;
+        tokens.push(token_i);
+        const token_pc = new state.Token("paragraph_close", "p", -1);
+        token_pc.block = true;
+        tokens.push(token_pc);
+      } else if (list2[i].label) {
+        tokens = refTokens[`:${list2[i].label}`];
+      }
+      if (tokens) state.tokens = state.tokens.concat(tokens);
+      let lastParagraph;
+      if (state.tokens[state.tokens.length - 1].type === "paragraph_close") {
+        lastParagraph = state.tokens.pop();
+      } else {
+        lastParagraph = null;
+      }
+      const t = list2[i].count > 0 ? list2[i].count : 1;
+      for (let j = 0; j < t; j++) {
+        const token_a = new state.Token("footnote_anchor", "", 0);
+        token_a.meta = { id: i, subId: j, label: list2[i].label };
+        state.tokens.push(token_a);
+      }
+      if (lastParagraph) {
+        state.tokens.push(lastParagraph);
+      }
+      state.tokens.push(new state.Token("footnote_close", "", -1));
+    }
+    state.tokens.push(new state.Token("footnote_block_close", "", -1));
+  }
+  md.block.ruler.before("reference", "footnote_def", footnote_def, { alt: ["paragraph", "reference"] });
+  md.inline.ruler.after("image", "footnote_inline", footnote_inline);
+  md.inline.ruler.after("footnote_inline", "footnote_ref", footnote_ref);
+  md.core.ruler.after("inline", "footnote_tail", footnote_tail);
+}
+
+// .taskfiles/vendor/node_modules/markdown-it-container/index.mjs
+function container_plugin(md, name, options) {
+  function validateDefault(params) {
+    return params.trim().split(" ", 2)[0] === name;
+  }
+  function renderDefault(tokens, idx, _options, env, slf) {
+    if (tokens[idx].nesting === 1) {
+      tokens[idx].attrJoin("class", name);
+    }
+    return slf.renderToken(tokens, idx, _options, env, slf);
+  }
+  options = options || {};
+  const min_markers = 3;
+  const marker_str = options.marker || ":";
+  const marker_char = marker_str.charCodeAt(0);
+  const marker_len = marker_str.length;
+  const validate = options.validate || validateDefault;
+  const render = options.render || renderDefault;
+  function container(state, startLine, endLine, silent) {
+    let pos;
+    let auto_closed = false;
+    let start = state.bMarks[startLine] + state.tShift[startLine];
+    let max = state.eMarks[startLine];
+    if (marker_char !== state.src.charCodeAt(start)) {
+      return false;
+    }
+    for (pos = start + 1; pos <= max; pos++) {
+      if (marker_str[(pos - start) % marker_len] !== state.src[pos]) {
+        break;
+      }
+    }
+    const marker_count = Math.floor((pos - start) / marker_len);
+    if (marker_count < min_markers) {
+      return false;
+    }
+    pos -= (pos - start) % marker_len;
+    const markup = state.src.slice(start, pos);
+    const params = state.src.slice(pos, max);
+    if (!validate(params, markup)) {
+      return false;
+    }
+    if (silent) {
+      return true;
+    }
+    let nextLine = startLine;
+    for (; ; ) {
+      nextLine++;
+      if (nextLine >= endLine) {
+        break;
+      }
+      start = state.bMarks[nextLine] + state.tShift[nextLine];
+      max = state.eMarks[nextLine];
+      if (start < max && state.sCount[nextLine] < state.blkIndent) {
+        break;
+      }
+      if (marker_char !== state.src.charCodeAt(start)) {
+        continue;
+      }
+      if (state.sCount[nextLine] - state.blkIndent >= 4) {
+        continue;
+      }
+      for (pos = start + 1; pos <= max; pos++) {
+        if (marker_str[(pos - start) % marker_len] !== state.src[pos]) {
+          break;
+        }
+      }
+      if (Math.floor((pos - start) / marker_len) < marker_count) {
+        continue;
+      }
+      pos -= (pos - start) % marker_len;
+      pos = state.skipSpaces(pos);
+      if (pos < max) {
+        continue;
+      }
+      auto_closed = true;
+      break;
+    }
+    const old_parent = state.parentType;
+    const old_line_max = state.lineMax;
+    state.parentType = "container";
+    state.lineMax = nextLine;
+    const token_o = state.push("container_" + name + "_open", "div", 1);
+    token_o.markup = markup;
+    token_o.block = true;
+    token_o.info = params;
+    token_o.map = [startLine, nextLine];
+    state.md.block.tokenize(state, startLine + 1, nextLine);
+    const token_c = state.push("container_" + name + "_close", "div", -1);
+    token_c.markup = state.src.slice(start, pos);
+    token_c.block = true;
+    state.parentType = old_parent;
+    state.lineMax = old_line_max;
+    state.line = nextLine + (auto_closed ? 1 : 0);
+    return true;
+  }
+  md.block.ruler.before("fence", "container_" + name, container, {
+    alt: ["paragraph", "reference", "blockquote", "list"]
+  });
+  md.renderer.rules["container_" + name + "_open"] = render;
+  md.renderer.rules["container_" + name + "_close"] = render;
+}
+
+// .taskfiles/vendor/.vendor-entry/markdown-it.mjs
+var import_markdown_it_admon = __toESM(require_markdown_it_admon(), 1);
+var export_admon = import_markdown_it_admon.default;
 export {
-  lib_default as default
+  export_admon as admon,
+  container_plugin as container,
+  lib_default as default,
+  footnote_plugin as footnote
 };

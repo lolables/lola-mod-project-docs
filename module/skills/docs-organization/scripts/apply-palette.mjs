@@ -4,11 +4,11 @@
 // classDefs filled in for the chosen palette.
 //
 // Usage: node apply-palette.mjs <palette.json> <body.mmd> > <output.mmd>
-//        node apply-palette.mjs --swap <palette.json> <file.mmd|file.md> [block]
+//        node apply-palette.mjs --swap <palette.json> <file.mmd|doc> [block]
 //
 // --swap is swap-palette.sh's engine: it strips the existing palette from a
-// whole diagram, or from each (or the 1-based `block`) mermaid fence of a .md,
-// and re-applies. Refusals print a reason on stderr and exit 2.
+// whole diagram, or from each (or the 1-based `block`) mermaid diagram of a
+// doc file, and re-applies. Refusals print a reason on stderr and exit 2.
 //
 // The body should reference sysA..sysF via the standard classDef names
 // (`:::sysX` or `class X sysY`). The script appends classDef lines only
@@ -19,6 +19,7 @@
 import { readFileSync } from 'node:fs';
 import { isMain } from './is-main.mjs';
 import { extractMermaidBlocks } from './lint-mermaid.mjs';
+import { formatFor, extensions } from './formats/index.mjs';
 
 export function initHeader(palette) {
   // primaryTextColor is the EDGE-LABEL / CHART-TITLE color. Setting it to
@@ -147,44 +148,57 @@ export function swapDiagram(palette, source, where) {
   return applyPalette(palette, body);
 }
 
-// Swap every mermaid fence of a .md, or only the 1-based `block`, splicing
-// each new diagram between its fences so every byte outside them is kept.
-// Fences are found (and numbered) exactly as lint-mermaid reports them.
-export function swapFences(palette, content, file, block) {
-  const blocks = extractMermaidBlocks(content, file);
+// Swap every mermaid diagram of a doc, or only the 1-based `block`, splicing
+// each new diagram between its delimiters so every byte outside them is kept.
+// Diagrams are found (and numbered) exactly as lint-mermaid reports them.
+export async function swapBlocks(palette, content, file, block) {
+  const blocks = await extractMermaidBlocks(content, file);
   if (blocks.length === 0) {
-    // An empty (or fence-less) .md is what `... p f.md > f.md` leaves behind
+    // An empty (or diagram-less) doc is what `... p f.md > f.md` leaves behind
     // once the shell truncates f.md before this reads it — same trap as the
     // .mmd empty-file case in swapDiagram, so it gets the same hint.
-    throw new Error(`no mermaid fences in ${file} (empty file, or output redirected onto the input?)`);
+    throw new Error(`no mermaid diagrams in ${file} (empty file, or output redirected onto the input?)`);
   }
   if (block !== undefined && block > blocks.length) {
-    throw new Error(`block ${block} requested but ${file} has ${blocks.length} mermaid fence(s)`);
+    throw new Error(`block ${block} requested but ${file} has ${blocks.length} mermaid diagram(s)`);
   }
   let out = '';
   let pos = 0;
   for (const b of block === undefined ? blocks : [blocks[block - 1]]) {
     const n = b.block;
-    // Indented fences (list items, blockquotes) need their indent re-applied
-    // to every new line; refuse rather than break the enclosing structure.
-    const opensAtColumn0 = b.fenceStart === 0 || content[b.fenceStart - 1] === '\n';
-    const closesAtColumn0 = content[b.bodyEnd - 1] === '\n';
-    if (!opensAtColumn0 || !closesAtColumn0) {
-      throw new Error(`block ${n} of ${file} is indented (not a top-level fence); swap it by hand`);
+    // A diagram whose delimiters are indented or nested (list item, quote,
+    // admonition) needs that prefix re-applied to every new line; refuse
+    // rather than break the enclosing structure.
+    if (!b.swappable) {
+      throw new Error(`block ${n} of ${file} is indented or nested (not a top-level delimited block); swap it by hand`);
     }
+    const body = content.slice(b.bodyStart, b.bodyEnd);
+    // swapDiagram/applyPalette always emit LF. Convert only the doc's own
+    // EOL sequence to and from LF around the swap (a literal split/join, not
+    // a regex replace of every \r), so a CRLF or CR-only doc doesn't end up
+    // with mixed endings but a stray \r that is NOT part of that sequence —
+    // inside a label or comment, say — survives byte for byte instead of
+    // becoming a new line break. The ending comes from the OPENING FENCE
+    // LINE, not the body: a body scan can be fooled by a stray \r into
+    // treating the whole doc as CR-only.
+    const eol = content.slice(b.blockStart, b.bodyStart).match(/(\r\n|\r|\n)$/)?.[0] ?? '\n';
     out += content.slice(pos, b.bodyStart) +
-      swapDiagram(palette, content.slice(b.bodyStart, b.bodyEnd), `block ${n} of ${file}`);
+      swapDiagram(palette, body.split(eol).join('\n'), `block ${n} of ${file}`).split('\n').join(eol);
     pos = b.bodyEnd;
   }
   return out + content.slice(pos);
 }
 
-function swap([paletteFile, file, block]) {
+async function swap([paletteFile, file, block]) {
   const palette = JSON.parse(readFileSync(paletteFile, 'utf8'));
   const content = readFileSync(file, 'utf8');
   try {
-    process.stdout.write(file.endsWith('.md')
-      ? swapFences(palette, content, file, block === undefined ? undefined : Number(block))
+    const isDoc = formatFor(file) !== null;
+    if (block !== undefined && !isDoc) {
+      throw new Error(`--block selects a diagram in a doc file (${extensions().join(', ')}); ${file} is a whole diagram`);
+    }
+    process.stdout.write(isDoc
+      ? await swapBlocks(palette, content, file, block === undefined ? undefined : Number(block))
       : swapDiagram(palette, content, file));
   } catch (e) {
     console.error(e.message);
@@ -192,14 +206,14 @@ function swap([paletteFile, file, block]) {
   }
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   if (args[0] === '--swap') {
     if (args.length < 3 || args.length > 4) {
-      console.error('usage: apply-palette.mjs --swap <palette.json> <file.mmd|file.md> [block]');
+      console.error('usage: apply-palette.mjs --swap <palette.json> <file.mmd|doc> [block]');
       process.exit(2);
     }
-    swap(args.slice(1));
+    await swap(args.slice(1));
     return;
   }
   const [paletteFile, bodyFile] = args;
@@ -213,5 +227,8 @@ function main() {
 }
 
 if (isMain(import.meta.url)) {
-  main();
+  main().catch((e) => {
+    console.error(e && e.message ? e.message : e);
+    process.exit(2);
+  });
 }

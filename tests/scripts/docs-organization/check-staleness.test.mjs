@@ -402,10 +402,11 @@ test('CLI: a doc filename containing a double quote still produces valid JSON', 
 test('CLI: invocable via a script path containing a space', () => {
   const spaceParent = mktemp();
   const targetDir = join(spaceParent, 'sp ace');
-  mkdirSync(join(targetDir, 'vendor'), { recursive: true });
+  mkdirSync(targetDir, { recursive: true });
   cpSync(SCRIPT, join(targetDir, 'check-staleness.mjs'));
   cpSync(join(SCRIPTS_DIR, 'is-main.mjs'), join(targetDir, 'is-main.mjs'));
-  cpSync(join(SCRIPTS_DIR, 'vendor', 'linguist.json'), join(targetDir, 'vendor', 'linguist.json'));
+  cpSync(join(SCRIPTS_DIR, 'vendor'), join(targetDir, 'vendor'), { recursive: true });
+  cpSync(join(SCRIPTS_DIR, 'formats'), join(targetDir, 'formats'), { recursive: true });
 
   const root = makeRepo();
   write(root, 'README.md', '# old\n');
@@ -599,4 +600,47 @@ test('entry guard: importing the module with a nonexistent argv[1] does not cras
   const specifier = JSON.stringify(pathToFileURL(SCRIPT).href);
   const out = execFileSync('node', ['-e', `import(${specifier})`, nonexistentArgv1], { encoding: 'utf8' });
   assert.equal(out, '');
+});
+
+test('CLI: a stale README.markdown triggers STALE_README naming that file', () => {
+  const root = makeRepo();
+  write(root, 'README.markdown', '# old\n');
+  git(root, 'add', 'README.markdown');
+  commit(root, '2026-01-01T12:00:00', 'initial docs');
+  write(root, 'src/main.js', 'function f() {}\n');
+  git(root, 'add', 'src/main.js');
+  commit(root, '2026-05-01T12:00:00', 'code change');
+  const { code, out } = runCli(root);
+  assert.equal(code, 1);
+  assert.deepEqual(out.findings.map((f) => [f.code, f.file]), [['STALE_README', 'README.markdown']]);
+});
+
+test('CLI: a stale docs/guide.markdown triggers STALE_DOC; docs/notes.txt is not a doc', () => {
+  const root = makeRepo();
+  write(root, 'README.md', '# readme\n');
+  write(root, 'docs/guide.markdown', '# guide\n');
+  write(root, 'docs/notes.txt', 'notes\n');
+  git(root, 'add', 'README.md', 'docs/guide.markdown', 'docs/notes.txt');
+  commit(root, '2026-01-01T12:00:00', 'initial docs');
+  write(root, 'src/main.js', 'function f() {}\n');
+  write(root, 'README.md', '# readme, refreshed\n');
+  git(root, 'add', 'src/main.js', 'README.md');
+  commit(root, '2026-05-01T12:00:00', 'code change');
+  const { code, out } = runCli(root);
+  assert.equal(code, 1);
+  assert.deepEqual(out.findings.map((f) => [f.code, f.file]), [['STALE_DOC', 'docs/guide.markdown']]);
+});
+
+test('CLI: a stale README.adoc and docs/guide.adoc are reported', () => {
+  const root = makeRepo();
+  write(root, 'README.adoc', '= old\n');
+  write(root, 'docs/guide.adoc', '= guide\n');
+  git(root, 'add', 'README.adoc', 'docs/guide.adoc');
+  commit(root, '2026-01-01T12:00:00', 'initial docs');
+  write(root, 'src/main.js', 'function f() {}\n');
+  git(root, 'add', 'src/main.js');
+  commit(root, '2026-05-01T12:00:00', 'code change');
+  const { code, out } = runCli(root);
+  assert.equal(code, 1);
+  assert.deepEqual(out.findings.map((f) => [f.code, f.file]), [['STALE_README', 'README.adoc'], ['STALE_DOC', 'docs/guide.adoc']]);
 });

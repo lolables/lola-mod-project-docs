@@ -19,7 +19,8 @@ auto-invokes — every behavior is reached through an explicit slash command.
 - **docs-organization** — manages README and `docs/` layout, detects drift
   between code and documentation, validates mermaid diagrams against a
   house style (palette + WCAG contrast).
-- **adr** — manages Architectural Decision Records (MADR 4.0) with an
+- **adr** — manages Architectural Decision Records in the
+  [MADR 4.0](https://adr.github.io/madr/) format, with an
   inline self-review pass on creation and a context-isolated subagent
   review pass on demand.
 
@@ -42,11 +43,11 @@ Behavior reaches the agent only through six explicit slash commands:
    lola install docs-discipline -a claude-code --scope user
    ```
 
-That is the whole install. The skill's two npm dependencies
-(`@aj-archipelago/merval` for mermaid validation, `markdown-it` for the
-`/docs-audit` prose and link checks) and GitHub Linguist's vendored
-language data (used by its staleness check) ship pre-bundled inside the
-module, so there is no `npm install`, no network access needed after `lola
+That is the whole install. The docs-organization skill's npm dependencies
+(`@aj-archipelago/merval` for mermaid validation, `markdown-it` and
+`@asciidoctor/core` for parsing Markdown and AsciiDoc docs) and GitHub
+Linguist's vendored language data (used by its staleness check) ship
+pre-bundled inside the module, so there is no `npm install`, no network access needed after `lola
 install`, and no follow-up step.
 
 Requirements: git, Node.js ≥ 20, bash ≥ 4, lola ≥ 0.7.0 (matching the
@@ -59,7 +60,8 @@ behind `/bin` on your `PATH`.
 
 ### Non-interactive install
 
-`lola install` prompts for assistant and scope when you omit them. Scripted:
+`lola install` prompts for assistant and scope when you omit them. Scripted,
+with `-f` (`--force`) to overwrite an existing install without prompting:
 
 ```bash
 lola install docs-discipline -a opencode --scope user -f
@@ -68,29 +70,39 @@ lola install docs-discipline -a claude-code --scope project -f
 
 ### Uninstall
 
-Uninstall mirrors it, for whichever scope you installed. For `--scope
-project`, name the project path — omitting it uninstalls from every
-project-scope installation `lola` knows about, not just the one you are
-standing in:
+Uninstall mirrors the install. Here `-f` skips the confirmation prompt.
 
-```bash
-lola uninstall docs-discipline -a claude-code --scope user -f
-lola uninstall docs-discipline -a claude-code --scope project -f .
-lola mod rm -f docs-discipline
-```
+1. Uninstall from the scope you installed into — run **one** of:
+
+   ```bash
+   lola uninstall docs-discipline -a claude-code --scope user -f
+   lola uninstall docs-discipline -a claude-code --scope project -f .
+   ```
+
+   For `--scope project`, name the project path (`.` above). Omitting it
+   uninstalls from every project-scope installation `lola` knows about, not
+   just the one you are standing in.
+
+2. Unregister the module:
+
+   ```bash
+   lola mod rm -f docs-discipline
+   ```
 
 ## Quickstart
 
-In a project with the module installed:
+In a project with the module installed, type these into your AI assistant's
+prompt (they are slash commands, not shell commands):
 
-```bash
-/docs-init                                        # scaffold README, docs/, .gitignore
-/docs-audit                                       # find drift between code and docs (read-only)
-/docs-update                                      # apply fixes interactively
-/diagram-test                                     # lint every mermaid diagram
-/adr-new "Use Postgres for primary storage"       # draft an ADR with inline self-review
-/adr-review 0001                                  # independent rubric review of ADR 0001 (the number /adr-new assigned)
-```
+1. `/docs-init` — scaffold README, `docs/`, and `.gitignore`.
+2. `/docs-audit` — find drift between code and docs (read-only).
+3. `/docs-update` — apply the audit's fixes interactively.
+4. `/diagram-test` — lint every mermaid diagram.
+5. `/adr-new "Use Postgres for primary storage"` — draft an ADR with an
+   inline self-review. It writes an `NNNN-*.md` file under the ADR
+   directory, numbered with the next free four digits.
+6. `/adr-review 0001` — independent rubric review of that ADR; pass the
+   number from its filename.
 
 ### Auditing a specific document
 
@@ -174,7 +186,9 @@ draft links.
 
 Four contrast-validated mermaid palettes ship with the skill:
 
-- **Solar** (default) — cool jewel tones, outlined clusters, both light and
+- **Solar** (default — the palette the house-style templates use, and the
+  one `/docs-update` falls back to when it can't tell a diagram's palette) —
+  cool jewel tones, outlined clusters, both light and
   dark backgrounds
 - **Federation** — cool balanced, outlined clusters, both backgrounds
 - **Citrus** — warm earth tones, outlined clusters, both backgrounds
@@ -190,32 +204,39 @@ for templates and its "Switching palette" section for moving between them.
 There is no project-wide palette setting: each diagram carries its palette
 in its own `%%{init}%%` header. After install, `/diagram-test` lints every
 diagram for syntax, a current palette header, approved class names, and
-contrast. To swap an existing diagram to a different palette, run the
-skill's `swap-palette.sh` directly — it prints the swapped diagram to
-stdout, so redirect it:
+contrast.
 
-```bash
-bash .claude/skills/docs-organization/scripts/swap-palette.sh citrus path/to/diagram.mmd > path/to/diagram.mmd.new
-mv path/to/diagram.mmd.new path/to/diagram.mmd
-```
+To swap an existing diagram to a different palette, run the skill's
+`swap-palette.sh` directly. It prints the result to stdout and never edits
+in place. **Never redirect onto the input file** — the shell empties it
+before the script reads it.
 
-That path is for a project-scope install; a user-scope install lives under
-`~/.claude/skills/`. Write to a new file and move it into place — redirecting
-straight onto the input empties it before the script reads it.
+1. Find the script. The examples use a Claude Code project-scope install,
+   `.claude/skills/docs-organization/scripts/`. A Claude Code user-scope
+   install lives under `~/.claude/skills/` instead; other assistants use
+   their own directories, chosen by `lola` at install time.
+2. Write the swapped output to a new file:
 
-Given a `.md`, the script prints the whole document with every
-` ```mermaid ` fence swapped and every byte outside the fences unchanged, so
-use the same write-then-move. `--block N` swaps only the N-th fence
-(1-based):
+   ```bash
+   bash .claude/skills/docs-organization/scripts/swap-palette.sh citrus path/to/diagram.mmd > path/to/diagram.mmd.new
+   ```
+
+3. Move it into place:
+
+   ```bash
+   mv path/to/diagram.mmd.new path/to/diagram.mmd
+   ```
+
+The script also takes a doc file in any supported format (see
+[Supported formats](#supported-formats)). It prints the whole document with
+every mermaid diagram swapped and every byte outside those diagrams
+unchanged, so use the same write-then-move. `--block N` swaps only the N-th
+diagram (1-based):
 
 ```bash
 bash .claude/skills/docs-organization/scripts/swap-palette.sh --block 2 citrus docs/guide.md > docs/guide.md.new
 mv docs/guide.md.new docs/guide.md
 ```
-
-(Path shown is a Claude Code project-scope install; other hosts and scopes
-use different directories, chosen by `lola` — see `lola install --help` for
-the full list of supported assistants.)
 
 **For contributors to this repo** (not needed to use the installed
 module): `task render -- path/to/diagram.mmd` renders a `.mmd` to PNG on
@@ -228,19 +249,35 @@ repo root; both are `task`-only, so they require the full dev checkout.
 
 1. Top-level `README.md` always self-sufficient for basic user onboarding.
 2. Developer documentation under `docs/dev/`.
-3. `docs/superpowers/` is in `.gitignore` and never committed (checked
-   once a `docs/` tree exists; a repo without one isn't using it yet).
+3. `docs/superpowers/` — working specs and plans that planning skills
+   such as superpowers write there — is in `.gitignore` and never committed
+   (checked once a `docs/` tree exists; a repo without one isn't using it
+   yet).
 4. ADRs in `docs/dev/adr/` (or `docs/adr/` for legacy layouts).
 5. Every mermaid diagram begins with the house-style init header (the
    `%%{init}%%` block for one of the four palettes above) and uses palette
    classes with WCAG-verified contrast.
+
+## Supported formats
+
+Markdown and AsciiDoc, each with its own README name. Every check —
+structure, staleness, readability, references, content-drift chunking,
+citations, mermaid lint, and palette swap — runs on both. See
+[`reference/supported-formats.md`](module/skills/docs-organization/reference/supported-formats.md)
+for the exact extensions and README names each format claims.
+
+In AsciiDoc, mermaid diagrams are `[mermaid]` or `[source,mermaid]` blocks,
+and the scripts check `include::` targets exist but never read them.
+`/docs-init` writes Markdown templates and leaves an existing `README.adoc`
+alone.
 
 ## Project structure
 
 ```text
 module/AGENTS.md                            module instructions, injected at install
 module/skills/docs-organization/SKILL.md    the docs-organization skill
-module/skills/docs-organization/scripts/    node + bash helpers (lint-mermaid.mjs, check-structure.sh, fetch-citations.mjs, …)
+module/skills/docs-organization/scripts/    node + bash helpers (doc-files.mjs, doc-chunks.mjs, lint-mermaid.mjs, check-structure.sh, fetch-citations.mjs, …)
+module/skills/docs-organization/scripts/formats/  format registry and adapters (markdown.mjs, asciidoc.mjs)
 module/skills/docs-organization/scripts/vendor/  pre-built MIT dependency bundles that ship with the skill
 module/skills/docs-organization/reference/  house-style references, README/docs templates, palettes
 module/skills/adr/SKILL.md                  the adr skill

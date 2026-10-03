@@ -34,14 +34,16 @@ Skip the `adr` activation otherwise.
 
 1. Read `$SKILL_DIR/SKILL.md` for the invariants and principles this skill enforces. The procedure below is the source of truth for what to do.
 2. Detect current state:
-   - Does `README.md` exist? Is it non-empty?
+   - Does a README exist (any name `node "$SKILL_DIR/scripts/formats/index.mjs" --readmes` prints — `README.md`, `README.adoc`, …)? Is it non-empty?
    - Does `docs/` exist? Is `docs/dev/` populated?
    - Does `.gitignore` contain `docs/superpowers/`?
 3. **Greenfield path** (no README, no docs/):
    - Read `$SKILL_DIR/reference/readme-template.md`.
      Write `README.md` using that template, filling project name from the
      repo's directory name and asking the user one question for the
-     one-sentence description.
+     one-sentence description. Templates are Markdown; an existing README
+     in another format (for example `README.adoc`) counts as the README,
+     so never add a `README.md` beside it.
    - Read `$SKILL_DIR/reference/docs-tree-template.md`.
      Create `docs/dev/README.md`, `docs/dev/architecture.md`,
      `docs/dev/contributing.md` with their template contents. The

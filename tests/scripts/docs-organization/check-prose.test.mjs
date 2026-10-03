@@ -1,6 +1,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeMarkdown, THRESHOLDS } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
+import { analyzeProse, THRESHOLDS } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
+import { parseDoc } from '../../../module/skills/docs-organization/scripts/formats/index.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync, realpathSync, cpSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -22,29 +23,31 @@ function mktemp(prefix = 'check-prose-') {
 
 const codes = (findings) => findings.map((f) => f.code);
 
-test('clean short prose yields no findings', () => {
+const analyze = async (src, name = 'doc.md') => analyzeProse(await parseDoc(name, src));
+
+test('clean short prose yields no findings', async () => {
   const md = `# Title\n\nA short paragraph. Two sentences only.\n\n- a tight bullet\n- another one\n`;
-  assert.deepEqual(analyzeMarkdown(md), []);
+  assert.deepEqual(await analyze(md), []);
 });
 
-test('long top-level paragraph flags WALL_OF_TEXT with its line', () => {
+test('long top-level paragraph flags WALL_OF_TEXT with its line', async () => {
   const words = Array(THRESHOLDS.paragraphWords + 5).fill('word').join(' ');
   const md = `# Title\n\nintro line here\n\n${words}.\n`;
-  const findings = analyzeMarkdown(md);
+  const findings = await analyze(md);
   const wt = findings.filter((f) => f.code === 'WALL_OF_TEXT');
   assert.equal(wt.length, 1);
   assert.equal(wt[0].line, 5); // the long paragraph starts on line 5
 });
 
-test('flat dense bullet flags DENSE_BULLET', () => {
+test('flat dense bullet flags DENSE_BULLET', async () => {
   const body = Array(THRESHOLDS.bulletWords + 5).fill('word').join(' ');
   const md = `- **Lead.** ${body}.\n- short one\n`;
-  const findings = analyzeMarkdown(md);
+  const findings = await analyze(md);
   assert.deepEqual(codes(findings), ['DENSE_BULLET']);
   assert.equal(findings[0].line, 1);
 });
 
-test('a bullet broken into short sub-bullets is NOT flagged (the escape hatch)', () => {
+test('a bullet broken into short sub-bullets is NOT flagged (the escape hatch)', async () => {
   const md =
     `- **Lead.** intro then details:\n` +
     `  - first point is short and scannable\n` +
@@ -52,21 +55,21 @@ test('a bullet broken into short sub-bullets is NOT flagged (the escape hatch)',
     `  - third point is short and scannable\n`;
   // The outer item holds a nested list (the desired shape) and its own text is
   // short; each inner item is short. No DENSE_BULLET.
-  assert.deepEqual(analyzeMarkdown(md), []);
+  assert.deepEqual(await analyze(md), []);
 });
 
-test('a long sub-bullet is still flagged (nesting does not exempt inner prose)', () => {
+test('a long sub-bullet is still flagged (nesting does not exempt inner prose)', async () => {
   const body = Array(THRESHOLDS.bulletWords + 20).fill('word').join(' ');
   const md = `- **Lead.** details:\n  - ${body}.\n  - a short sibling\n`;
-  assert.deepEqual(codes(analyzeMarkdown(md)), ['DENSE_BULLET']);
+  assert.deepEqual(codes(await analyze(md)), ['DENSE_BULLET']);
 });
 
-test('a short bullet with code spans is not flagged', () => {
+test('a short bullet with code spans is not flagged', async () => {
   const md = `- Uses \`v1.2.3\`, \`a.b.c\`, \`x.y.z\`, and \`p.q.r\` together.\n`;
-  assert.deepEqual(analyzeMarkdown(md), []);
+  assert.deepEqual(await analyze(md), []);
 });
 
-test('abbreviation-heavy short prose is not flagged (no sentence counting)', () => {
+test('abbreviation-heavy short prose is not flagged (no sentence counting)', async () => {
   // Peppered with abbreviations that would wreck any regex sentence counter.
   // Because we trigger on word count only, this ~45-word paragraph is clean —
   // the fuzzy sentence-rhythm judgment is the LLM lane's job, not ours.
@@ -74,36 +77,75 @@ test('abbreviation-heavy short prose is not flagged (no sentence counting)', () 
     'The pipeline has stages, e.g. fetch, verify, and emit. Configure it via ' +
     'flags, i.e. the documented ones, or via the file. Compare vs. the old ' +
     'tool. The U.S. deployment differs. See sec. 3.2 for details. It works.\n';
-  assert.deepEqual(analyzeMarkdown(md), []);
+  assert.deepEqual(await analyze(md), []);
 });
 
-test('code fences and tables are excluded from prose counting', () => {
+test('code fences and tables are excluded from prose counting', async () => {
   const longWords = Array(THRESHOLDS.paragraphWords + 30).fill('word').join(' ');
   const md =
     '# Title\n\n```\n' + longWords + '. ' + longWords + '.\n```\n\n' +
     '| col | ' + longWords + ' |\n|---|---|\n| a | b |\n';
-  assert.deepEqual(analyzeMarkdown(md), []);
+  assert.deepEqual(await analyze(md), []);
 });
 
-test('a long blockquote is excluded like a list', () => {
+test('a long blockquote is excluded like a list', async () => {
   const words = Array(THRESHOLDS.paragraphWords + 10).fill('word').join(' ');
   const md = `> ${words}.\n`;
-  assert.deepEqual(analyzeMarkdown(md), []);
+  assert.deepEqual(await analyze(md), []);
 });
 
-test('a file over the line budget flags SPLIT_CANDIDATE at line 1', () => {
+test('a file over the line budget flags SPLIT_CANDIDATE at line 1', async () => {
   const md = '# Title\n\n' + Array(THRESHOLDS.fileLines + 5).fill('filler line').join('\n') + '\n';
-  const findings = analyzeMarkdown(md);
+  const findings = await analyze(md);
   const sc = findings.filter((f) => f.code === 'SPLIT_CANDIDATE' && f.line === 1);
   assert.equal(sc.length, 1);
 });
 
-test('an oversized H2 section flags SPLIT_CANDIDATE at the heading', () => {
+test('an oversized H2 section flags SPLIT_CANDIDATE at the heading', async () => {
   const filler = Array(THRESHOLDS.sectionLines + 10).fill('filler line').join('\n');
   const md = `# Doc\n\n## Big Section\n\n${filler}\n\n## Small Section\n\ndone.\n`;
-  const findings = analyzeMarkdown(md);
+  const findings = await analyze(md);
   const sc = findings.find((f) => f.code === 'SPLIT_CANDIDATE' && f.message.includes('Big Section'));
   assert.ok(sc, 'expected a SPLIT_CANDIDATE naming the Big Section');
+  assert.equal(sc.line, 3);
+});
+
+test('a long GFM alert or admonition is the author\'s prose and flags WALL_OF_TEXT', async () => {
+  const words = Array(THRESHOLDS.paragraphWords + 5).fill('word').join(' ');
+  const alert = await analyze(`> [!NOTE]\n> ${words}.\n`);
+  assert.deepEqual(alert.map((f) => [f.code, f.line]), [['WALL_OF_TEXT', 1]]);
+  const admon = await analyze(`!!! note\n    ${words}.\n`);
+  assert.deepEqual(admon.map((f) => [f.code, f.line]), [['WALL_OF_TEXT', 2]]);
+});
+
+test('a long second paragraph inside a list item is not a WALL_OF_TEXT (the item owns it)', async () => {
+  const words = Array(THRESHOLDS.paragraphWords + 5).fill('word').join(' ');
+  const findings = await analyze(`- short item\n\n  ${words}.\n`);
+  assert.deepEqual(codes(findings), ['DENSE_BULLET']);
+});
+
+test('front matter does not count toward a section or paragraph', async () => {
+  const findings = await analyze('---\ntitle: x\n---\n# T\n\nShort.\n');
+  assert.deepEqual(findings, []);
+});
+
+test('AsciiDoc: a long paragraph or NOTE flags WALL_OF_TEXT; a quote block does not', async () => {
+  const words = Array(THRESHOLDS.paragraphWords + 5).fill('word').join(' ');
+  const src = `= T\n\n${words}.\n\nNOTE: ${words}.\n\n____\n${words}.\n____\n`;
+  const findings = await analyze(src, 'doc.adoc');
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['WALL_OF_TEXT', 3], ['WALL_OF_TEXT', 5]]);
+});
+
+test('AsciiDoc: a dense flat list item flags DENSE_BULLET; a nested one does not', async () => {
+  const words = Array(THRESHOLDS.bulletWords + 5).fill('word').join(' ');
+  const findings = await analyze(`* ${words}\n* parent ${words}\n** child\n`, 'doc.adoc');
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['DENSE_BULLET', 1]]);
+});
+
+test('AsciiDoc: an oversized == section flags SPLIT_CANDIDATE at its heading', async () => {
+  const filler = Array(THRESHOLDS.sectionLines + 10).fill('filler line').join('\n');
+  const findings = await analyze(`= Doc\n\n== Big Section\n\n${filler}\n\n== Small\n\ndone.\n`, 'doc.adoc');
+  const sc = findings.find((f) => f.code === 'SPLIT_CANDIDATE' && f.message.includes('Big Section'));
   assert.equal(sc.line, 3);
 });
 
@@ -131,7 +173,7 @@ function makeAliasedTree() {
   return root;
 }
 
-test('CLI: a symlink and its target are one document, reported at the canonical path', () => {
+test('CLI: a symlink and its target are one document, reported at the canonical path', async () => {
   const root = makeAliasedTree();
   const { code, out } = runCli(root, 'canonical', 'alias');
   assert.equal(code, 1);
@@ -139,14 +181,14 @@ test('CLI: a symlink and its target are one document, reported at the canonical 
   assert.deepEqual(out.findings.map((f) => [f.code, f.file]), [['WALL_OF_TEXT', 'canonical/a.md']]);
 });
 
-test('CLI: a directory of symlinks is walked and reports canonical paths', () => {
+test('CLI: a directory of symlinks is walked and reports canonical paths', async () => {
   const root = makeAliasedTree();
   const { out } = runCli(root, 'alias');
   assert.equal(out.scanned, 1);
   assert.deepEqual(out.findings.map((f) => f.file), ['canonical/a.md']);
 });
 
-test('CLI: a symlinked directory is not descended', () => {
+test('CLI: a symlinked directory is not descended', async () => {
   const root = mktemp();
   mkdirSync(join(root, 'outside'));
   mkdirSync(join(root, 'docs'));
@@ -157,7 +199,7 @@ test('CLI: a symlinked directory is not descended', () => {
   assert.equal(out.scanned, 0);
 });
 
-test('CLI: scanned counts every clean document read', () => {
+test('CLI: scanned counts every clean document read', async () => {
   const root = mktemp();
   writeFileSync(join(root, 'one.md'), '# One\n\nShort.\n');
   writeFileSync(join(root, 'two.md'), '# Two\n\nShort.\n');
@@ -167,7 +209,7 @@ test('CLI: scanned counts every clean document read', () => {
   assert.equal(out.scanned, 2);
 });
 
-test('CLI: a dangling .md symlink fails loudly (exit 2), not silently skipped', () => {
+test('CLI: a dangling .md symlink fails loudly (exit 2), not silently skipped', async () => {
   const root = mktemp();
   mkdirSync(join(root, 'docs'));
   symlinkSync('../missing.md', join(root, 'docs', 'x.md'));
@@ -201,7 +243,7 @@ function fixtureRoot() {
   return root;
 }
 
-test('CLI: invocable via a script path containing a space', () => {
+test('CLI: invocable via a script path containing a space', async () => {
   const spaceParent = mktemp();
   const targetDir = join(spaceParent, 'sp ace');
   copyScriptsDirTo(targetDir);
@@ -211,7 +253,7 @@ test('CLI: invocable via a script path containing a space', () => {
   assert.deepEqual(codes(out.findings), ['WALL_OF_TEXT']);
 });
 
-test('CLI: invocable through a symlinked directory', () => {
+test('CLI: invocable through a symlinked directory', async () => {
   const parent = mktemp();
   const linkDir = join(parent, 'link');
   symlinkSync(SCRIPTS_DIR, linkDir, 'dir');
@@ -225,7 +267,7 @@ test('CLI: invocable through a symlinked directory', () => {
 // instead of resolving it — the mirror image of the plain symlinked-directory
 // case above. A guard that only resolves one side of the comparison passes
 // one of these two cases and silently fails the other.
-test('CLI: invocable through a symlinked directory under node --preserve-symlinks-main', () => {
+test('CLI: invocable through a symlinked directory under node --preserve-symlinks-main', async () => {
   const parent = mktemp();
   const linkDir = join(parent, 'link');
   symlinkSync(SCRIPTS_DIR, linkDir, 'dir');

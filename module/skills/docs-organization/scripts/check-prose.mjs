@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Deterministic prose-scannability checks over a markdown AST.
+// Deterministic prose-scannability checks over a document's DocModel.
 //
 // Replaces the LLM "readability" lane's job of *enumerating* violations: an
 // LLM reading a 700-line file against a fuzzy word/size bar under-reports, and
@@ -10,7 +10,7 @@
 // was tried and removed — segmentation is a hard NLP problem (see THRESHOLDS).
 //
 // Findings (all severity info — nudges, never blockers):
-//   WALL_OF_TEXT    a top-level paragraph over the density threshold
+//   WALL_OF_TEXT    a top-level or callout paragraph over the density threshold
 //   DENSE_BULLET    a flat list item (no sub-list) whose body is over threshold
 //   SPLIT_CANDIDATE the whole file, or one H2 section, over the size threshold
 //
@@ -21,15 +21,17 @@
 // findings, 1 = findings, 2 = internal error. Matches the contract of
 // check-structure.sh / check-staleness.mjs.
 //
-// Markdown structure is read from the markdown-it token stream, never from
-// per-line regexes: fenced code, tables, blockquotes, and nested lists are
-// distinguished by node type, so wrapped list bodies and indented code never
-// masquerade as paragraphs (the false-positive class a hand-rolled scanner hits).
+// Structure comes from the file's format adapter (formats/index.mjs), never
+// from per-line regexes: code blocks, tables, quotations, and nested lists
+// are distinguished by the parser, so wrapped list bodies and indented code
+// never masquerade as paragraphs (the false-positive class a hand-rolled
+// scanner hits). A callout (GFM alert, admonition) is the author's own prose
+// and is checked; a quotation is someone else's and is not.
 
-import MarkdownIt from './vendor/markdown-it.mjs';
 import { readFileSync, realpathSync, lstatSync } from 'node:fs';
 import { relative } from 'node:path';
-import { walkMarkdown } from './md-files.mjs';
+import { walkDocs } from './doc-files.mjs';
+import { parseDoc } from './formats/index.mjs';
 import { isMain } from './is-main.mjs';
 
 // Thresholds. Word count and line span are the only *unambiguous* size metrics,
@@ -47,102 +49,44 @@ export const THRESHOLDS = {
   sectionLines: 250,
 };
 
-const md = new MarkdownIt(); // default preset: tables and lists enabled.
-
 function countWords(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function lineOf(token) {
-  return token.map ? token.map[0] + 1 : null;
-}
+const PROSE_CONTEXTS = new Set(['top', 'callout']);
 
-// Walk the flat token stream, tracking nesting, and pull out:
-//   - top-level paragraphs (not inside a list item or blockquote)
-//   - list items, with their DIRECT text and whether they hold a nested list
-export function analyzeMarkdown(content) {
-  const tokens = md.parse(content, {});
+export function analyzeProse(model) {
   const findings = [];
-
-  // Depth counters so we know our structural context at each inline token.
-  let listItemDepth = 0;
-  let blockquoteDepth = 0;
-
-  // Stack of open list items, so a nested list's text is attributed to the
-  // inner item and the outer item is marked as "has a nested list".
-  const itemStack = [];
-
-  for (let ti = 0; ti < tokens.length; ti++) {
-    const tok = tokens[ti];
-    switch (tok.type) {
-      case 'blockquote_open':
-        blockquoteDepth++;
-        break;
-      case 'blockquote_close':
-        blockquoteDepth--;
-        break;
-      case 'bullet_list_open':
-      case 'ordered_list_open':
-        // A list opening inside an item means that item is not flat.
-        if (itemStack.length > 0) itemStack[itemStack.length - 1].hasNestedList = true;
-        break;
-      case 'list_item_open':
-        listItemDepth++;
-        itemStack.push({ line: lineOf(tok), text: '', hasNestedList: false });
-        break;
-      case 'list_item_close': {
-        listItemDepth--;
-        const item = itemStack.pop();
-        // Only flag a flat item: one carrying its whole load as prose with no
-        // sub-bullets to break it up. An item that already nests a list is
-        // exactly the shape we want, however long.
-        if (!item.hasNestedList) {
-          const words = countWords(item.text);
-          if (words >= THRESHOLDS.bulletWords) {
-            findings.push({
-              code: 'DENSE_BULLET',
-              severity: 'info',
-              line: item.line,
-              message: `flat bullet ~${words} words; break into sub-bullets`,
-            });
-          }
-        }
-        break;
-      }
-      case 'inline': {
-        // Attribute this text to the innermost open list item, if any.
-        if (itemStack.length > 0) {
-          itemStack[itemStack.length - 1].text += ' ' + tok.content;
-        }
-        break;
-      }
-      case 'paragraph_open': {
-        // A genuine top-level paragraph: not in a list item, not in a
-        // blockquote. Its text is the next inline token.
-        if (listItemDepth === 0 && blockquoteDepth === 0) {
-          const line = lineOf(tok);
-          // The paragraph's inline content is the immediately following token.
-          const inline = tokens[ti + 1];
-          const text = inline && inline.type === 'inline' ? inline.content : '';
-          const words = countWords(text);
-          if (words >= THRESHOLDS.paragraphWords) {
-            findings.push({
-              code: 'WALL_OF_TEXT',
-              severity: 'info',
-              line,
-              message: `paragraph ~${words} words unbroken; split at a topic seam`,
-            });
-          }
-        }
-        break;
-      }
-      default:
-        break;
+  for (const p of model.paragraphs) {
+    if (!PROSE_CONTEXTS.has(p.context)) continue;
+    const words = countWords(p.text);
+    if (words >= THRESHOLDS.paragraphWords) {
+      findings.push({
+        code: 'WALL_OF_TEXT',
+        severity: 'info',
+        line: p.line,
+        message: `paragraph ~${words} words unbroken; split at a topic seam`,
+      });
+    }
+  }
+  // Only a flat item is flagged: one carrying its whole load as prose with no
+  // sub-bullets to break it up. An item that already nests a list is exactly
+  // the shape we want, however long.
+  for (const item of model.listItems) {
+    if (item.hasNestedList) continue;
+    const words = countWords(item.text);
+    if (words >= THRESHOLDS.bulletWords) {
+      findings.push({
+        code: 'DENSE_BULLET',
+        severity: 'info',
+        line: item.line,
+        message: `flat bullet ~${words} words; break into sub-bullets`,
+      });
     }
   }
 
-  // Size heuristics. Whole file first, then any oversized H2 section.
-  const totalLines = content.split('\n').length;
+  // Size heuristics. Whole file first, then any oversized level-2 section.
+  const totalLines = model.lines;
   if (totalLines > THRESHOLDS.fileLines) {
     findings.push({
       code: 'SPLIT_CANDIDATE',
@@ -152,16 +96,8 @@ export function analyzeMarkdown(content) {
     });
   }
 
-  // Section spans: from each H2 heading to the next heading of level <= 2.
-  const headings = [];
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].type === 'heading_open') {
-      const level = Number(tokens[i].tag.slice(1));
-      const line = lineOf(tokens[i]);
-      const title = tokens[i + 1] && tokens[i + 1].type === 'inline' ? tokens[i + 1].content : '';
-      headings.push({ level, line, title });
-    }
-  }
+  // Section spans: from each level-2 heading to the next heading of level <= 2.
+  const { headings } = model;
   for (let i = 0; i < headings.length; i++) {
     if (headings[i].level !== 2) continue;
     let end = totalLines + 1;
@@ -183,7 +119,7 @@ export function analyzeMarkdown(content) {
   return findings;
 }
 
-function main(argv) {
+async function main(argv) {
   const targets = argv.slice(2);
   if (targets.length === 0) {
     process.stderr.write('usage: check-prose.mjs <file-or-dir>...\n');
@@ -193,14 +129,14 @@ function main(argv) {
   const seen = new Set();
   const cwd = realpathSync(process.cwd());
   for (const target of targets) {
-    for (const file of walkMarkdown(target)) {
+    for (const file of walkDocs(target)) {
       const real = realpathSync(file);
       if (seen.has(real)) continue; // a symlink and its target are one document
       seen.add(real);
       // Keep the caller's spelling for ordinary files; name the target for symlinks.
       const shown = lstatSync(file).isSymbolicLink() ? relative(cwd, real) : file;
       const content = readFileSync(real, 'utf8');
-      for (const f of analyzeMarkdown(content)) findings.push({ ...f, file: shown });
+      for (const f of analyzeProse(await parseDoc(file, content))) findings.push({ ...f, file: shown });
     }
   }
   const payload = {
@@ -213,10 +149,8 @@ function main(argv) {
 }
 
 if (isMain(import.meta.url)) {
-  try {
-    main(process.argv);
-  } catch (e) {
+  main(process.argv).catch((e) => {
     process.stderr.write('check-prose: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
     process.exit(2);
-  }
+  });
 }

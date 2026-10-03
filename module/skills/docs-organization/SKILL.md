@@ -24,7 +24,7 @@ commands:
 
 ## Invariants this skill enforces
 
-1. **README.md is always self-sufficient.** Even after detailed usage docs
+1. **The README is always self-sufficient.** Even after detailed usage docs
    move to `docs/usage/`, the README must provide enough Install +
    Quickstart for a new user to get started.
 2. **`docs/superpowers/` is never committed.** It contains specs and plans
@@ -43,9 +43,9 @@ The skill audits **project-centric documentation only** — content that
 describes the project itself. When enumerating documentation files (in
 `/docs-audit` and any command that re-runs its lanes), include:
 
-- `README.md` at the repository root.
-- Every `.md` under `docs/`.
-- For lola module repositories: every `.md` under `module/` that ships as
+- The README at the repository root (any registered README name).
+- Every doc file under `docs/` (see "Supported formats").
+- For lola module repositories: every doc file under `module/` that ships as
   part of the module (`module/skills/*/SKILL.md`, `module/commands/*.md`,
   `module/skills/*/reference/*.md`).
 
@@ -74,7 +74,7 @@ exception: a relative link resolves from the path a reader opened, and an
 installed module is read from the symlink's location, so Lane 4 gets every
 path. A tracked regular file sitting among at least two symlinks into a
 directory that has a diverged, tracked same-named twin is flagged by
-`check-structure.sh` as `FORKED_COPY` (`README.md`/`index.md` exempt).
+`check-structure.sh` as `FORKED_COPY` (a README or `index.<ext>` is exempt).
 
 **Tooling preference:** when enumerating files, prefer the agent host's
 built-in glob/search tools (e.g., Claude Code's `Glob` and `Grep`) over shell
@@ -85,6 +85,11 @@ use `git -c core.quotePath=false ls-files --cached --others
 untracked-not-ignored, i.e., Glob minus `.gitignore` — and apply the
 remaining exclusions to its output. Shell tools are still appropriate for
 the deterministic scripts under `scripts/`, which run outside the agent.
+
+## Supported formats
+
+Markdown and AsciiDoc; per-format extensions, README names, and mermaid
+block syntax are in `reference/supported-formats.md`.
 
 ## When a diagram earns its place
 
@@ -124,34 +129,9 @@ tool (asciinema / VHS) — never a fabricated artifact.
 
 ## Tools this skill uses
 
-Scripts print JSON (lint-mermaid: with `--json`). Exit code:
-0 = no findings, 1 = findings, 2 = internal error.
-
-- `scripts/check-structure.sh` — file presence, `.gitignore`, ADR index,
-  forked copies in symlinked doc trees (`FORKED_COPY`).
-- `scripts/check-staleness.mjs` — git log delta between docs and source;
-  source is classified with GitHub Linguist's vendored language data, and
-  `STALENESS_NOT_ASSESSED` reports when no commit ever touched source.
-- `scripts/check-prose.mjs` — readability and size over a markdown AST:
-  `WALL_OF_TEXT` (dense top-level paragraph), `DENSE_BULLET` (fat flat list
-  item with no sub-bullets), `SPLIT_CANDIDATE` (oversized file or H2 section).
-- `scripts/check-refs.mjs` — `REF_NOT_IN_GIT`, `REF_BROKEN` (untracked docs:
-  checked on disk), `UNLINKED_REF` (bare `§`).
-- `scripts/lint-mermaid.mjs` — merval parse, init header, palette,
-  contrast.
-- `scripts/md-files.mjs`, `md-chunks.mjs` — path expansion; drift ranges.
-- `scripts/fetch-citations.mjs` — document-mode URLs, local sources; only
-  network actor (`--fetch`; else `--offline`).
-
-`check-prose.mjs` and `check-refs.mjs` also report `scanned`, so an empty
-result can be told apart from a lane that read nothing: `check-prose.mjs`
-counts distinct documents read (a symlink and its target count once);
-`check-refs.mjs` counts doc paths checked (a symlink and its target
-count separately).
-
-Requires Node.js ≥20. The npm deps (`@aj-archipelago/merval`, `markdown-it`)
-and Linguist data (`linguist.json`) ship pre-bundled under `scripts/vendor/`;
-nothing to install.
+Every check is a script under `scripts/` that prints JSON and exits 0 (no
+findings), 1 (findings), or 2 (internal error). What each script checks and
+reports is in `reference/scripts.md`.
 
 ### Deterministic where it's unambiguous, LLM where it's fuzzy
 
@@ -171,7 +151,8 @@ Why each signal sits where it does:
 ### References should be followable
 
 A reference the reader cannot follow is a defect, and much of it is
-deterministic: `check-refs.mjs` resolves every markdown *link* against the
+deterministic: `check-refs.mjs` resolves every *link* (and AsciiDoc
+cross-reference and include) against the
 git-tracked file set. A link to a missing path (`REF_BROKEN`) or to a real but
 gitignored/unstaged file (`REF_NOT_IN_GIT`) dangles for anyone who clones. It
 also surfaces `§` section citations that carry no link (`UNLINKED_REF`) — a

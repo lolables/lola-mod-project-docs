@@ -5,6 +5,34 @@ set -euo pipefail
 # paths, so add_finding JSON-escapes them.
 # Exit code: 0 = no findings, 1 = findings, 2 = internal error.
 
+# Format registry: which README names satisfy the README rule and which file
+# extensions are docs. Resolved before the cd below, while BASH_SOURCE is
+# still valid relative to the caller's cwd.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! readme_list=$(node "$SCRIPT_DIR/formats/index.mjs" --readmes) \
+  || ! ext_list=$(node "$SCRIPT_DIR/formats/index.mjs" --extensions); then
+  echo '{"status": "error", "message": "format registry (formats/index.mjs) failed"}'
+  exit 2
+fi
+mapfile -t readme_names <<< "$readme_list"
+mapfile -t doc_exts <<< "$ext_list"
+
+is_doc() {
+  local lower="${1,,}" ext
+  for ext in "${doc_exts[@]}"; do
+    case "$lower" in *?"$ext") return 0;; esac
+  done
+  return 1
+}
+
+# README.<ext> and index.<ext> are conventional per-directory files, not forks.
+is_conventional_name() {
+  local n
+  for n in "${readme_names[@]}"; do [ "$1" = "$n" ] && return 0; done
+  case "$1" in index.*) is_doc "$1" && return 0;; esac
+  return 1
+}
+
 findings=()
 
 # Run every check from the repo root, regardless of the cwd the caller
@@ -51,10 +79,15 @@ add_finding() {
   findings+=("{\"code\": \"$code\", \"severity\": \"$severity\", \"message\": \"$message\"}")
 }
 
-# Check 1: README.md present and non-empty.
-if [ ! -f README.md ] || [ ! -s README.md ]; then
+# Check 1: a README in any registered format, present and non-empty.
+readme_found=0
+for name in "${readme_names[@]}"; do
+  if [ -f "$name" ] && [ -s "$name" ]; then readme_found=1; break; fi
+done
+if [ "$readme_found" -eq 0 ]; then
+  readme_choices=$(printf '%s, ' "${readme_names[@]}")
   add_finding "MISSING_README" "blocker" \
-    "README.md is missing or empty. Run /docs-init to scaffold one."
+    "README is missing or empty (any of: ${readme_choices%, }). Run /docs-init to scaffold one."
 fi
 
 # Check 2: if the project uses a docs/ tree, docs/superpowers/ must be gitignored
@@ -103,14 +136,14 @@ if [ -d docs/adr ] && [ ! -f docs/adr/index.md ]; then
     "docs/adr/ exists but index.md is missing. Run adr-index.sh."
 fi
 
-# Check 5: a regular .md file beside two or more file symlinks into the same
+# Check 5: a regular doc file beside two or more file symlinks into the same
 # directory, where that directory has a same-named tracked file, is a copy
 # that risks forking from its canonical twin. Editing a symlink writes
 # through to the target; editing the copy silently does not. Only plain
 # file symlinks count — a directory symlink is not "a directory of
 # symlinks" — and at least two of them must point into the same directory
-# before a bare regular file sitting there is suspicious. README.md and
-# index.md are conventional per-directory files, not forks, so they're
+# before a bare regular file sitting there is suspicious. README.<ext> and
+# index.<ext> are conventional per-directory files, not forks, so they're
 # exempt. The twin must itself be tracked: a same-named file that merely
 # exists on disk is not evidence of a fork. Scope follows SKILL.md: tracked
 # files only, nothing under a dot-directory. A copy that is still
@@ -134,7 +167,7 @@ if [ "$in_git_repo" -eq 1 ]; then
 
     case "$mode" in
       100644|100755)
-        case "$f" in *.md) ;; *) continue;; esac
+        is_doc "$f" || continue
         d=${f%/*}; [ "$d" = "$f" ] && d=.
         name=${f##*/}
         md_dirs+=("$d")
@@ -188,21 +221,18 @@ if [ "$in_git_repo" -eq 1 ]; then
         if [ "${md_dirs[$j]}" = "$link_dir" ]; then
           name="${md_names[$j]}"
           f="${md_paths[$j]}"
-          case "$name" in
-            README.md|index.md) : ;;
-            *)
-              if [ "$target_rel" = "." ]; then
-                twin="$name"
-              else
-                twin="$target_rel/$name"
-              fi
-              if git --literal-pathspecs ls-files --error-unmatch -- "$twin" > /dev/null 2>&1 \
-                && ! cmp -s "$f" "$twin"; then
-                add_finding "FORKED_COPY" "warning" \
-                  "$f is a regular file among symlinks into $target_rel/, and has diverged from its tracked twin $twin. Diff the two, then replace $f with a symlink or record why it differs."
-              fi
-              ;;
-          esac
+          if ! is_conventional_name "$name"; then
+            if [ "$target_rel" = "." ]; then
+              twin="$name"
+            else
+              twin="$target_rel/$name"
+            fi
+            if git --literal-pathspecs ls-files --error-unmatch -- "$twin" > /dev/null 2>&1 \
+              && ! cmp -s "$f" "$twin"; then
+              add_finding "FORKED_COPY" "warning" \
+                "$f is a regular file among symlinks into $target_rel/, and has diverged from its tracked twin $twin. Diff the two, then replace $f with a symlink or record why it differs."
+            fi
+          fi
         fi
         j=$((j + 1))
       done

@@ -1,0 +1,31 @@
+= Sample Document
+
+An opening paragraph that links to link:guide.md[the guide] and cites §4.2.
+
+== Lists
+
+* first item with an image image:img/logo.png[logo]
+** nested item
+* second item
+
+== Quotes and callouts
+
+____
+A quoted paragraph.
+____
+
+[NOTE]
+A callout paragraph with https://example.com/callout[a link].
+
+[source,mermaid]
+----
+flowchart LR
+  A --> B
+----
+
+=== Detail
+
+Closing paragraph citing §7 without any link.
+
+TIP: Alert body text.
+
