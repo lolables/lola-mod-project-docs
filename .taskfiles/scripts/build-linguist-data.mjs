@@ -4,8 +4,8 @@
 // check-staleness.mjs needs to know which tracked files are *source*. Linguist
 // is the maintained answer (it drives GitHub's language bar); rather than
 // hand-maintain an extension list, fetch its data at a pinned tag, verify each
-// file against a pinned SHA-256, and ship a trimmed JSON. Bumping the tag means
-// updating TAG and every hash below, then `task vendor`.
+// file against a pinned SHA-256, and ship a trimmed JSON. The tag and hashes live
+// in .taskfiles/vendor/linguist-pin.json; `task deps:bump` rewrites them.
 //
 // Usage: node build-linguist-data.mjs <license-out-path>
 // Writes $SCRIPTS_DIR/vendor/linguist.json and the Linguist LICENSE text to
@@ -13,7 +13,7 @@
 
 import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const SCRIPTS_DIR = 'module/skills/docs-organization/scripts';
@@ -21,14 +21,10 @@ const SCRIPTS_DIR = 'module/skills/docs-organization/scripts';
 const require = createRequire(resolve('.taskfiles/vendor', 'package.json'));
 const yaml = require('js-yaml');
 
-const TAG = 'v9.7.0';
+const PIN = JSON.parse(readFileSync('.taskfiles/vendor/linguist-pin.json', 'utf8'));
+const TAG = PIN.tag;
 const BASE = `https://raw.githubusercontent.com/github-linguist/linguist/${TAG}/`;
-const PINNED = {
-  'lib/linguist/languages.yml': '7c2bc5b59662de6c5d09cd4990e82b2541d4cd2ea7c8c213537730474f24a5c7',
-  'lib/linguist/vendor.yml': '1ae9980298c7c4b89fa663f1efbab3c977818a0fcb59ddc869f2b8060a7ad345',
-  'lib/linguist/documentation.yml': '9bcc2d965be92c009926dd9390b5a454e309d851f7b26a0f51d6570a808a8745',
-  'LICENSE': '7717070c5a8c85440ff2312930bb30dd19002ab5bc235c9800042767f6f5242f',
-};
+const PINNED = PIN.sha256;
 
 async function fetchPinned(path) {
   let res;

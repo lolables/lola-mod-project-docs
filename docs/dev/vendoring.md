@@ -27,7 +27,7 @@ flowchart LR
     Pkg --> Esb["esbuild bundles"]
   end
   subgraph lingpath["GitHub Linguist data"]
-    Hand["maintainer edits by hand, no bump bot"] --> Pin["TAG and PINNED hashes"]
+    Hand["task deps:bump, no bump bot"] --> Pin["linguist-pin.json tag and hashes"]
     Pin --> Raw["fetch from raw.githubusercontent.com"]
     Raw --> Yaml["js-yaml converts, trimmed to JSON"]
   end
@@ -94,13 +94,14 @@ points inside `.taskfiles/vendor/`. The bundles embed each module's path
 relative to the repo root (`.taskfiles/vendor/node_modules/...`), so moving the
 toolchain again means rerunning `task vendor` and committing the result.
 
-GitHub Linguist's data is pinned separately: `.taskfiles/scripts/build-linguist-data.mjs`
-hardcodes the fetched tag (`TAG`) and a SHA-256 per file (`PINNED`).
+GitHub Linguist's data is pinned separately: `.taskfiles/vendor/linguist-pin.json`
+records the fetched tag and a SHA-256 per file, and
+`.taskfiles/scripts/build-linguist-data.mjs` rejects any fetch that does not match.
 Dependabot's `npm` entry covers the vendor toolchain's `package.json` (the six
 bundled packages plus esbuild and js-yaml), so it never opens a bump PR for the
 Linguist fetch. `task vendor`, which CI also runs, needs
 network access to `raw.githubusercontent.com`, not just the npm registry. To
-bump it, follow [Bump the GitHub Linguist data](maintaining.md#bump-the-github-linguist-data).
+bump it, follow [Bump dependencies](maintaining.md#bump-dependencies).
 
 `LICENSES.md` is assembled by `build-vendor.sh` from the installed packages'
 own metadata and licence files, because esbuild only preserves `/*! */` legal

@@ -86,6 +86,8 @@ GitHub Linguist's vendored language data ship pre-bundled under
 `task vendor` is the contributor-only path — it installs the build toolchain
 and regenerates those bundles. Run it after any dependency bump, and commit the
 result: CI reruns it and fails on a non-empty `git diff vendor/`.
+`task deps:bump` moves every npm pin and the Linguist pin to latest, then runs
+`task vendor`; see `docs/dev/maintaining.md#bump-dependencies`.
 
 `task clean` removes derived state (`.test-output/` and
 `.taskfiles/vendor/node_modules/`). It
