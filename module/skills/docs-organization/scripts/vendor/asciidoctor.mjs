@@ -1,7 +1,12 @@
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+var __esm = (fn, res, err) => function __init() {
+  if (err) throw err[0];
+  try {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  } catch (e) {
+    throw err = [e], e;
+  }
 };
 var __export = (target, all) => {
   for (var name in all)
@@ -13177,7 +13182,7 @@ var AttributeList = class _AttributeList {
 };
 
 // .taskfiles/vendor/node_modules/@asciidoctor/core/src/attribute_entry.js
-var ATTR_ENTRIES_KEY = Symbol("attribute_entries");
+var ATTR_ENTRIES_KEY = /* @__PURE__ */ Symbol("attribute_entries");
 function getAttributeEntries(blockAttributes) {
   return blockAttributes[ATTR_ENTRIES_KEY];
 }
