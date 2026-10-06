@@ -1,0 +1,24 @@
+eval/results/r16-plainlanguage-v2.json
+  s_db445f694d8d51::t_df563fbcca038a 1-387
+eval/REPORT.md
+  s_db445f694d8d51::t_8ae9bff6eb38d1 1044-1046
+  s_db445f694d8d51::t_d362dc682dcb87 967-995,997-1043,1047-1048
+  s_db445f694d8d51::t_dfbd29442e3b27 963-965
+  s_db445f694d8d51::t_bb36d87b211a99 966
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "533329ee92b93f6e0b8edfcbf1f8a6fea1670b2c",
+  "prompts": {},
+  "sessions": {
+    "s_db445f694d8d51": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aa978e76-6963-4f4a-b36a-b7880dc371fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
