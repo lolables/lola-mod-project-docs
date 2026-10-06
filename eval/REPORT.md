@@ -910,3 +910,139 @@ corrected afterwards to name those `.v1`/`.v2` copies (v1 ran with batch 10
 and claims listed without a kind).
 Run: `python3 run_ledger.py --batch 20 --fixture fixtures/real-lane-table
 --repo /tmp/r14-real --doc docs/dev/architecture.md --out <file>`.
+
+## Round 16 — plain language: noun strings and hidden verbs (isolated runs)
+
+Origin: a reader could not parse "Complete this setup before requesting
+shared dev/prod applies or enabling schedules", and `/docs-audit` passed it.
+The deterministic half (`DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`) ships in
+`check-prose.mjs` with unit tests; this round measures the LLM half.
+
+Prompt: `prompts/plain-language.txt`, one call per `doc-chunks.mjs` range,
+under `isolated_config()`. Fixture: `fixtures/plain-language` — the
+originating sentence, four planted noun strings, four planted hidden verbs
+spread to the last section, and four clean controls. The 164-line document
+splits into two chunks (lines 1-88 and 89-164). K=5.
+
+| Item | Hits |
+| --- | --- |
+| `orig-noun` | 5/5 |
+| `orig-verb` | 5/5 |
+| `noun-autoscaler` | 4/5 |
+| `noun-expiry` | 4/5 |
+| `noun-rotation` | 5/5 |
+| `noun-override` | 5/5 |
+| `verb-evaluation` | 4/5 |
+| `verb-determination` | 4/5 |
+| `verb-consideration` | 4/5 |
+| `verb-review` | 4/5 |
+
+| Control | Flagged |
+| --- | --- |
+| `two-node` | 0/5 |
+| `installation-dir` | 0/5 |
+| `deployment-config` | 0/5 |
+| `health-check` | 0/5 |
+
+Unassigned findings per run: 0, 0, 0, 0, 0.
+
+Three of the five runs found all ten items. The misses cluster in two runs,
+each a partial pass over one chunk:
+
+- Run 2 kept the line-15 pair but dropped the other four items in lines
+  1-88 (`noun-autoscaler`, `noun-expiry`, `verb-evaluation`,
+  `verb-determination`).
+- Run 5 dropped two items in lines 89-164 (`verb-consideration`,
+  `verb-review`).
+
+Every finding in every run landed on a planted item, so precision on this
+fixture was perfect.
+
+Ship gate (every planted item ≥4/5, no control flagged): **PASS** on the
+first run; the prompt was not revised. Results:
+`results/r16-plainlanguage.json`. Recall cleared the gate only at its
+floor: six items sat at exactly 4/5, so one more miss would have failed
+them.
+
+### Strengthened fixture
+
+Code review found the first measurement weaker than its gate implied.
+Three of the four controls ("the installation directory", "deployment
+configuration", "load balancer health check") appear in the prompt's own
+Do-NOT-flag list, so 0/5 flags mostly showed that the model obeys an
+explicit list. The fixture and scoring changed before a second run; the
+prompt did not.
+
+- **Unnamed controls.** Four phrases the prompt never mentions:
+  `request-rate-graph` ("the request rate graph", two noun modifiers,
+  within Google's "more than two" limit), `after-upgrade` ("after the
+  upgrade", a plain noun with no support verb), `access-control-list` ("the
+  access control list", an established compound), and `restore-drill` ("a
+  restore drill"). One sits in Configure (chunk 1); the other three sit in
+  Monitoring, Releases, and Backups (chunk 2).
+- **Unplanted hidden verb removed.** "Plan an expansion at that point"
+  became "Plan to expand the disk at that point".
+- **Tighter orig groups.** `orig-noun` now needs `dev/prod applies` and
+  `orig-verb` needs `requesting`, so an ordinary "applies" elsewhere cannot
+  take the credit. Re-scoring the first results with the new
+  `expected.json` changes no hit and no unassigned count.
+- **Stricter gate.** The threshold is `runs - 1` instead of a literal 4,
+  and any unassigned finding fails the gate. The fixture plants every
+  failure it contains, so a finding that matches no planted item is a
+  false positive. The results file now records each run's error.
+
+The 166-line document still splits at lines 1-88 and 89-166. K=5, all five
+runs succeeded.
+
+| Item | Hits |
+| --- | --- |
+| `orig-noun` | 4/5 |
+| `orig-verb` | 5/5 |
+| `noun-autoscaler` | 4/5 |
+| `noun-expiry` | 5/5 |
+| `noun-rotation` | 5/5 |
+| `noun-override` | 5/5 |
+| `verb-evaluation` | 5/5 |
+| `verb-determination` | 5/5 |
+| `verb-consideration` | 5/5 |
+| `verb-review` | 5/5 |
+
+| Control | Named in the prompt | Flagged |
+| --- | --- | --- |
+| `two-node` | no | 0/5 |
+| `installation-dir` | yes | 0/5 |
+| `deployment-config` | yes | 0/5 |
+| `health-check` | yes | 0/5 |
+| `request-rate-graph` | no | 0/5 |
+| `after-upgrade` | no | 0/5 |
+| `access-control-list` | no | 0/5 |
+| `restore-drill` | no | 0/5 |
+
+Unassigned findings per run: 0, 0, 0, 0, 0.
+
+Four runs found all ten items. Run 3 left out two chunk-1 items: the
+noun-string half of the originating sentence (it reported only the hidden
+verb on line 15) and `noun-autoscaler`. Both are real misses, not scoring
+artifacts.
+
+Ship gate: **PASS**, prompt unchanged. Results:
+`results/r16-plainlanguage-v2.json`.
+
+**Limitations.**
+
+- One fixture in one document style (a prose operations guide), so these
+  numbers say nothing about reference tables, tutorials, or terse READMEs.
+- K=5 is small. A 4/5 hit rate has a Wilson 95% interval of roughly
+  0.38-0.96, and 5/5 still allows a true rate as low as about 0.57.
+- The prompt's worked example is the originating sentence, so the orig
+  hits measure recognition, not generalization.
+- Three controls are named in the prompt (`installation-dir`,
+  `deployment-config`, `health-check`). Five are not (`two-node` and the
+  four new ones). Only the unnamed five test whether the model generalizes
+  the Do-NOT-flag guidance; all five stayed clean in all runs.
+
+Decision: wired because the gate passed on the strengthened fixture. The
+prompt goes into `/docs-audit` as Lane 6 prompt 7 in its own commit,
+copied verbatim with `<file>`/`<start>`/`<end>` in place of the braces. As
+in the first measurement, the expected failure mode is lower recall (a run
+that skips part of a chunk), not false positives.

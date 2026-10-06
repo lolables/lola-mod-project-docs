@@ -1,0 +1,387 @@
+{
+  "runs": [
+    [
+      {
+        "code": "NOUN_STRING",
+        "line": 15,
+        "quote": "shared dev/prod applies",
+        "why": "Three nouns (shared, dev/prod, applies) stack before the reader can tell 'applies' is itself a noun (an approval action), so the phrase reads as a typo or unfinished thought.",
+        "rewrite": "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 15,
+        "quote": "requesting shared dev/prod applies",
+        "why": "'Applies' is a noun standing in for the verb 'apply,' forcing the weak verb 'requesting' to carry the action, so the reader has to mentally convert it back to 'ask someone to apply changes' before the sentence makes sense.",
+        "rewrite": "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 33,
+        "quote": "The operator should perform an evaluation of the logs before moving on.",
+        "why": "'Perform an evaluation of' hides the verb 'evaluate' behind a noun and a filler verb, adding words the reader must strip away to find the actual instruction.",
+        "rewrite": "The operator should evaluate the logs before moving on."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 56,
+        "quote": "cluster node pool autoscaler settings page",
+        "why": "Five nouns (cluster, node, pool, autoscaler, settings) pile up before the head noun 'page,' so a first-time reader can't tell where one concept ends and the next begins or which word names the actual destination.",
+        "rewrite": "open the autoscaler settings page for the cluster's node pool and set the minimum to two"
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 77,
+        "quote": "make a determination as to whether the cache is warm",
+        "why": "'Make a determination as to whether' buries the verb 'determine' inside a noun phrase plus a weak verb, making the reader decode a longer, vaguer construction before reaching the simple instruction.",
+        "rewrite": "After a restart, determine whether the cache is warm before you send traffic to that node."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 82,
+        "quote": "user account password reset token expiry window",
+        "why": "Six nouns (user, account, password, reset, token, expiry) are stacked before the head noun 'window,' so the reader must hold all of them in mind at once to figure out which setting is actually being named.",
+        "rewrite": "The usual cause is the window during which a user's password reset token is valid, which the identity team sets to fifteen minutes."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 123,
+        "quote": "release pipeline artifact signing key rotation schedule",
+        "why": "Six nouns (release, pipeline, artifact, signing, key, rotation) stack in front of the head noun \"schedule,\" so the reader can't tell which word names the thing being reviewed until untangling the whole chain.",
+        "rewrite": "Review the rotation schedule for the release pipeline's artifact signing key before each quarter so that you are not surprised by a new key when a release arrives."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 105,
+        "quote": "Give consideration to the network latency",
+        "why": "\"Consideration\" is the verb \"consider\" turned into a noun, so it needs the weak verb \"give\" to carry the action, forcing the reader to convert the phrase back into \"consider\" to see what to actually do.",
+        "rewrite": "Consider the network latency between the nodes when you read the replication graph."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 142,
+        "quote": "database backup retention policy override flag",
+        "why": "Five nouns (database, backup, retention, policy, override) stack in front of the head noun \"flag,\" so the reader can't tell which word is the actual flag until parsing the full chain.",
+        "rewrite": "For them, set the override flag for the database backup retention policy in the backup tool and choose the number of days they need."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 146,
+        "quote": "conduct a review of the access list",
+        "why": "\"Review\" is nominalized and paired with the weak verb \"conduct,\" so the reader has to mentally convert it back into the verb \"review\" to understand the instruction.",
+        "rewrite": "Once a quarter, review the access list for the backup bucket."
+      }
+    ],
+    [
+      {
+        "code": "NOUN_STRING",
+        "line": 15,
+        "quote": "shared dev/prod applies",
+        "why": "\"shared\", \"dev\", and \"prod\" all pile up in front of \"applies\", so the reader can't tell if \"applies\" names a thing or is part of the action, and has to re-read to realize it means change requests for the dev and prod environments.",
+        "rewrite": "Complete this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 15,
+        "quote": "requesting shared dev/prod applies",
+        "why": "\"applies\" is the verb \"apply\" turned into a noun, so the sentence needs the weaker verb \"requesting\" just to make it work, and the reader has to mentally convert it back to \"apply\" to get the meaning.",
+        "rewrite": "Complete this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 33,
+        "quote": "The operator should perform an evaluation of the logs before moving on.",
+        "why": "\"evaluation\" is \"evaluate\" turned into a noun, forcing the filler verb \"perform\" to carry the sentence; the reader has to unpack \"perform an evaluation of\" back into the single action it names.",
+        "rewrite": "The operator should evaluate the logs before moving on."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 56,
+        "quote": "cluster node pool autoscaler settings page",
+        "why": "Four nouns (\"cluster\", \"node\", \"pool\", \"autoscaler\") stack in front of \"settings page\", so the reader can't immediately tell which word is the actual thing being opened and which are describing it.",
+        "rewrite": "open the settings page for the cluster's node pool autoscaler and set the minimum to two."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 77,
+        "quote": "make a determination as to whether the cache is warm",
+        "why": "\"determination\" is \"determine\" turned into a noun, and \"make ... as to whether\" is extra scaffolding the reader must strip away to find the real action, determining.",
+        "rewrite": "After a restart, determine whether the cache is warm before you send traffic to that node."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 82,
+        "quote": "the user account password reset token expiry window",
+        "why": "Six nouns (\"user\", \"account\", \"password\", \"reset\", \"token\", \"expiry\") stack before \"window\", so the reader must stop to work out which word is the head noun and which are modifiers.",
+        "rewrite": "the usual cause is the expiry window on the password reset token for the user's account, which the identity team sets to fifteen minutes."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 123,
+        "quote": "release pipeline artifact signing key rotation schedule",
+        "why": "Six nouns (release, pipeline, artifact, signing, key, rotation) stack in front of \"schedule,\" so the reader has to hold the whole chain in mind before finding the word that actually names the thing being reviewed.",
+        "rewrite": "Review the schedule for rotating the key that signs release pipeline artifacts before each quarter so that you are not surprised by a new key when a release arrives."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 142,
+        "quote": "database backup retention policy override flag",
+        "why": "Five nouns (database, backup, retention, policy, override) stack in front of \"flag,\" leaving the reader to guess whether the sentence is about a database, a backup, or a policy until the final word resolves it.",
+        "rewrite": "set the flag in the backup tool that overrides the retention policy for database backups, and choose the number of days they need"
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 105,
+        "quote": "Give consideration to the network latency",
+        "why": "\"Consideration\" is the verb \"consider\" turned into a noun, so the sentence needs the extra, weaker verb \"give\" just to carry the action, making the reader recover the real verb before moving on.",
+        "rewrite": "Consider the network latency between the nodes when you read the replication graph."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 146,
+        "quote": "conduct a review of the access list",
+        "why": "\"Review\" is the verb \"review\" turned into a noun, so the sentence needs the extra verb \"conduct\" just to carry the action, adding a word the reader must process without adding meaning.",
+        "rewrite": "Once a quarter, review the access list for the backup bucket."
+      }
+    ],
+    [
+      {
+        "code": "HIDDEN_VERB",
+        "line": 15,
+        "quote": "requesting shared dev/prod applies",
+        "why": "\"applies\" is the noun form of the verb \"apply,\" so the sentence needs the weak verb \"requesting\" to carry the action; a first-time reader has to convert \"applies\" back into \"apply\" to see what is actually being asked for.",
+        "rewrite": "before you ask someone to apply changes to the shared dev or prod environment"
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 82,
+        "quote": "user account password reset token expiry window",
+        "why": "Six nouns (user, account, password, reset, token, expiry) are stacked in front of \"window,\" so the reader cannot tell at a glance which word names the thing and which words describe it, and has to re-read to find the head noun.",
+        "rewrite": "the expiry window for the password-reset token on a user's account"
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 33,
+        "quote": "perform an evaluation of the logs",
+        "why": "\"evaluation\" is the noun form of \"evaluate,\" and the sentence needs the empty verb \"perform\" to make it work; a first-time reader has to unpack the phrase to realize it just means to evaluate the logs.",
+        "rewrite": "The operator should evaluate the logs before moving on."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 77,
+        "quote": "make a determination as to whether",
+        "why": "\"determination\" hides the verb \"determine,\" and \"make ... as to whether\" is a roundabout way of saying \"determine whether,\" forcing the reader to decode the phrase before getting to the point.",
+        "rewrite": "After a restart, determine whether the cache is warm"
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 105,
+        "quote": "Give consideration to the network latency between the nodes",
+        "why": "The nominalization \"consideration\" needs the weak verb \"give\" to carry the action, so the reader has to mentally convert it back to the verb \"consider\" before the sentence's instruction lands.",
+        "rewrite": "Consider the network latency between the nodes when you read the replication graph."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 123,
+        "quote": "the release pipeline artifact signing key rotation schedule",
+        "why": "Six nouns (release, pipeline, artifact, signing, key, rotation) stack in front of the head noun \"schedule\", so the reader cannot tell which words name separate things and which are just modifiers until reaching the final word.",
+        "rewrite": "Review the rotation schedule for the key that signs artifacts in the release pipeline before each quarter so that you are not surprised by a new key when a release arrives."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 142,
+        "quote": "the database backup retention policy override flag",
+        "why": "Five nouns (database, backup, retention, policy, override) stack in front of \"flag\", forcing the reader to hold all of them in mind before learning that \"flag\" is the actual thing being set.",
+        "rewrite": "set the flag in the backup tool that overrides the database's backup-retention policy, and choose the number of days they need."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 146,
+        "quote": "conduct a review of the access list for the backup bucket",
+        "why": "The nominalization \"a review\" needs the weak verb \"conduct\" to carry the action, delaying the real instruction (review the list) behind an extra throat-clearing verb.",
+        "rewrite": "Once a quarter, review the access list for the backup bucket."
+      }
+    ],
+    [
+      {
+        "code": "NOUN_STRING",
+        "line": 15,
+        "quote": "requesting shared dev/prod applies",
+        "why": "\"shared,\" \"dev,\" and \"prod\" all pile up in front of \"applies,\" so a first-time reader can't tell if \"applies\" is the verb 'to apply' or a noun naming a request type, and must reread to parse the chain.",
+        "rewrite": "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 15,
+        "quote": "requesting shared dev/prod applies",
+        "why": "\"applies\" is the verb \"apply\" turned into a noun, so the sentence needs the extra, weaker verb \"requesting\" just to say someone should apply the change.",
+        "rewrite": "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 33,
+        "quote": "perform an evaluation of the logs",
+        "why": "\"evaluation\" hides the verb \"evaluate,\" forcing the sentence to add the filler verb \"perform\" just to carry the action, so the reader has to mentally convert it back to a verb.",
+        "rewrite": "5. The operator should evaluate the logs before moving on."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 56,
+        "quote": "the cluster node pool autoscaler settings page",
+        "why": "Six nouns in a row (\"cluster,\" \"node,\" \"pool,\" \"autoscaler,\" \"settings,\" \"page\") give no cue about which word names the destination and which ones describe it, so the reader has to stop and work out the chain.",
+        "rewrite": "open the settings page for the node pool autoscaler in the cluster and set the minimum to two"
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 77,
+        "quote": "make a determination as to whether the cache is warm",
+        "why": "\"determination\" hides the verb \"determine,\" so the sentence needs the weak verb \"make\" plus the wordy connector \"as to whether\" just to say \"determine whether.\"",
+        "rewrite": "After a restart, determine whether the cache is warm before you send traffic to that node."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 82,
+        "quote": "user account password reset token expiry window",
+        "why": "Six nouns stack in front of \"window\" (\"user,\" \"account,\" \"password,\" \"reset,\" \"token,\" \"expiry\"), so the reader can't tell which noun the sentence is actually about until reaching the end.",
+        "rewrite": "the expiry window on the token used to reset a user account password"
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 123,
+        "quote": "release pipeline artifact signing key rotation schedule",
+        "why": "Six nouns (release, pipeline, artifact, signing, key, rotation) pile up in front of \"schedule,\" so the reader can't tell which word is the thing being discussed versus which ones are just modifiers.",
+        "rewrite": "Review the schedule for rotating the signing key used for release-pipeline artifacts before each quarter so that you are not surprised by a new key when a release arrives."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 142,
+        "quote": "database backup retention policy override flag",
+        "why": "Five nouns (database, backup, retention, policy, override) stack in front of \"flag,\" forcing the reader to hold the whole chain in mind before finding the actual object \u2014 a flag.",
+        "rewrite": "For them, set the backup tool's flag that overrides the retention policy for database backups, and choose the number of days they need."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 105,
+        "quote": "Give consideration to the network latency",
+        "why": "\"Give consideration to\" hides the verb \"consider\" inside a noun and needs the weak verb \"give\" to carry the action, so the reader has to mentally convert it back to \"consider.\"",
+        "rewrite": "Consider the network latency between the nodes when you read the replication graph."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 146,
+        "quote": "conduct a review of the access list",
+        "why": "\"Conduct a review of\" buries the verb \"review\" inside a noun and props it up with \"conduct,\" making the reader unpack it back into the simpler action.",
+        "rewrite": "Once a quarter, review the access list for the backup bucket."
+      }
+    ],
+    [
+      {
+        "code": "NOUN_STRING",
+        "line": 15,
+        "quote": "shared dev/prod applies",
+        "why": "Three words (shared, dev, prod) pile up in front of \"applies,\" and since \"applies\" is itself an odd noun built from a verb, a first-time reader can't tell whether \"dev/prod\" names an environment or modifies something else.",
+        "rewrite": "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 15,
+        "quote": "requesting shared dev/prod applies",
+        "why": "\"Applies\" is the verb \"apply\" turned into a noun, so the sentence needs the weaker verb \"requesting\" to carry the action, forcing the reader to mentally convert the noun back into the real action (applying) before the sentence makes sense.",
+        "rewrite": "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 33,
+        "quote": "perform an evaluation of the logs",
+        "why": "\"Evaluation\" is the nominalized form of \"evaluate,\" so the step needs the filler verb \"perform\" and the reader has to unpack the phrase back into one action (evaluating) to see what to actually do.",
+        "rewrite": "5. The operator should evaluate the logs before moving on."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 56,
+        "quote": "the cluster node pool autoscaler settings page",
+        "why": "Five nouns (cluster, node, pool, autoscaler, settings) are stacked in front of \"page\" with no hyphens or prepositions showing how they relate, so the reader can't tell at a glance whether they're opening a page for a cluster, a node, a pool, or an autoscaler.",
+        "rewrite": "To change how many nodes the platform keeps warm, open the settings page for the node pool autoscaler on the cluster and set the minimum to two."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 77,
+        "quote": "make a determination as to whether the cache is warm",
+        "why": "\"Determination\" is the noun form of \"determine,\" so \"make a determination as to whether\" makes the reader decode a weak verb-plus-noun phrase before reaching the real question of whether the cache is warm.",
+        "rewrite": "After a restart, determine whether the cache is warm before you send traffic to that node."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 82,
+        "quote": "user account password reset token expiry window",
+        "why": "Six nouns (user, account, password, reset, token, expiry) are stacked before \"window\" with nothing marking which words name the thing and which describe it, so the reader must work backward from \"window\" to untangle the relationships.",
+        "rewrite": "The usual cause is the expiry window for the password reset token on their account, which the identity team sets to fifteen minutes."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 123,
+        "quote": "release pipeline artifact signing key rotation schedule",
+        "why": "Six nouns (release, pipeline, artifact, signing, key, rotation) stack in front of 'schedule', so the reader must hold the whole chain in memory before learning what is actually being scheduled.",
+        "rewrite": "Review the rotation schedule for the release pipeline's artifact signing key before each quarter so that you are not surprised by a new key when a release arrives."
+      },
+      {
+        "code": "NOUN_STRING",
+        "line": 142,
+        "quote": "database backup retention policy override flag",
+        "why": "Five nouns (database, backup, retention, policy, override) stack in front of 'flag', so the reader can't tell which word names the thing being set until reaching the end of the chain.",
+        "rewrite": "For them, set the override flag for the database's backup retention policy in the backup tool and choose the number of days they need."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 105,
+        "quote": "Give consideration to",
+        "why": "'Consideration' is the noun form of 'consider', so the sentence needs the extra, weaker verb 'give' to carry the action, making the instruction feel indirect.",
+        "rewrite": "Consider the network latency between the nodes when you read the replication graph."
+      },
+      {
+        "code": "HIDDEN_VERB",
+        "line": 146,
+        "quote": "conduct a review of",
+        "why": "'Review' is nominalized into 'a review', so the sentence needs the added verb 'conduct' to carry an action that 'review' could carry on its own.",
+        "rewrite": "Once a quarter, review the access list for the backup bucket."
+      }
+    ]
+  ],
+  "hits": {
+    "orig-noun": 4,
+    "orig-verb": 5,
+    "noun-autoscaler": 4,
+    "noun-expiry": 5,
+    "noun-rotation": 5,
+    "noun-override": 5,
+    "verb-evaluation": 5,
+    "verb-determination": 5,
+    "verb-consideration": 5,
+    "verb-review": 5
+  },
+  "controls": {
+    "two-node": 0,
+    "installation-dir": 0,
+    "deployment-config": 0,
+    "health-check": 0,
+    "request-rate-graph": 0,
+    "after-upgrade": 0,
+    "access-control-list": 0,
+    "restore-drill": 0
+  },
+  "unassigned": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "errors": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "gate": true
+}

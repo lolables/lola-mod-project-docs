@@ -141,7 +141,10 @@ LLM asked to enumerate under-reports on long files. The LLM lane adjudicates
 only the candidates the script surfaces: choppy rhythm, and dense-prose
 *genres* (academic, legal, formal spec) where `WALL_OF_TEXT` should be
 suppressed, and `reference` enumerations (glossaries, changelogs, punch
-lists) where `SPLIT_CANDIDATE` may be. A procedure spread across many small
+lists) where `SPLIT_CANDIDATE` may be. The same script enumerates two lexical
+plain-language candidates (`DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`) for the LLM
+to keep or drop; noun strings and hidden verbs need part-of-speech judgment, so
+a chunked Lane 6 prompt finds them. A procedure spread across many small
 blocks trips no size check but is absence-of-structure, so it belongs to the
 grounded `NEEDS_STRUCTURE` sub-check in Lane 6.
 
@@ -198,6 +201,8 @@ An unaudited file is "unknown", never "clean".
   completeness lanes are shaped as they are.
 - `reference/deterministic-vs-llm.md` — why each readability signal is owned
   by `check-prose.mjs` or by an LLM lane, and the guards on each.
+- `reference/rule-sources.md` — the published rule (or house convention)
+  behind each writing-quality finding code; `/docs-audit` cites it.
 - `reference/readme-template.md` — minimum acceptable README structure.
 - `reference/docs-tree-template.md` — `docs/dev/` scaffold.
 

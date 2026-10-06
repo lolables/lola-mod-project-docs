@@ -14,7 +14,12 @@
 //   links        [{kind, target, line, block, bare}]
 //                kind: link | image | xref | include; block: inline-block id;
 //                bare: a bare URL found by autodetection, not written as a link
-//   texts        [{text, line, block}]     plain text outside link text
+//   texts        [{text, line, block, prose}]  plain text outside link text;
+//                prose: true when the text belongs to a paragraphs or
+//                listItems entry and is not inside a quotation at any
+//                depth — running prose; false for headings, block titles,
+//                simple table cells, quotations (and lists or paragraphs
+//                nested in one), dlist terms, and a GFM alert's marker line
 //   diagrams     [{startLine, source, blockStart, bodyStart, bodyEnd, swappable}]
 //                mermaid only; offsets index the original text. startLine is
 //                the first body line; blockStart is the offset of the

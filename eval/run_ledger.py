@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Two-stage claim ledger for repo-mode content drift (Round 15), K runs.
 
-Per run: md-chunks.mjs splits the doc; one extract call per chunk lists every
+Per run: doc-chunks.mjs splits the doc; one extract call per chunk lists every
 checkable claim; claims are numbered C1..Cn in document order and verified
 in consecutive batches of --batch, each call returning one verdict per
 claim. Ids left without a verdict are re-verified, for ATTEMPTS rounds in
@@ -19,13 +19,13 @@ ATTEMPTS = 3  # first try plus two retries, as /docs-audit's empty-reply guardra
 VERDICTS = ("match", "drift", "unverifiable")
 
 def extract(path, repo, env, meta, template):
-    """Claims for every md-chunks range, numbered C1..Cn; None plus an error
-    when md-chunks.mjs fails or a chunk yields no parseable reply after
+    """Claims for every doc-chunks range, numbered C1..Cn; None plus an error
+    when doc-chunks.mjs fails or a chunk yields no parseable reply after
     ATTEMPTS tries. Non-object entries in a reply are dropped."""
     try:
         ranges = md_chunks(path)
     except subprocess.CalledProcessError as e:
-        return None, f"md-chunks exited {e.returncode}: {e.stderr}"
+        return None, f"doc-chunks exited {e.returncode}: {e.stderr}"
     claims = []
     for start, end in ranges:
         for _ in range(ATTEMPTS):

@@ -53,12 +53,12 @@ These scripts exist to remove LLM variance; re-implementing their work by hand
 is a defect even when the output looks similar. The scripts are the source of
 truth for their finding codes — never invent a code outside the schema below.
 
-Lane 6 (grounding, content drift, missing diagrams, cold read, completeness
-for type, structure for procedures, hero demo) is the ONLY agent-owned lane,
-because those judgments are irreducibly fuzzy. Even there the guardrail is
-mandatory: validate every subagent reply, retry an empty/errored one up to
-twice, and record a `LANE_FAILED` warning rather than reading empty as
-clean.
+Lane 6 (grounding, content drift, missing diagrams, cold read, plain language,
+completeness for type, structure for procedures, hero demo) is the ONLY
+agent-owned lane, because those judgments are irreducibly fuzzy. Even there
+the guardrail is mandatory: validate every subagent reply, retry an
+empty/errored one up to twice, and record a `LANE_FAILED` warning rather than
+reading empty as clean.
 </EXECUTION-CONTRACT>
 
 ## User-provided arguments
@@ -120,7 +120,7 @@ Which lanes run:
 | 3 Prose | run | run | run |
 | 4 Refs | run | run | run |
 | 5 Mermaid | run | run | run |
-| 6 Grounding, Cold read, Completeness for type, Structure for procedures, Missing diagrams | run | run | run |
+| 6 Grounding, Cold read, Completeness for type, Structure for procedures, Plain language, Missing diagrams | run | run | run |
 | 6 Content drift | vs. repo code | vs. repo code | vs. cited sources |
 | 6 Diagram drift | run | run | skip |
 | 6 Hero demo | README / landing | only the repo's root README | skip |
@@ -165,10 +165,20 @@ pass.
        is the class the per-paragraph rule misses because it excludes lists.
      - `SPLIT_CANDIDATE` — the whole file, or one level-2 section (`##` / `==`), over the size
        budget; consider extracting an audience-specific how-to under `docs/`.
+     - `DOUBLE_NEGATIVE` — a negator (`not`, `no`, `never`, `cannot`, `n't`)
+       followed in the same clause by a negative-meaning word (`unless`,
+       `without`, `fail`, `invalid`, …), or `no fewer than` / `no less than` /
+       `other than`.
+       A candidate, not a verdict — see the adjudication rule below.
+     - `SLASH_ALTERNATIVE` — `word/word` in running prose. Paths, URLs,
+       inline code, numbers, and established terms (`I/O`, `CI/CD`) are
+       already excluded. A candidate, not a verdict.
    - This lane is **deterministic**: it counts words and line spans over each
      file's parsed structure (code blocks, tables, quotations, and nested
-     lists are distinguished by the format's parser), so it enumerates every violation
-     exhaustively and returns byte-identical results every run. Do **not**
+     lists are distinguished by the format's parser), and matches the two
+     plain-language patterns over the same parsed prose, so it enumerates
+     every violation and candidate exhaustively and returns byte-identical
+     results every run. Do **not**
      ask an LLM to hunt for wall-of-text or dense bullets — an LLM
      under-reports on long files (its recall fades toward the end) and the
      result is not reproducible.
@@ -178,9 +188,9 @@ pass.
      instead of reporting those files as clean. A count below the number of
      paths passed is expected *only* when two paths are one document (a
      symlink and its target) — report any other shortfall.
-   - The script triggers on word count and line span only — both unambiguous.
-     It deliberately does **not** count sentences (segmentation is a hard NLP
-     problem that false-flags abbreviation-heavy prose).
+   - The size codes trigger on word count and line span only — both unambiguous.
+     The script deliberately does **not** count sentences (segmentation is a
+     hard NLP problem that false-flags abbreviation-heavy prose).
    - **Fuzzy judgment (LLM, only for files this lane flags):** on the candidates
      the script surfaces, judge by the file's Diátaxis mode (from Lane 6
      grounding). Dense unbroken prose is a convention in `reference` and
@@ -194,6 +204,21 @@ pass.
      also note choppy sentence rhythm the word count can't see. State every
      suppression under "Other" as `suppressed: <code> — <file> (<Diátaxis
      mode>); not for /docs-update` — never drop a finding silently.
+   - **Plain-language adjudication (LLM, every candidate):** for each
+     `DOUBLE_NEGATIVE` and `SLASH_ALTERNATIVE` candidate, read its sentence
+     and keep or drop it. Judge only the candidates the script reports; never
+     add one it did not. Keep a real double negative ("not uncommon",
+     "cannot fail to", "is not valid unless"), including a restricting
+     condition: "do not deploy until tests pass" and "cannot run except as
+     root" are real double negatives (rewrite as "deploy only after tests
+     pass", "runs only as root"), so keep them. Keep a slash that stands for
+     "or" or "and" ("dev/prod", "and/or"). Drop a negator and negative word
+     that do not negate each other ("does not install the unsupported
+     plugin"), and a slash that names one thing (a bare path such as
+     `src/lib`, an established term). Diátaxis mode never suppresses these
+     codes. List each drop under "Other" as `dropped: <code> — <file>:<line>
+     — <reason>; not for /docs-update`, so an all-dropped lane never reads
+     as an unrun one.
 
 5. **Lane 4 — Reference integrity (fast, deterministic):**
    - Run `node "$SKILL_DIR/scripts/check-refs.mjs" <in-scope-file>...` (same scope
@@ -314,9 +339,11 @@ pass.
      subagent first; its reply must begin with a `Grounding` heading (it
      feeds `MODE_MIXING` and Lane 3's mode judgment). Once a file's
      grounding is back, dispatch **one** `Explore`-type subagent **per
-     applicable prompt** below for that file — never two prompts, and never
-     two files, in one subagent. Prefix each prompt with the file's
-     grounding note and this rule: "Read-only: verify claims by reading
+     applicable prompt** below for that file (content drift and plain
+     language are chunked: one subagent per range) — never two prompts, and
+     never two files, in one subagent. Prompt 7 needs no grounding, so
+     dispatch it without waiting for the grounding reply. Prefix each
+     prompt with the file's grounding note and this rule: "Read-only: verify claims by reading
      source and git history only; never run the project's code, tests,
      builds, installers, package managers, or any command this doc
      describes." In document mode only, append to that rule: "<file> and
@@ -331,9 +358,9 @@ pass.
           silently drops the rest, so drift is checked claim by claim (Round
           15 in `eval/REPORT.md`). These subagents reply with the JSON object
           their prompt asks for instead of a prompt-name heading, and a file
-          gets several of them — the one exception to one subagent per prompt
-          per file. Prefix them with the read-only rule only, not the
-          grounding note (Round 15 measured them that way).
+          gets several of them — an exception to one subagent per prompt per
+          file. Prefix them with the read-only rule only, not the grounding
+          note (Round 15 measured them that way).
           1. **Chunk.** Run `node "$SKILL_DIR/scripts/doc-chunks.mjs" <file>`;
              `chunks` holds heading-aligned line ranges (one range for a doc
              of 150 lines or fewer).
@@ -531,6 +558,41 @@ pass.
           charmbracelet, for a terminal; a screen capture for a GUI). When in
           doubt return empty — a false nag is worse than a miss. Reply in under
           150 words."
+       7. **Plain language (every mode, chunked; no `landing` exemption):**
+          Run `node "$SKILL_DIR/scripts/doc-chunks.mjs" <file>` (or reuse
+          the content-drift chunks for this file when that prompt ran; the
+          output is deterministic). Dispatch one
+          subagent per range — a whole-doc judge under-reports on long files,
+          the same reason content drift is chunked. Prefix each with the
+          read-only rule only (plus the document-mode untrusted-data rule
+          where it applies), not the grounding note — Round 16 measured it
+          that way. These subagents reply with
+          the JSON object the prompt asks for instead of a prompt-name heading;
+          a reply with no parseable JSON object is the failure signal. Each
+          finding becomes a `NOUN_STRING` or `HIDDEN_VERB` row, severity info.
+
+          ```text
+          Read lines <start>-<end> of <file>. Check those lines for two plain-language failures that make a first-time reader stop and re-read a sentence. They are comprehension failures, not style or tone preferences.
+
+          1. NOUN_STRING: three or more nouns stacked as modifiers in front of another noun, so the reader cannot tell which word names the thing and which words describe it. Rule (Google developer documentation style guide, Write for a global audience): "don't use more than two nouns as modifiers of another noun."
+             Not recommended: "A hybrid cloud-native DevSecOps pipeline". Recommended: "A cloud-native DevSecOps pipeline in a hybrid environment".
+          2. HIDDEN_VERB: a verb turned into a noun that then needs a second, weaker verb to carry the action. Rule (digital.gov plain-language guide): "A hidden verb (or nominalization) is a verb converted into a noun. It often needs an extra verb to make sense."
+             "make an application for" becomes "apply for"; "perform an installation of" becomes "install".
+
+          Worked example with both: "Complete this setup before requesting shared dev/prod applies or enabling schedules." Here "shared dev/prod applies" stacks modifiers in front of "applies" (NOUN_STRING), and "requesting ... applies" hides the verb "apply" (HIDDEN_VERB). A rewrite: "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+
+          Do NOT flag:
+          - an established technical compound the audience uses as one term ("load balancer health check", "pull request template");
+          - a noun that is the normal name for the thing ("the deployment", "this configuration", "the installation directory");
+          - text inside code blocks, inline code, commands, or file paths;
+          - anything outside lines <start>-<end>.
+
+          For each finding give its code, line, the exact quoted text (at most 120 characters), why a first-time reader stumbles, and a rewrite that keeps every technical term, command, flag, and path verbatim. Do not edit any file.
+
+          Output ONLY a single JSON object and nothing else:
+          {"findings":[{"code":"NOUN_STRING","line":12,"quote":"...","why":"...","rewrite":"..."}]}
+          Return {"findings":[]} when those lines have neither failure.
+          ```
    - For each `.mmd` file or mermaid block found within the
      enumerated documentation files (same scope rules apply; skipped in
      document mode, where there is no code to compare against):
@@ -549,9 +611,10 @@ pass.
      heading, re-run grounding first. Re-dispatch up to
      **twice**; if it still yields nothing parseable, record a
      `LANE_FAILED` **Warning** naming the file and lane rather
-     than reporting the file as clean. Claim-ledger replies carry no
-     heading: for them, a reply with no parseable JSON object is the
-     failure signal.
+     than reporting the file as clean. Claim-ledger and plain-language
+     (prompt 7) replies carry no heading: for them, a reply with no
+     parseable JSON object is the failure signal, and only the failed range
+     is re-dispatched without a grounding note.
 8. Aggregate findings from all six lanes and present a structured
    punch list. **This format is the contract `/docs-update` parses** from
    conversation context, so it must be regular. Build it in this order —
@@ -581,15 +644,16 @@ pass.
        - Lane 1: `MISSING_README`, `MISSING_GITIGNORE_SUPERPOWERS`,
          `SUPERPOWERS_IN_GIT`, `MISSING_ADR_INDEX`, `FORKED_COPY`.
        - Lane 2: `STALENESS_NOT_ASSESSED`, `STALE_README`, `STALE_DOC`.
-       - Lane 3: `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE`.
+       - Lane 3: `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE`,
+         `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`.
        - Lane 4: `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`, `PARSE_WARNING`.
        - Lane 5: `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`,
          `MISSING_HOUSE_STYLE_HEADER`, `LEGACY_HOUSE_STYLE_HEADER`,
          `UNAPPROVED_CLASSNAME`, `UNAPPROVED_STYLE`, `LOW_CONTRAST_TEXT`,
          `LOW_CONTRAST_LIGHT_BG`, `LOW_CONTRAST_DARK_BG`.
        - Lane 6: `MISSING_DIAGRAM`, `CONTENT_DRIFT`, `COLD_READ`,
-         `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
-         `MISSING_DEMO`, and in document mode `NOT_VERIFIABLE`,
+         `NOUN_STRING`, `HIDDEN_VERB`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`,
+         `NEEDS_STRUCTURE`, `MISSING_DEMO`, and in document mode `NOT_VERIFIABLE`,
          `CITATION_BLOCKED`, `CITATION_FETCH_FAILED`, `CITATION_LIMIT`,
          `CITATIONS_NOT_FETCHED`.
        - Any lane: `LANE_FAILED`.
@@ -643,6 +707,12 @@ pass.
        - `SPLIT_CANDIDATE`: the file (or the named H2 section) and its line
          span; the fix is to extract an audience-specific how-to under
          `docs/` and leave a pointer. Info.
+       - `DOUBLE_NEGATIVE`: the quoted double negative (from `check-prose`).
+         Info. The fix is a positive rewrite that keeps any condition.
+       - `SLASH_ALTERNATIVE`: the quoted slash pair. Info. The fix is "or" or
+         "and", whichever the sentence means; ambiguous ones go to the user.
+       - `NOUN_STRING` / `HIDDEN_VERB`: the quoted text, why a first-time
+         reader stumbles, and the subagent's rewrite. Info.
        - `REF_BROKEN` / `REF_NOT_IN_GIT`: the link target and whether it is
          missing or merely untracked. Warning. Fix is author's call in
          `/docs-update` (repoint, commit, or make it an explicit external link).
@@ -761,16 +831,27 @@ pass.
          unassessed, not clean.
        - `LANE_FAILED`: which file (or `—` for a whole deterministic lane) and
          which lane could not be audited (for content drift, the extract
-         range or the claim ids left without a verdict) — after retries for a Lane 6
-         subagent; immediately for a deterministic script. Warning — it means
-         "unknown", not "clean".
+         range or the claim ids left without a verdict, or, for plain
+         language, the range) — after retries
+         for a Lane 6 subagent; immediately for a deterministic script.
+         Warning — it means "unknown", not "clean".
    - If a finding doesn't fit the schema, list it under a separate
      "Other" subsection rather than mangling the table. A doc-vs-code gap —
      including an item missing from a list that names its items one by
      one — is `CONTENT_DRIFT`, never "Other". "Other" also lists the
-     content-drift coverage lines and stated suppressions (`suppressed:
-     <code> — <file> (<mode>); not for /docs-update`), both of which
-     `/docs-update` skips.
+     content-drift coverage lines, stated suppressions (`suppressed:
+     <code> — <file> (<mode>); not for /docs-update`), and dropped
+     plain-language candidates (`dropped: …`), all of which `/docs-update`
+     skips.
+   - When a `COLD_READ` finding and a `NOUN_STRING` or `HIDDEN_VERB` finding
+     quote the same text, report only the plain-language row; its rewrite is
+     the fix.
+   - After the tables and "Other", print a `### Rule sources` list: one line
+     per row of `$SKILL_DIR/reference/rule-sources.md` that names a code
+     appearing in the tables, in the order those codes first appear, as
+     `- <the row's Code cell> — <Authority>: <Source>` (a row listing
+     several codes prints once, with all of them). Omit rows whose codes did
+     not appear. Print nothing when no row matched.
    - Once every table is built, count each table's rows and print the
      summary as the first line of the punch list, in exactly this form —
      a single code span, nothing before or after it, no bold: `` `N
@@ -784,7 +865,7 @@ pass.
 
 A run against a small project part-way through cleanup might report:
 
-`3 blockers, 5 warnings, 11 info`
+`3 blockers, 5 warnings, 13 info`
 
 ### Blockers
 
@@ -819,6 +900,25 @@ A run against a small project part-way through cleanup might report:
 | `INCOMPLETE_FOR_TYPE` | `docs/troubleshooting.md` | 8 | `troubleshooting`: 3 symptoms listed with causes but no resolutions — reader can't fix anything |
 | `NEEDS_STRUCTURE` | `README.md` | 14 | "Install" — ~6 commands run together as unbroken prose; break into a numbered list |
 | `MISSING_DEMO` | `README.md` | 1 | user-facing CLI, no demo; record `init → sync --dry-run → sync` as an asciinema/VHS clip at the top |
+| `DOUBLE_NEGATIVE` | `README.md` | 51 | double negative: "not valid unless"; state it positively |
+| `NOUN_STRING` | `docs/how-to-rotate-keys.md` | 22 | "cluster node pool autoscaler setting" — four nouns before "setting"; rewrite: "the autoscaler setting for the cluster's node pool" |
+
+### Other
+
+- `dropped: SLASH_ALTERNATIVE — docs/dev/architecture.md:12 — "src/lib" is a path, not alternatives; not for /docs-update`
+
+### Rule sources
+
+- `COLD_READ` — Google developer documentation style guide, Jargon and Abbreviations — the undefined term or acronym category only: <https://developers.google.com/style/jargon>, <https://developers.google.com/style/abbreviations>
+- `COLD_READ` — house convention — every category except an undefined term or acronym: The cold-read prompt in `/docs-audit`; `reference/diataxis-grounding.md`
+- `MISSING_DIAGRAM` — house convention (encouragement): The missing-diagram prompt in `/docs-audit`
+- `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE` — house convention: `THRESHOLDS` in `scripts/check-prose.mjs`
+- `MODE_MIXING` — Diátaxis: <https://diataxis.fr>
+- `INCOMPLETE_FOR_TYPE` — The Good Docs Project: <https://www.thegooddocsproject.dev>
+- `NEEDS_STRUCTURE` — Google developer documentation style guide, Procedures: <https://developers.google.com/style/procedures>
+- `MISSING_DEMO` — house convention (encouragement): The hero-demo prompt in `/docs-audit`
+- `DOUBLE_NEGATIVE` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
+- `NOUN_STRING` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
 
 Then: "Run /docs-update to fix these findings interactively."
 

@@ -24,6 +24,9 @@ function project(m) {
     listItems: m.listItems.map(({ line, hasNestedList }) => ({ line, hasNestedList })),
     links: m.links.map(({ kind, target, line, bare }) => ({ kind, target, line, bare })),
     citations: citations.map((t) => ({ line: t.line, linked: linkedBlocks.has(t.block) })),
+    // Letters only: raw text is syntax-specific, but the words a prose check
+    // reads must be identical across formats.
+    proseWords: m.texts.filter((t) => t.prose).flatMap((t) => t.text.match(/\p{L}+/gu) ?? []),
     diagrams: m.diagrams.map(({ startLine, source, swappable }) => ({ startLine, source, swappable })),
     diagnostics: m.diagnostics,
   };
@@ -49,6 +52,13 @@ test('the reference projection is what the sample says it is', async () => {
     { line: 7, hasNestedList: true }, { line: 8, hasNestedList: false }, { line: 9, hasNestedList: false },
   ]);
   assert.deepEqual(p.citations, [{ line: 3, linked: true }, { line: 28, linked: false }]);
+  assert.deepEqual(p.proseWords, [
+    'An', 'opening', 'paragraph', 'that', 'links', 'to', 'and', 'cites',
+    'first', 'item', 'with', 'an', 'image', 'nested', 'item', 'second', 'item',
+    'A', 'callout', 'paragraph', 'with',
+    'Closing', 'paragraph', 'citing', 'without', 'any', 'link',
+    'Alert', 'body', 'text',
+  ]);
   assert.deepEqual(p.diagrams, [{ startLine: 22, source: 'flowchart LR\n  A --> B', swappable: true }]);
 });
 
