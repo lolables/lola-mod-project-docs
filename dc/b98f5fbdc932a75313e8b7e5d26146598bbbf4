@@ -1,0 +1,19 @@
+docs/dev/architecture.md
+  s_db445f694d8d51::t_dba0e86142f911 130-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dcb98f5fbdc932a75313e8b7e5d26146598bbbf4",
+  "prompts": {},
+  "sessions": {
+    "s_db445f694d8d51": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aa978e76-6963-4f4a-b36a-b7880dc371fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
