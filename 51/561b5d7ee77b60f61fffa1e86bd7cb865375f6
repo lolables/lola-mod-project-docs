@@ -1,0 +1,21 @@
+docs/dev/architecture.md
+  s_db445f694d8d51::t_600641e06db417 63,126-131
+module/skills/docs-organization/reference/deterministic-vs-llm.md
+  s_db445f694d8d51::t_92773ed99f1b83 62-65,77-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "51561b5d7ee77b60f61fffa1e86bd7cb865375f6",
+  "prompts": {},
+  "sessions": {
+    "s_db445f694d8d51": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aa978e76-6963-4f4a-b36a-b7880dc371fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
