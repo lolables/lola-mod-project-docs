@@ -1,0 +1,25 @@
+eval/fixtures/plain-language/DOC.md
+  s_db445f694d8d51::t_c4bc39b3bd36fb 149-150
+  s_db445f694d8d51::t_23f4c91ba3b709 61-62,93-94,110,120-121
+eval/run_plainlanguage.py
+  s_db445f694d8d51::t_2c924dac4d8a8a 11-15,58-59,62-63
+eval/fixtures/plain-language/expected.json
+  s_db445f694d8d51::t_74d95bb29c353e 16
+  s_db445f694d8d51::t_f93f91e7e5ca07 4-5,17-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b453787a949cc10bc42cb884dcd340731e1e29b8",
+  "prompts": {},
+  "sessions": {
+    "s_db445f694d8d51": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aa978e76-6963-4f4a-b36a-b7880dc371fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
