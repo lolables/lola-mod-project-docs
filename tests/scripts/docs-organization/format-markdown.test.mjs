@@ -231,3 +231,38 @@ test('an alert paragraph\'s text drops the [!TIP] marker line, keeping only the 
   const m = await parse('> [!TIP]\n> one two three\n');
   assert.deepEqual(m.paragraphs.map(({ text, context }) => [text, context]), [['one two three', 'callout']]);
 });
+
+test('texts: prose marks paragraph and list text, not headings, tables, quotes, or the alert marker', async () => {
+  const src = [
+    '# Heading words',
+    '',
+    'Paragraph words.',
+    '',
+    '- item words',
+    '',
+    '| cell | words |',
+    '|---|---|',
+    '| body | cell |',
+    '',
+    '> quoted words',
+    '',
+    '> [!NOTE]',
+    '> alert words',
+    '',
+  ].join('\n');
+  const m = await parse(src);
+  const prose = m.texts.filter((t) => t.prose).map((t) => t.text.trim());
+  const other = m.texts.filter((t) => !t.prose).map((t) => t.text.trim());
+  assert.deepEqual(prose, ['Paragraph words.', 'item words', 'alert words']);
+  assert.deepEqual(other, ['Heading words', 'cell', 'words', 'body', 'cell', 'quoted words', '[!NOTE]']);
+  assert.ok(m.texts.every((t) => typeof t.prose === 'boolean'));
+});
+
+test('texts: prose excludes quotations nested in lists and lists nested in quotations', async () => {
+  const nestedQuote = await parse('- item\n\n  > quoted in item\n');
+  const fragments = (m, want) => m.texts.filter((t) => t.prose && t.text.includes(want));
+  assert.equal(fragments(nestedQuote, 'item').filter((t) => !t.text.includes('quoted')).length, 1);
+  assert.equal(fragments(nestedQuote, 'quoted').length, 0);
+  const quotedList = await parse('> - quoted item\n');
+  assert.equal(fragments(quotedList, 'quoted').length, 0);
+});

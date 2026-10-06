@@ -71,13 +71,15 @@ present, skip the `adr` activation.
      ranked menu; skip by default if the user declines and never auto-apply.
    - **Semantic:** `CONTENT_DRIFT` (content and diagram drift), `FORKED_COPY`,
      `STALE_README`, `STALE_DOC`, `WALL_OF_TEXT`, `DENSE_BULLET`,
-     `SPLIT_CANDIDATE`, `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`,
+     `SPLIT_CANDIDATE`, `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`, `NOUN_STRING`,
+     `HIDDEN_VERB`, `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`,
      `PARSE_WARNING` (fix: correct the markup the parser names),
      `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
      `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`, `UNAPPROVED_CLASSNAME`,
-     `UNAPPROVED_STYLE` findings, and anything else needing judgment. Exclude "Other" lines
-     marked `suppressed: …` or `content drift: …` — those are stated
-     suppressions and coverage counts, not findings to fix.
+     `UNAPPROVED_STYLE` findings, and anything else needing judgment. Exclude
+     "Other" lines marked `suppressed: …`, `dropped: …`, or `content drift: …`
+     — those are stated suppressions and coverage counts, not findings to fix.
+     Also ignore the `### Rule sources` list: it cites rules, not findings.
      (`LANE_FAILED`, `STALENESS_NOT_ASSESSED`, `MISSING_README`,
      `NOT_VERIFIABLE`, `CITATIONS_NOT_FETCHED`, `CITATION_BLOCKED`,
      `CITATION_FETCH_FAILED`, and `CITATION_LIMIT` are not fixable here — see
@@ -248,6 +250,30 @@ present, skip the `adr` activation.
        shape — never re-flatten it. Show the proposed step breakdown before
        applying. (Fires on a README Install/Quickstart too — the README staying
        self-sufficient is unaffected; this only reshapes existing content.)
+     - For `DOUBLE_NEGATIVE` / `SLASH_ALTERNATIVE` / `NOUN_STRING` /
+       `HIDDEN_VERB`: rewrite only the sentence's grammar; keep every command,
+       flag, path, finding code, and technical claim verbatim. Show the
+       sentence before and after. For `NOUN_STRING` / `HIDDEN_VERB`, start from
+       the audit's rewrite.
+       - When several of these findings sit on the same line or sentence,
+         present them as one before/after rewrite of that sentence and apply
+         it once. Ask any `SLASH_ALTERNATIVE` question first: the user's
+         answer overrides the audit's suggested rewrite, which may have
+         guessed the reading.
+       - `DOUBLE_NEGATIVE`: state it positively and keep any condition — "is
+         not valid unless it is signed" → "is valid only if it is signed"; "no
+         fewer than three" → "at least three".
+       - `SLASH_ALTERNATIVE`: use "or" or "and", whichever the sentence means.
+         When the reading is ambiguous ("shared dev/prod": one shared
+         environment, or the dev and the prod environments?), ask the user
+         which they meant. Never guess. `and/or` becomes "and" when
+         either-or-both is clear from context, otherwise "X, Y, or both"
+         (Google's Slashes page).
+       - `NOUN_STRING`: open the stack with prepositions and articles — "a
+         hybrid cloud-native DevSecOps pipeline" → "a cloud-native DevSecOps
+         pipeline in a hybrid environment".
+       - `HIDDEN_VERB`: restore the verb and drop the support verb — "perform
+         an evaluation of the logs" → "evaluate the logs".
      - For `CONTENT_DRIFT`: the code is the source of truth. Re-read the cited
        code first (the audit may be stale), then rewrite only the doc's claim to
        match it, keeping the surrounding text. Present `CONTENT_DRIFT` blockers

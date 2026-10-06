@@ -57,10 +57,10 @@ would be faster.
 | --- | --- | --- |
 | 1 structural | `check-structure.sh` | missing or empty README, ungitignored `docs/superpowers/` (working specs and plans that planning skills such as superpowers write), drafts there tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`) |
 | 2 staleness | `check-staleness.mjs` | docs older than the code they describe; reports `STALENESS_NOT_ASSESSED` when no commit ever touched a file Linguist classifies as source |
-| 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections |
+| 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections, double-negative and slash-alternative candidates |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven); `doc-chunks.mjs` for the drift claim ledger; `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures; cited-source snapshots |
+| 6 LLM | — (subagent-driven); `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
 
 Lane 6 is the model-owned exception: a grounding subagent classifies each
 file's Diátaxis mode first, then a separate subagent runs each applicable
@@ -122,6 +122,19 @@ sequenceDiagram
   end
   O->>O: coverage line per file
 ```
+
+The plain-language prompt (prompt 7) uses the same chunking, for the same
+reason: a whole-document judge under-reports on long files. It runs one
+subagent per `doc-chunks.mjs` range. It needs no claim ledger, because each
+range's reply is its findings. It takes no grounding note (Round 16 measured
+it without one) and gets the read-only rule only, plus the untrusted-data
+rule in document mode.
+
+Every writing-quality finding code needs a row in
+`module/skills/docs-organization/reference/rule-sources.md`, naming an
+external rule or "house convention". `/docs-audit` prints those rows under
+`### Rule sources`, and `tests/scripts/docs-organization/rule-sources.test.mjs`
+fails if a code has no row.
 
 Lane 2 classifies source with GitHub Linguist's language, vendor, and
 documentation data (vendored at a pinned tag as `scripts/vendor/linguist.json`)
@@ -396,9 +409,9 @@ parses to (abridged):
   "paragraphs": [{ "line": 3, "text": "See [setup](setup.md) and §2.", "context": "top" }],
   "links": [{ "kind": "link", "target": "setup.md", "line": 3, "block": 1, "bare": false }],
   "texts": [
-    { "text": "Guide", "line": 1, "block": 0 },
-    { "text": "See ", "line": 3, "block": 1 },
-    { "text": " and §2.", "line": 3, "block": 1 }
+    { "text": "Guide", "line": 1, "block": 0, "prose": false },
+    { "text": "See ", "line": 3, "block": 1, "prose": true },
+    { "text": " and §2.", "line": 3, "block": 1, "prose": true }
   ]
 }
 ```

@@ -271,7 +271,7 @@ function xrefTarget(raw) {
 // `lineNumbers[i]` is the already-resolved original source line for
 // `rawLines[i]` — sequential for most blocks, but realigned (see alignLines)
 // wherever an excluded conditional could have shifted Asciidoctor's own count.
-function scanInline(doc, model, block, lineNumbers, rawLines) {
+function scanInline(doc, model, block, lineNumbers, rawLines, prose) {
   rawLines.forEach((raw, i) => {
     const line = lineNumbers[i];
     const text = resolveAttributes(doc, raw.replace(CODE_SPAN_RE, (s) => ' '.repeat(s.length)));
@@ -310,10 +310,10 @@ function scanInline(doc, model, block, lineNumbers, rawLines) {
         }
       }
       if (ref && !HAS_ATTR_REF_RE.test(ref.target)) model.links.push({ ...ref, line, block });
-      if (m.index > last) model.texts.push({ text: text.slice(last, m.index), line, block });
+      if (m.index > last) model.texts.push({ text: text.slice(last, m.index), line, block, prose });
       last = m.index + m[0].length;
     }
-    if (last < text.length) model.texts.push({ text: text.slice(last), line, block });
+    if (last < text.length) model.texts.push({ text: text.slice(last), line, block, prose });
   });
 }
 
@@ -401,8 +401,12 @@ export default {
       headings: [], paragraphs: [], listItems: [], links: [], texts: [], diagrams: [], diagnostics: [],
     };
     let block = 0;
-    const scan = (lineNumbers, rawLines) => {
-      scanInline(doc, model, block, lineNumbers, rawLines);
+    // `prose` marks running prose (see the DocModel contract in index.mjs):
+    // only paragraph, admonition, and list-item scans outside a quotation
+    // (ctx.quoted) pass true; headings, titles, table cells, quotation
+    // text, dlist terms, and images default to false.
+    const scan = (lineNumbers, rawLines, prose = false) => {
+      scanInline(doc, model, block, lineNumbers, rawLines, prose);
       block++;
     };
 
@@ -670,7 +674,7 @@ export default {
               model.paragraphs.push({ line: filtered.lines[0], text: filtered.text.join('\n'), context: ctx.para });
               if (ctx.item) ctx.item.text += ' ' + filtered.text.join('\n');
             }
-            scan(filtered.lines, filtered.text);
+            scan(filtered.lines, filtered.text, !ctx.quoted);
             break;
           }
           case 'admonition': {
@@ -686,7 +690,7 @@ export default {
                 model.paragraphs.push({ line: filtered.lines[0], text: filtered.text.join('\n'), context: ctx.para === 'top' ? 'callout' : ctx.para });
                 if (ctx.item) ctx.item.text += ' ' + filtered.text.join('\n');
               }
-              scan(filtered.lines, filtered.text);
+              scan(filtered.lines, filtered.text, !ctx.quoted);
             }
             break;
           }
@@ -701,8 +705,8 @@ export default {
             const trueLine = trueMarkerLine(line, LIST_MARKER_RE);
             const raw = itemLines(trueLine, LIST_MARKER_RE);
             const item = { line: trueLine, text: raw.text.join('\n'), hasNestedList: false };
-            scan(raw.lines, raw.text);
-            walk(b, { para: 'list', item });
+            scan(raw.lines, raw.text, !ctx.quoted);
+            walk(b, { para: 'list', item, quoted: ctx.quoted });
             model.listItems.push(item);
             break;
           }
@@ -722,8 +726,8 @@ export default {
                 ? itemLines(dline, DLIST_TERM_RE)
                 : itemLines(dline, /^[ \t]+/);
               const item = { line: dline, text: raw.text.join('\n'), hasNestedList: false };
-              scan(raw.lines, raw.text);
-              walk(desc, { para: 'list', item });
+              scan(raw.lines, raw.text, !ctx.quoted);
+              walk(desc, { para: 'list', item, quoted: ctx.quoted });
               model.listItems.push(item);
             }
             break;
@@ -791,7 +795,7 @@ export default {
             // A delimited quote holds blocks; a `[quote]` paragraph or a
             // verse holds its text directly.
             const para = ctx.item ? 'list' : 'quote';
-            if (b.getBlocks().length > 0) { scanTitle(b, line); walk(b, { ...ctx, para }); break; }
+            if (b.getBlocks().length > 0) { scanTitle(b, line); walk(b, { ...ctx, para, quoted: true }); break; }
             const src = b.getSourceLines();
             const aligned = alignLines(line, src);
             const filtered = filterAlignedSrc(src, aligned);

@@ -276,3 +276,132 @@ test('CLI: invocable through a symlinked directory under node --preserve-symlink
   assert.equal(code, 1);
   assert.deepEqual(codes(out.findings), ['WALL_OF_TEXT']);
 });
+
+const only = (code) => async (src, name) => (await analyze(src, name)).filter((f) => f.code === code);
+const dn = only('DOUBLE_NEGATIVE');
+
+test('DOUBLE_NEGATIVE: a negator then a negative-meaning word in one clause', async () => {
+  for (const [src, phrase] of [
+    ['This is not uncommon.', 'not uncommon'],
+    ['You cannot fail to notice it.', 'cannot fail'],
+    ['A key is not valid unless it is signed.', 'not valid unless'],
+    ["It doesn't prevent writes.", "doesn't prevent"],
+    ['An application does not become void unless the applicant fails.', 'not become void'],
+    ['Do not deploy without a backup.', 'not deploy without'],
+    ['Use no fewer than three nodes.', 'no fewer than'],
+    ['Keep no less than 10 GB free.', 'no less than'],
+    ['Do not use any tool other than the CLI.', 'not use any tool other than'],
+  ]) {
+    const f = await dn(`${src}\n`);
+    assert.equal(f.length, 1, src);
+    assert.ok(f[0].message.includes(`"${phrase}"`), `${src}: ${f[0].message}`);
+    assert.equal(f[0].severity, 'info');
+    assert.equal(f[0].line, 1);
+  }
+});
+
+test('DOUBLE_NEGATIVE: lone negations, prefix lookalikes, and split clauses are not flagged', async () => {
+  for (const src of [
+    'This is not supported.',
+    'Retry unless it is done.',
+    'Do not install the index.',
+    'It does not include tests.',
+    'It is not here. Unless you ask, it stays.',
+    'It is not here; unless you ask, it stays.',
+    'It is not one two three four five six seven eight nine ten unless.',
+    'Neither the CLI nor the API changes.',
+  ]) {
+    assert.deepEqual(await dn(`${src}\n`), [], src);
+  }
+});
+
+test('DOUBLE_NEGATIVE: reports the negator line, across emphasis and a soft wrap', async () => {
+  assert.equal((await dn('# T\n\nIntro.\n\nThis is **not** uncommon.\n'))[0].line, 5);
+  const wrapped = await dn('It is not\nuncommon to wrap.\n');
+  assert.equal(wrapped.length, 1);
+  assert.equal(wrapped[0].line, 1);
+});
+
+test('DOUBLE_NEGATIVE: headings, code, tables, and quotations are not prose; alerts and list items are', async () => {
+  const skipped = [
+    '# Not uncommon title',
+    '',
+    '```',
+    'not uncommon',
+    '```',
+    '',
+    'Uses `not uncommon` inline.',
+    '',
+    '| a | b |',
+    '|---|---|',
+    '| not uncommon | x |',
+    '',
+    '> This is not uncommon.',
+    '',
+  ].join('\n');
+  assert.deepEqual(await dn(skipped), []);
+  const counted = await dn('> [!NOTE]\n> This is not uncommon.\n\n- also not unusual\n');
+  assert.deepEqual(counted.map((f) => f.line), [2, 4]);
+});
+
+test('AsciiDoc: DOUBLE_NEGATIVE in a paragraph, not in a quote block', async () => {
+  const adoc = 'This is not uncommon.\n\n____\nNot uncommon in a quote.\n____\n';
+  const f = await dn(adoc, 'doc.adoc');
+  assert.equal(f.length, 1);
+  assert.equal(f[0].line, 1);
+});
+
+const sa = only('SLASH_ALTERNATIVE');
+
+test('SLASH_ALTERNATIVE: a slash between two words in prose', async () => {
+  for (const [src, pair] of [
+    ['Pick dev/prod now.', 'dev/prod'],
+    ['Use and/or here.', 'and/or'],
+    ['Toggle enable/disable (rarely).', 'enable/disable'],
+    ['Pick dev/prod… then go.', 'dev/prod'],
+    ['Pick dev/prod— then go.', 'dev/prod'],
+    ['Pick dev/prod– then go.', 'dev/prod'],
+    ['“dev/prod” is ambiguous.', 'dev/prod'],
+  ]) {
+    const f = await sa(`${src}\n`);
+    assert.equal(f.length, 1, src);
+    assert.ok(f[0].message.includes(`"${pair}"`), `${src}: ${f[0].message}`);
+    assert.equal(f[0].severity, 'info');
+  }
+});
+
+test('SLASH_ALTERNATIVE: code, links, URLs, paths, numbers, and established terms are not flagged', async () => {
+  for (const src of [
+    'Write `a/b` here.',
+    'See [the docs](src/lib).',
+    'Go to https://example.com/a/b now.',
+    'Use src/lib/ and ./x/y and ../up and ~/foo and /etc/hosts.',
+    'Nest a/b/c deep.',
+    'Edit config/app.yaml first.',
+    'Handles I/O, TCP/IP, CI/CD, A/B, N/A, UI/UX, read/write, 24/7.',
+    'Half is 1/2 on 10/06.',
+  ]) {
+    assert.deepEqual(await sa(`${src}\n`), [], src);
+  }
+});
+
+test('SLASH_ALTERNATIVE: a bare two-segment path is a candidate (adjudication drops it)', async () => {
+  assert.equal((await sa('Bare src/lib here.\n')).length, 1);
+});
+
+test('AsciiDoc: SLASH_ALTERNATIVE in a paragraph, not in inline code or a link macro', async () => {
+  const f = await sa('Pick dev/prod, not `a/b` or link:src/lib[docs].\n', 'doc.adoc');
+  assert.deepEqual(f.map((x) => x.message.match(/"([^"]+)"/)[1]), ['dev/prod']);
+});
+
+test('SLASH_ALTERNATIVE: a long run of edge punctuation completes without quadratic cost', async () => {
+  const run = ')'.repeat(50000);
+  const started = performance.now();
+  assert.deepEqual(await sa(`${run}a\n`), []);
+  assert.deepEqual(await sa(`${run}dev/prod\n`), []);
+  const f = await sa(`${'('.repeat(50000)}dev/prod${run}\n`);
+  assert.equal(f.length, 1);
+  assert.ok(f[0].message.includes('"dev/prod"'));
+  // node:test's timeout option cannot interrupt synchronous work, so measure.
+  assert.ok(performance.now() - started < 2000, 'slash scan took 2s or more');
+});

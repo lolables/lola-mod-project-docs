@@ -13,7 +13,9 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
 - `scripts/check-prose.mjs` — readability and size over the parsed doc:
   `WALL_OF_TEXT` (dense top-level or callout paragraph), `DENSE_BULLET` (fat
   flat list item with no sub-bullets), `SPLIT_CANDIDATE` (oversized file or
-  level-2 section).
+  level-2 section), and plain-language candidates for the LLM to adjudicate:
+  `DOUBLE_NEGATIVE` (negator plus negative-meaning word in one clause) and
+  `SLASH_ALTERNATIVE` (`word/word` in prose).
 - `scripts/check-refs.mjs` — `REF_NOT_IN_GIT`, `REF_BROKEN` (untracked docs:
   checked on disk), `UNLINKED_REF` (bare `§`), `PARSE_WARNING` (parser
   warned; AsciiDoc only — Markdown never produces it).

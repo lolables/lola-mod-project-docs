@@ -1,0 +1,25 @@
+{
+  "lane": "plain-language",
+  "planted": [
+    {"id": "orig-noun", "desc": "originating sentence: 'shared dev/prod applies'", "groups": [["noun_string"], ["dev/prod applies"]]},
+    {"id": "orig-verb", "desc": "originating sentence: 'requesting ... applies'", "groups": [["hidden_verb"], ["requesting shared", "requesting"]]},
+    {"id": "noun-autoscaler", "desc": "cluster node pool autoscaler settings page", "groups": [["noun_string"], ["autoscaler"]]},
+    {"id": "noun-expiry", "desc": "user account password reset token expiry window", "groups": [["noun_string"], ["expiry"]]},
+    {"id": "noun-rotation", "desc": "release pipeline artifact signing key rotation schedule", "groups": [["noun_string"], ["rotation"]]},
+    {"id": "noun-override", "desc": "database backup retention policy override flag", "groups": [["noun_string"], ["override"]]},
+    {"id": "verb-evaluation", "desc": "perform an evaluation of the logs", "groups": [["hidden_verb"], ["evaluation"]]},
+    {"id": "verb-determination", "desc": "make a determination as to whether", "groups": [["hidden_verb"], ["determination"]]},
+    {"id": "verb-consideration", "desc": "give consideration to the network latency", "groups": [["hidden_verb"], ["consideration"]]},
+    {"id": "verb-review", "desc": "conduct a review of the access list", "groups": [["hidden_verb"], ["conduct"]]}
+  ],
+  "controls": [
+    {"id": "two-node", "desc": "'a two-node cluster' is ordinary (not named in the prompt; in the first measurement)", "groups": [["two-node"]]},
+    {"id": "installation-dir", "desc": "'the installation directory' is the normal name (named in the prompt)", "groups": [["installation directory"]]},
+    {"id": "deployment-config", "desc": "'The deployment configuration' is the normal name (named in the prompt)", "groups": [["deployment configuration"]]},
+    {"id": "health-check", "desc": "'load balancer health check' is an established compound (named in the prompt)", "groups": [["health check"]]},
+    {"id": "request-rate-graph", "desc": "'the request rate graph': two noun modifiers, within Google's limit (not named in the prompt)", "groups": [["request rate graph"]]},
+    {"id": "after-upgrade", "desc": "'after the upgrade': an ordinary noun with no support verb (not named in the prompt)", "groups": [["after the upgrade"]]},
+    {"id": "access-control-list", "desc": "'the access control list' is an established compound (not named in the prompt)", "groups": [["access control list"]]},
+    {"id": "restore-drill", "desc": "'a restore drill' is a normal two-word noun phrase (not named in the prompt)", "groups": [["restore drill"]]}
+  ]
+}

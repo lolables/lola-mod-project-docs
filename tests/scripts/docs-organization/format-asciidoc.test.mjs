@@ -680,3 +680,44 @@ test('a closing delimiter inside an excluded conditional does not close the bloc
   const [d] = (await parse(src)).diagrams;
   assert.equal(src.slice(d.bodyEnd), '----\n');
 });
+
+test('texts: prose marks paragraph, list, and admonition text, not titles, tables, quotes, or dlist terms', async () => {
+  const src = [
+    '= Title words',
+    '',
+    'Paragraph words.',
+    '',
+    '* item words',
+    '',
+    '|===',
+    '| cell | words',
+    '|===',
+    '',
+    '____',
+    'quoted words',
+    '____',
+    '',
+    'NOTE: alert words',
+    '',
+    'term words:: description words',
+    '',
+  ].join('\n');
+  const m = await parse(src);
+  const prose = m.texts.filter((t) => t.prose).map((t) => t.text.trim()).filter(Boolean);
+  const other = m.texts.filter((t) => !t.prose).map((t) => t.text.trim()).filter(Boolean);
+  assert.deepEqual(prose, ['Paragraph words.', 'item words', 'alert words', 'description words']);
+  for (const w of ['Title words', 'quoted words', 'term words']) assert.ok(other.some((t) => t.includes(w)), w);
+  assert.ok(!prose.some((t) => t.includes('cell')));
+  assert.ok(m.texts.every((t) => typeof t.prose === 'boolean'));
+});
+
+test('texts: prose excludes quotations nested in lists and lists nested in quotations', async () => {
+  const proseWith = (m, want) => m.texts.filter((t) => t.prose && t.text.includes(want));
+  const nestedQuote = await parse('* item\n+\n____\nquoted in item\n____\n');
+  assert.equal(proseWith(nestedQuote, 'quoted').length, 0);
+  assert.ok(nestedQuote.paragraphs.some((p) => p.text.includes('quoted in item')), 'quote attached inside the item');
+  assert.equal(proseWith(nestedQuote, 'item').filter((t) => !t.text.includes('quoted')).length, 1);
+  const quotedList = await parse('____\n* quoted item\n____\n');
+  assert.ok(quotedList.listItems.some((i) => i.text.includes('quoted item')));
+  assert.equal(proseWith(quotedList, 'quoted').length, 0);
+});

@@ -145,6 +145,9 @@ export default {
     // paragraph_open (its own marker paragraph, by construction of isAlert
     // below) to strip the `[!NOTE]` marker line from the reported text.
     let pendingAlertMarker = false;
+    // Set when that paragraph's marker is stripped; consumed by its inline
+    // token so the marker's own text fragment is not reported as prose.
+    let alertMarkerText = false;
 
     for (let ti = 0; ti < tokens.length; ti++) {
       const tok = tokens[ti];
@@ -198,6 +201,7 @@ export default {
           if (pendingAlertMarker) {
             text = text.replace(ALERT_RE, '');
             pendingAlertMarker = false;
+            alertMarkerText = true;
           }
           model.paragraphs.push({ line: tok.map[0] + 1, text, context });
           break;
@@ -208,6 +212,11 @@ export default {
         case 'inline': {
           if (itemStack.length > 0) itemStack[itemStack.length - 1].text += ' ' + tok.content;
           const base = tok.map ? tok.map[0] : rowLine;
+          // Running prose is a paragraph's text (list-item paragraphs
+          // included) that is not inside a quotation at any depth. Alerts
+          // are callouts, not quotations, so they stay prose.
+          const inQuote = quoteStack.some((isAlert) => !isAlert);
+          const prose = tokens[ti - 1]?.type === 'paragraph_open' && !inQuote;
           let linkDepth = 0;
           for (const c of tok.children) {
             if (c.type === 'link_open') {
@@ -218,7 +227,9 @@ export default {
             } else if (c.type === 'image') {
               model.links.push({ kind: 'image', target: c.attrGet('src'), line: lineOf(base, c), block, bare: false });
             } else if (c.type === 'text' && linkDepth === 0) {
-              model.texts.push({ text: c.content, line: lineOf(base, c), block });
+              const marker = alertMarkerText && ALERT_RE.test(c.content);
+              alertMarkerText = false;
+              model.texts.push({ text: c.content, line: lineOf(base, c), block, prose: prose && !marker });
             }
           }
           block++;

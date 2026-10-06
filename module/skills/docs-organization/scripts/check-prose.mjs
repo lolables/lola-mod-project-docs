@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Deterministic prose-scannability checks over a document's DocModel.
+// Deterministic prose checks over a document's DocModel: size, plus lexical plain-language candidates.
 //
 // Replaces the LLM "readability" lane's job of *enumerating* violations: an
 // LLM reading a 700-line file against a fuzzy word/size bar under-reports, and
@@ -10,9 +10,11 @@
 // was tried and removed — segmentation is a hard NLP problem (see THRESHOLDS).
 //
 // Findings (all severity info — nudges, never blockers):
-//   WALL_OF_TEXT    a top-level or callout paragraph over the density threshold
-//   DENSE_BULLET    a flat list item (no sub-list) whose body is over threshold
-//   SPLIT_CANDIDATE the whole file, or one H2 section, over the size threshold
+//   WALL_OF_TEXT       a top-level or callout paragraph over the density threshold
+//   DENSE_BULLET       a flat list item (no sub-list) whose body is over threshold
+//   SPLIT_CANDIDATE    the whole file, or one H2 section, over the size threshold
+//   DOUBLE_NEGATIVE    a negator and a negative-meaning word in one clause (candidate)
+//   SLASH_ALTERNATIVE  word/word in running prose (candidate)
 //
 // Output: JSON {status, scanned, findings:[{code, severity, file, line, message}]}
 // on stdout. `scanned` is the number of distinct documents read, so an empty
@@ -35,9 +37,12 @@ import { parseDoc } from './formats/index.mjs';
 import { isMain } from './is-main.mjs';
 
 // Thresholds. Word count and line span are the only *unambiguous* size metrics,
-// so those are all this deterministic pass triggers on. A paragraph gets more
-// slack than a bullet: a bullet is meant to be one scannable idea, so it trips
-// sooner. Sentence-boundary segmentation is a genuinely hard NLP problem
+// so those are all the size checks trigger on. A paragraph gets more slack
+// than a bullet: a bullet is meant to be one scannable idea, so it trips
+// sooner. The numbers are house conventions, set when this lane was
+// introduced (commit fbfa536); they are not derived from an external style
+// guide and no eval round tuned them (see reference/rule-sources.md).
+// Sentence-boundary segmentation is a genuinely hard NLP problem
 // (abbreviations, decimals, initials, ellipses), so we deliberately do NOT
 // count sentences here — that fuzzy "is the rhythm choppy / is this a
 // dense-prose genre" judgment is deferred to the LLM lane, which only ever
@@ -48,6 +53,132 @@ export const THRESHOLDS = {
   fileLines: 600,
   sectionLines: 250,
 };
+
+// Plain-language candidates. A lexical pass over running prose (texts with
+// prose: true — inline code, link text, and link targets already removed by
+// the format adapter) enumerates them exhaustively; /docs-audit's LLM step
+// keeps or drops each one. Rule sources: reference/rule-sources.md.
+//
+// Negative-meaning words are a curated list, not raw un-/in-/dis- prefixes:
+// "index", "install", "include", and "discuss" start with the same letters.
+// neither/nor are deliberately absent: "does not support X nor Y" is a
+// correlative, not a double negative.
+// The two-word "other than" is matched in doubleNegatives alongside this list,
+// and "no fewer than" / "no less than" are fixed phrases there too.
+export const NEGATIVE_WORDS = new Set([
+  'unless', 'except', 'without', 'until', 'void', 'insufficient',
+  'fail', 'fails', 'failed', 'failing', 'prevent', 'prevents', 'prevented',
+  'uncommon', 'unlikely', 'unusual', 'unlike', 'unable', 'unavailable', 'unsupported',
+  'unknown', 'unclear', 'unnecessary', 'unimportant', 'unreasonable', 'unsafe',
+  'invalid', 'incorrect', 'inactive', 'incomplete', 'inconsistent', 'insecure',
+  'impossible', 'improbable', 'disabled', 'disallowed', 'dissimilar',
+  'nonzero', 'non-zero', 'nonempty', 'non-empty',
+]);
+const NEGATOR_RE = /^(?:not|no|never|cannot)$|n['’]t$/i;
+// Words, or a clause-ending mark. Sentence segmentation is not attempted (see
+// THRESHOLDS): an abbreviation such as "e.g." can end a window early, which
+// costs a missed candidate, never a false one.
+const TOKEN_RE = /[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*|[.;:!?]/gu;
+const CLAUSE_END_RE = /^[.;:!?]$/;
+const NEGATION_WINDOW = 10;
+
+// A block's prose fragments joined in order: no separator within a line (so
+// "**not** uncommon" and "un*common*" rejoin), a newline between lines (so a
+// soft-wrapped line never glues two words). spans maps offsets back to lines.
+function proseBlocks(model) {
+  const blocks = new Map();
+  for (const t of model.texts) {
+    if (!t.prose) continue;
+    let b = blocks.get(t.block);
+    if (!b) {
+      b = { text: '', spans: [] };
+      blocks.set(t.block, b);
+    }
+    const last = b.spans[b.spans.length - 1];
+    if (last && last.line !== t.line) b.text += '\n';
+    b.spans.push({ start: b.text.length, line: t.line });
+    b.text += t.text;
+  }
+  return [...blocks.values()];
+}
+
+function lineAt(block, offset) {
+  let line = block.spans[0].line;
+  for (const s of block.spans) {
+    if (s.start > offset) break;
+    line = s.line;
+  }
+  return line;
+}
+
+const excerpt = (s) => s.replace(/\s+/g, ' ').trim().slice(0, 80);
+
+function doubleNegatives(block) {
+  const toks = [...block.text.matchAll(TOKEN_RE)].map((m) => ({ w: m[0].toLowerCase(), at: m.index, end: m.index + m[0].length }));
+  const hits = [];
+  for (let i = 0; i < toks.length; i++) {
+    if (!NEGATOR_RE.test(toks[i].w)) continue;
+    if (toks[i].w === 'no' && (toks[i + 1]?.w === 'fewer' || toks[i + 1]?.w === 'less') && toks[i + 2]?.w === 'than') {
+      hits.push({ at: toks[i].at, end: toks[i + 2].end });
+      i += 2;
+      continue;
+    }
+    for (let j = i + 1, words = 0; j < toks.length && words < NEGATION_WINDOW; j++, words++) {
+      if (CLAUSE_END_RE.test(toks[j].w)) break;
+      const otherThan = toks[j].w === 'other' && toks[j + 1]?.w === 'than';
+      if (NEGATIVE_WORDS.has(toks[j].w) || otherThan) {
+        hits.push({ at: toks[i].at, end: otherThan ? toks[j + 1].end : toks[j].end });
+        i = j;
+        break;
+      }
+    }
+  }
+  return hits.map(({ at, end }) => ({
+    code: 'DOUBLE_NEGATIVE',
+    severity: 'info',
+    line: lineAt(block, at),
+    message: `double negative: "${excerpt(block.text.slice(at, end))}"; state it positively`,
+  }));
+}
+
+// Established terms written with a slash. 24/7 and other numeric pairs are
+// excluded by the letters-only segment rule, so they need no entry here.
+export const SLASH_ALLOWLIST = new Set(['i/o', 'tcp/ip', 'ci/cd', 'a/b', 'n/a', 'ui/ux', 'read/write']);
+const LEADING_PUNCT = new Set([...'("\'“‘[']);
+const TRAILING_PUNCT = new Set([...')"\'”’].,;:!?…—–']);
+const PATH_START_RE = /^(?:\/|\.{1,2}\/|~\/)/;
+// A word: starts with a letter; letters, digits, hyphens after. Rejects
+// numbers, file extensions (a dot), URL schemes (a colon), and empty segments.
+const SLASH_SEGMENT_RE = /^\p{L}[\p{L}\p{N}-]*$/u;
+
+// Index loops, not a regex: an alternation anchored at both ends backtracks
+// quadratically on a long punctuation run, and audited docs may be untrusted.
+function trimEdgePunct(token) {
+  let start = 0;
+  let end = token.length;
+  while (start < end && LEADING_PUNCT.has(token[start])) start++;
+  while (end > start && TRAILING_PUNCT.has(token[end - 1])) end--;
+  return token.slice(start, end);
+}
+
+function slashAlternatives(block) {
+  const out = [];
+  for (const m of block.text.matchAll(/\S+/g)) {
+    if (!m[0].includes('/')) continue;
+    const tok = trimEdgePunct(m[0]);
+    if (!tok.includes('/') || PATH_START_RE.test(tok) || tok.endsWith('/')) continue;
+    const segments = tok.split('/');
+    if (segments.length !== 2 || !segments.every((s) => SLASH_SEGMENT_RE.test(s))) continue;
+    if (SLASH_ALLOWLIST.has(tok.toLowerCase())) continue;
+    out.push({
+      code: 'SLASH_ALTERNATIVE',
+      severity: 'info',
+      line: lineAt(block, m.index),
+      message: `slash between alternatives: "${tok}"; use "or" or "and"`,
+    });
+  }
+  return out;
+}
 
 function countWords(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -115,6 +246,7 @@ export function analyzeProse(model) {
     }
   }
 
+  for (const block of proseBlocks(model)) findings.push(...doubleNegatives(block), ...slashAlternatives(block));
   findings.sort((a, b) => (a.line || 0) - (b.line || 0));
   return findings;
 }

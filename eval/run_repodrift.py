@@ -14,7 +14,7 @@ With `--repo`, audits an existing checkout in place instead of copying a
 fixture (real-document mode); `--fixture` still supplies expected.json.
 
 With `--chunked`, the doc is split into chunks by the shipped
-`md-chunks.mjs` script (heading-aligned, coalesced up to its line cap; a
+`doc-chunks.mjs` script (heading-aligned, coalesced up to its line cap; a
 longer single section stays whole) and the prompt runs once per chunk, its
 {start}/{end} placeholders filled with the chunk's 1-based line range — this
 measures exactly what /docs-audit ships, not a separate Python
@@ -27,7 +27,7 @@ from run_citeddrift import parse_findings, tok_match
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PLACEHOLDER_RE = re.compile(r"\{(file|repo_root|start|end|claims)\}")
-MD_CHUNKS_SCRIPT = os.path.join(HERE, "..", "module", "skills", "docs-organization", "scripts", "md-chunks.mjs")
+MD_CHUNKS_SCRIPT = os.path.join(HERE, "..", "module", "skills", "docs-organization", "scripts", "doc-chunks.mjs")
 GIT_ENV = dict(os.environ,
     GIT_CONFIG_GLOBAL="/dev/null", GIT_CONFIG_SYSTEM="/dev/null",
     GIT_AUTHOR_NAME="docs-discipline eval", GIT_AUTHOR_EMAIL="eval@docs-discipline.invalid",
@@ -86,7 +86,7 @@ def assign(findings, planted):
     return assignment, unassigned
 
 def md_chunks(path):
-    """Return the 1-based inclusive (start, end) line ranges `md-chunks.mjs`
+    """Return the 1-based inclusive (start, end) line ranges `doc-chunks.mjs`
     computes for `path` — the same deterministic chunker /docs-audit's Lane 6
     runs, so this eval measures the shipped behavior rather than a
     reimplementation of it."""
@@ -143,7 +143,7 @@ def one_run(fixture, template, repo=None, doc="README.md", chunked=False, env=No
     With `repo` given, run against that existing checkout in place (no copy,
     no git init) — the real-document lane. Otherwise copy `fixture` into a
     fresh git repository in a temp directory via `fixture_repo`. With
-    `chunked`, call once per chunk `md-chunks.mjs` returns (a single chunk
+    `chunked`, call once per chunk `doc-chunks.mjs` returns (a single chunk
     still fills {start}/{end}, covering the whole file) and union the
     findings; any failed chunk fails the run. `env`, when given, is passed
     through to every `call()` (e.g. `isolated_config()`'s env)."""
@@ -180,7 +180,7 @@ def main():
     ap.add_argument("--repo", help="real-document mode: an existing repo checkout to audit in place, "
                                     "instead of copying --fixture into a fresh git repo")
     ap.add_argument("--doc", default="README.md", help="doc to audit, relative to the repo root")
-    ap.add_argument("--chunked", action="store_true", help="split the doc with md-chunks.mjs and run the prompt "
+    ap.add_argument("--chunked", action="store_true", help="split the doc with doc-chunks.mjs and run the prompt "
                                                    "once per chunk; the prompt needs {start}/{end}")
     ap.add_argument("--isolated", action="store_true", help="run `claude` with an isolated CLAUDE_CONFIG_DIR "
                                                    "(see isolated_config()) instead of the caller's own config")

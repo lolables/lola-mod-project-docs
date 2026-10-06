@@ -31,6 +31,8 @@ python3 run_coldread.py fixtures/cold-read grounded 5
 python3 run_repodrift.py --out results/r14-repodrift-after.json          # repo-mode drift: attribution, omission
 python3 run_coldread_actionable.py --out results/r14-coldread-after.json # cold read + actionable tag
 python3 run_ledger.py --out results/r15-ledger3-fixture.json              # repo-mode drift as shipped: claim ledger
+python3 run_plainlanguage.py --out results/r16-plainlanguage.json        # plain language: NOUN_STRING / HIDDEN_VERB, chunked
+python3 run_plainlanguage.py --out results/r16-plainlanguage-v2.json     # same, strengthened fixture: the ship-decision run
 ```
 
 `run_ledger.py` reproduces the shipped claim ledger (extract per range, verify
