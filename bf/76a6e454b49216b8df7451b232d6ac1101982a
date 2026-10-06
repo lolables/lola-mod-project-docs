@@ -1,0 +1,120 @@
+tests/scripts/docs-organization/format-asciidoc.test.mjs
+  s_db445f694d8d51::t_5764625852f0ff 683-712
+  s_db445f694d8d51::t_fb19322bf969e7 713-723
+tests/scripts/docs-organization/format-conformance.test.mjs
+  s_db445f694d8d51::t_5764625852f0ff 27-29,55-61
+module/skills/docs-organization/scripts/formats/index.mjs
+  s_db445f694d8d51::t_63d3b755440e38 17-18
+  s_db445f694d8d51::t_97c6bef26dc034 19-22
+tests/scripts/docs-organization/format-markdown.test.mjs
+  s_db445f694d8d51::t_5764625852f0ff 234-259
+  s_db445f694d8d51::t_fb19322bf969e7 260-268
+module/skills/docs-organization/scripts/formats/asciidoc.mjs
+  s_db445f694d8d51::t_691bf133b12357 274,313,316,404,408-409
+  s_db445f694d8d51::t_97c6bef26dc034 405-407,677,693,708-709,729-730,798
+module/skills/docs-organization/scripts/formats/markdown.mjs
+  s_db445f694d8d51::t_63d3b755440e38 148-150,204,218,230-232
+  s_db445f694d8d51::t_97c6bef26dc034 215-217,219
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_db445f694d8d51::t_23a0939e22bb71 279-292,294-352
+  s_db445f694d8d51::t_99cce06458ed2c 293
+  s_db445f694d8d51::t_e6801fda5810b3 353-360,365-395
+  s_db445f694d8d51::t_a47201480c85d8 401-402,404
+  s_db445f694d8d51::t_ea224644174e9e 361-364,396-398,400,403
+  s_db445f694d8d51::t_1dc1e7168051cb 407
+  s_db445f694d8d51::t_696ff0e7c74ab5 399,405-406
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_db445f694d8d51::t_31a3605de796d4 2,13-16,57-65,68-143
+  s_db445f694d8d51::t_930433f9fd40d8 66-67
+  s_db445f694d8d51::t_c1557ca8bd661f 17,144-146,149-153,164-166,169-182,249
+  s_db445f694d8d51::t_79f819717be263 40-45
+  s_db445f694d8d51::t_bd264df08f3140 147-148,154-163,167-168
+module/commands/docs-update.md
+  s_db445f694d8d51::t_098d8c9d1c3757 263-268
+  s_db445f694d8d51::t_a7bd33c4ab09b0 79-81,269-271
+  s_db445f694d8d51::t_5ea633c68281a9 74-75,253-255,272-273,275
+  s_db445f694d8d51::t_61be67927dabae 276
+  s_db445f694d8d51::t_77679f56b2f8a9 256-257,274
+  s_db445f694d8d51::t_b6a87f61e1f10c 82
+  s_db445f694d8d51::t_86495f2912e12f 258-262
+module/commands/docs-audit.md
+  s_db445f694d8d51::t_098d8c9d1c3757 168-169,172-175,178,191,207-208,215-221,647-648,710-713,842-845
+  s_db445f694d8d51::t_33e6b0696f59a3 170-171,179-181,192-193,209-210
+  s_db445f694d8d51::t_a7bd33c4ab09b0 211-214
+  s_db445f694d8d51::t_5ea633c68281a9 561,565-566,570-595,714-715
+  s_db445f694d8d51::t_77679f56b2f8a9 56,123,342-343,361-363,562,567-569,614-616,655-656,846-848
+  s_db445f694d8d51::t_7457493b7ad035 57-58
+  s_db445f694d8d51::t_06a573ac25cb2e 59-61
+  s_db445f694d8d51::t_7014dcb232eb35 850-854,868,903,905-909,911-921
+  s_db445f694d8d51::t_b6a87f61e1f10c 849,904,910
+  s_db445f694d8d51::t_8140cd690ddf69 344-346,563-564,617,834-835
+  s_db445f694d8d51::t_0ccc6079c080c4 836-837
+eval/run_repodrift.py
+  s_db445f694d8d51::t_dfabe913c9d7fc 17,30,89,146,183
+eval/run_ledger.py
+  s_db445f694d8d51::t_e73da304815dc3 4,22-23,28
+eval/prompts/plain-language.txt
+  s_db445f694d8d51::t_1ff063952c9fcd 1-20
+eval/run_plainlanguage.py
+  s_db445f694d8d51::t_1ff063952c9fcd 1-10,16-57,60-61,64-67
+  s_db445f694d8d51::t_2c924dac4d8a8a 11-15,58-59,62-63
+eval/fixtures/plain-language/DOC.md
+  s_db445f694d8d51::t_1ff063952c9fcd 1-60,63-92,95-109,111-119,122-148,151-166
+  s_db445f694d8d51::t_c4bc39b3bd36fb 149-150
+  s_db445f694d8d51::t_23f4c91ba3b709 61-62,93-94,110,120-121
+eval/fixtures/plain-language/expected.json
+  s_db445f694d8d51::t_1ff063952c9fcd 1-3,6-15,24-25
+  s_db445f694d8d51::t_74d95bb29c353e 16
+  s_db445f694d8d51::t_f93f91e7e5ca07 4-5,17-23
+eval/README.md
+  s_db445f694d8d51::t_1416f2bf5d231c 34
+  s_db445f694d8d51::t_8140cd690ddf69 35
+eval/REPORT.md
+  s_db445f694d8d51::t_61ba18f8c690db 913-962,996
+  s_db445f694d8d51::t_8ae9bff6eb38d1 1044-1046
+  s_db445f694d8d51::t_d362dc682dcb87 967-995,997-1043,1047-1048
+  s_db445f694d8d51::t_dfbd29442e3b27 963-965
+  s_db445f694d8d51::t_bb36d87b211a99 966
+eval/results/r16-plainlanguage.json
+  s_db445f694d8d51::t_f253f3dd8e43c0 1-348
+eval/results/r16-plainlanguage-v2.json
+  s_db445f694d8d51::t_df563fbcca038a 1-387
+tests/scripts/docs-organization/rule-sources.test.mjs
+  s_db445f694d8d51::t_f598ddbd948a59 1-3,5-7,9-12,14-16,19-39,43-44,58-59,65-66,68-89
+  s_db445f694d8d51::t_f9d0b7adba9597 4,8,13,17-18,40-42,45-57,60-64,67,90-96
+  s_db445f694d8d51::t_1259548c9cbf30 97
+module/skills/docs-organization/reference/rule-sources.md
+  s_db445f694d8d51::t_d986ec2c9a49e0 1-5,8-24,26-32,34-37,41-60
+  s_db445f694d8d51::t_b6a87f61e1f10c 6-7,25,33,38-39
+  s_db445f694d8d51::t_b6d554ac9b0de7 40
+module/skills/docs-organization/reference/scripts.md
+  s_db445f694d8d51::t_e4159f6013ed57 16-18
+docs/dev/architecture.md
+  s_db445f694d8d51::t_e4159f6013ed57 60,412-414
+  s_db445f694d8d51::t_600641e06db417 63,126-129,138
+  s_db445f694d8d51::t_dba0e86142f911 130-131
+  s_db445f694d8d51::t_8140cd690ddf69 133-138
+module/skills/docs-organization/SKILL.md
+  s_db445f694d8d51::t_e4159f6013ed57 144-147,204-205
+AGENTS.md
+  s_db445f694d8d51::t_e4159f6013ed57 19
+module/skills/docs-organization/reference/deterministic-vs-llm.md
+  s_db445f694d8d51::t_e4159f6013ed57 21-23,55-61,66-76
+  s_db445f694d8d51::t_92773ed99f1b83 62-65,77-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bf76a6e454b49216b8df7451b232d6ac1101982a",
+  "prompts": {},
+  "sessions": {
+    "s_db445f694d8d51": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aa978e76-6963-4f4a-b36a-b7880dc371fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
