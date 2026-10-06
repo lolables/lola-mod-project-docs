@@ -1,0 +1,23 @@
+module/commands/docs-audit.md
+  s_db445f694d8d51::t_7014dcb232eb35 846-851,865,900-918
+tests/scripts/docs-organization/rule-sources.test.mjs
+  s_db445f694d8d51::t_f598ddbd948a59 1-74
+module/skills/docs-organization/reference/rule-sources.md
+  s_db445f694d8d51::t_d986ec2c9a49e0 1-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "099c521f9111939d2b38e47a1f60e581129caf06",
+  "prompts": {},
+  "sessions": {
+    "s_db445f694d8d51": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aa978e76-6963-4f4a-b36a-b7880dc371fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
