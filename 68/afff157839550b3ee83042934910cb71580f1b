@@ -1,0 +1,23 @@
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_ec323bf71d3c09::t_71a1cd4a2a5225 88,105
+tests/lint-voice.bats
+  s_ec323bf71d3c09::t_71a1cd4a2a5225 129-134
+.taskfiles/scripts/lint-voice.mjs
+  s_ec323bf71d3c09::t_71a1cd4a2a5225 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "68afff157839550b3ee83042934910cb71580f1b",
+  "prompts": {},
+  "sessions": {
+    "s_ec323bf71d3c09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c3a756a-db46-4160-bb7e-cab308855086",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
