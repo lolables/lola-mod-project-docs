@@ -188,7 +188,8 @@ exact source line so a link and a cited URL are reported on the line a
 reader finds them. `md-lines.mjs` is internal to the Markdown adapter —
 nothing outside `formats/` imports it.
 
-Convention 2 in `AGENTS.md` — developer documentation under `docs/dev/` — is
+Convention 2 in [Conventions enforced](../../README.md#conventions-enforced) —
+developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
 
 ## Path mode and document mode
@@ -530,3 +531,22 @@ The skill's npm packages and GitHub Linguist's data ship pre-bundled under
 `scripts/vendor/`, so an install needs no `npm install` and no network. How
 the bundles are built, pinned, licensed, and kept in sync is in
 [vendoring.md](vendoring.md).
+
+## Background reading
+
+Sources behind the skills' conventions. Borrow the ideas, not the text.
+External links rot; re-check them when you touch this section.
+
+- [MADR](https://adr.github.io/madr/) — the decision-record template `/adr-new`
+  instantiates; the canonical shape for "Considered Options" and "Consequences".
+- [Nygard, "Documenting Architecture Decisions"](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
+  — why lightweight, per-decision records beat a monolithic design doc.
+- [Diátaxis](https://diataxis.fr/) — the four-mode model (tutorial / how-to /
+  reference / explanation) behind keeping the README task-focused and pushing
+  architecture into `docs/dev/`.
+- [Write the Docs](https://www.writethedocs.org/) — a working community's
+  conventions for docs that stay maintained.
+- [Mermaid](https://mermaid.js.org/) — full diagram grammar; the house style is
+  a strict subset (see [`mermaid-house-style.md`](../../module/skills/docs-organization/reference/mermaid-house-style.md)).
+- [lola](https://lobstertrap.org/lola/) — the cross-host module format this
+  ships as.

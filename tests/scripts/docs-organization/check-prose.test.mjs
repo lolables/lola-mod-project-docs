@@ -7,6 +7,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync, realpathSync, cpSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scalingRatio, LINEAR_LIMIT } from './linearity.mjs';
 
 // Every temp dir any test in this file creates is tracked here and removed
 // once, after the whole file runs (matches check-staleness.test.mjs).
@@ -395,13 +396,18 @@ test('AsciiDoc: SLASH_ALTERNATIVE in a paragraph, not in inline code or a link m
 });
 
 test('SLASH_ALTERNATIVE: a long run of edge punctuation completes without quadratic cost', async () => {
+  const scan = async (n) => {
+    const run = ')'.repeat(n);
+    await sa(`${run}a\n`);
+    await sa(`${run}dev/prod\n`);
+    return sa(`${'('.repeat(n)}dev/prod${run}\n`);
+  };
+  const ratio = await scalingRatio(scan, 40000);
+  assert.ok(ratio < LINEAR_LIMIT, `4x input cost ${ratio.toFixed(1)}x`);
   const run = ')'.repeat(50000);
-  const started = performance.now();
   assert.deepEqual(await sa(`${run}a\n`), []);
   assert.deepEqual(await sa(`${run}dev/prod\n`), []);
   const f = await sa(`${'('.repeat(50000)}dev/prod${run}\n`);
   assert.equal(f.length, 1);
   assert.ok(f[0].message.includes('"dev/prod"'));
-  // node:test's timeout option cannot interrupt synchronous work, so measure.
-  assert.ok(performance.now() - started < 2000, 'slash scan took 2s or more');
 });
