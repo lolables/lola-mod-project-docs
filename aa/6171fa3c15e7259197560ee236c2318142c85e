@@ -1,0 +1,21 @@
+Taskfile.yml
+  s_ec323bf71d3c09::t_f22c293fbe99aa 70-78
+tests/quiet-gate.bats
+  s_ec323bf71d3c09::t_f22c293fbe99aa 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aa6171fa3c15e7259197560ee236c2318142c85e",
+  "prompts": {},
+  "sessions": {
+    "s_ec323bf71d3c09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c3a756a-db46-4160-bb7e-cab308855086",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
