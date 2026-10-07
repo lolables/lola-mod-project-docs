@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import asciidoc from '../../../module/skills/docs-organization/scripts/formats/asciidoc.mjs';
+import { scalingRatio, LINEAR_LIMIT } from './linearity.mjs';
 
 const ADAPTER = fileURLToPath(new URL('../../../module/skills/docs-organization/scripts/formats/asciidoc.mjs', import.meta.url));
 const parse = (src) => asciidoc.parse(src);
@@ -254,10 +255,14 @@ test('a bare URL in parentheses stops before the closing paren, even with an inn
 });
 
 test('a long run of non-whitespace after a bare URL parses in linear time', async () => {
-  const src = 'Para https://a' + '.'.repeat(40000) + 'x\n';
-  const start = Date.now();
-  await parse(src);
-  assert.ok(Date.now() - start < 500, `took ${Date.now() - start}ms`);
+  // One parse of 10k chars costs ~0.3 ms, under the helper's noise floor, so each
+  // call parses REPS times. Inputs stay small so a quadratic regression finishes.
+  const REPS = 30;
+  const ratio = await scalingRatio(async (n) => {
+    const src = 'Para https://a' + '.'.repeat(n) + 'x\n';
+    for (let i = 0; i < REPS; i++) await parse(src);
+  }, 10000);
+  assert.ok(ratio < LINEAR_LIMIT, `4x input cost ${ratio.toFixed(1)}x`);
 });
 
 test('a block title line is scanned for references, not reported as a paragraph', async () => {
@@ -660,14 +665,13 @@ test('a custom [separator=!] table resolves two cells on the same line independe
 });
 
 test('a large two-column table parses in linear time, and the last row lands on its true line', async () => {
-  const rows = 10000;
-  const big = '[cols="2"]\n|===\n'
+  const table = (rows) => '[cols="2"]\n|===\n'
     + Array.from({ length: rows }, (_, i) => `| link:k${i}.adoc[] | link:v${i}.adoc[]`).join('\n')
     + '\n|===\n';
-  const start = Date.now();
-  const m = await parse(big);
-  const elapsed = Date.now() - start;
-  assert.ok(elapsed < 2000, `took ${elapsed}ms`);
+  const ratio = await scalingRatio((rows) => parse(table(rows)), 1000);
+  assert.ok(ratio < LINEAR_LIMIT, `4x rows cost ${ratio.toFixed(1)}x`);
+  const rows = 4000;
+  const m = await parse(table(rows));
   const lastRowLine = 2 + rows;
   assert.ok(m.links.some((l) => l.target === `k${rows - 1}.adoc` && l.line === lastRowLine));
   assert.ok(m.links.some((l) => l.target === `v${rows - 1}.adoc` && l.line === lastRowLine));

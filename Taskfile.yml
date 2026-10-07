@@ -39,7 +39,7 @@ tasks:
     cmd: bash "{{.ROOT_DIR}}/.taskfiles/scripts/lint-structure.sh" --module . --mode {{.MODE}}
 
   lint:content:
-    desc: Content-quality lint with skillsaw (needs uvx)
+    desc: 'Content-quality lint with skillsaw (needs uvx). MODE=llm for errors-only.'
     cmds:
       - |
         if ! command -v uvx >/dev/null 2>&1; then
@@ -47,28 +47,44 @@ tasks:
         fi
         # skillsaw@latest so a stale uvx cache cannot pin us to an older linter;
         # keep .skillsaw.yaml `version:` in sync with the latest release.
-        uvx skillsaw@latest lint --strict .
+        bash "{{.ROOT_DIR}}/.taskfiles/scripts/quiet-gate.sh" --mode {{.MODE}} lint:content -- uvx skillsaw@latest lint --strict .
 
   lint:diagrams:
     desc: Lint every mermaid diagram in the module's own docs
     cmd: node {{.SCRIPTS_DIR}}/lint-mermaid.mjs module/ README.md
 
+  lint:voice:
+    desc: 'Flag banned house-voice words and phrases in tracked Markdown. MODE=llm for errors-only.'
+    cmds:
+      # tests/ and eval/fixtures/ hold deliberate bad prose; vendor/ is third-party text.
+      - >-
+        git ls-files -z -- '*.md' ':(exclude)tests'
+        ':(exclude)eval/fixtures' ':(exclude,glob)**/vendor/**'
+        | xargs -0 node "{{.ROOT_DIR}}/.taskfiles/scripts/lint-voice.mjs" --mode {{.MODE}}
+
   test:unit:
-    desc: Run node:test unit tests for the docs-organization scripts
-    cmd: node --test --test-reporter=spec tests/scripts/docs-organization/*.test.mjs
+    desc: 'Run node:test unit tests for the docs-organization scripts. MODE=llm for errors-only.'
+    cmd: bash "{{.ROOT_DIR}}/.taskfiles/scripts/quiet-gate.sh" --mode {{.MODE}} test:unit -- node --test --test-reporter={{if eq .MODE "llm"}}dot{{else}}spec{{end}} tests/scripts/docs-organization/*.test.mjs
 
   test:bash:
-    desc: Run the bash script tests
+    desc: 'Run the bash script tests. MODE=llm for errors-only.'
     cmds:
-      - bash tests/scripts/docs-organization/check-structure.test.sh
-      - bash tests/scripts/docs-organization/swap-palette.test.sh
-      - bash tests/scripts/adr/adr-index.test.sh
+      - bash "{{.ROOT_DIR}}/.taskfiles/scripts/quiet-gate.sh" --mode {{.MODE}} test:bash:check-structure -- bash tests/scripts/docs-organization/check-structure.test.sh
+      - bash "{{.ROOT_DIR}}/.taskfiles/scripts/quiet-gate.sh" --mode {{.MODE}} test:bash:swap-palette -- bash tests/scripts/docs-organization/swap-palette.test.sh
+      - bash "{{.ROOT_DIR}}/.taskfiles/scripts/quiet-gate.sh" --mode {{.MODE}} test:bash:adr-index -- bash tests/scripts/adr/adr-index.test.sh
 
   test:gates:
-    desc: Run the bats suites covering the shared lint and verify scripts
+    desc: 'Run the bats suites covering the shared lint and verify scripts. MODE=llm for errors-only.'
     preconditions:
-      - sh: command -v bats
-        msg: 'bats-core is required. Install it: https://bats-core.readthedocs.io/'
+      # tests/*.bats call bats_require_minimum_version, which bats added in 1.7.0.
+      - sh: |
+          command -v bats >/dev/null || exit 1
+          v=$(bats --version | sed 's/^Bats //')
+          major=${v%%.*}
+          rest=${v#*.}
+          minor=${rest%%.*}
+          [ "$major" -gt 1 ] || { [ "$major" -eq 1 ] && [ "$minor" -ge 7 ]; }
+        msg: 'bats-core >= 1.7.0 is required. Install it: https://bats-core.readthedocs.io/'
       # verify-oracle.bats drives the real lola binary. Presence only: the
       # oracle owns the >=0.5.0 floor and reports it, so the version is not
       # duplicated here where it would rot out of sync. Beware that a second,
@@ -76,7 +92,7 @@ tasks:
       # does not prepend it, which is how this surfaced.
       - sh: command -v lola
         msg: 'lola is required by tests/verify-oracle.bats. Install it: uv tool install --force git+https://github.com/LobsterTrap/lola@v0.7.0'
-    cmd: bats tests/lint-structure.bats tests/lint-quoted-paths.bats tests/verify-oracle.bats
+    cmd: bash "{{.ROOT_DIR}}/.taskfiles/scripts/quiet-gate.sh" --mode {{.MODE}} test:gates -- bats tests/lint-structure.bats tests/lint-quoted-paths.bats tests/verify-oracle.bats tests/quiet-gate.bats tests/module-policy.bats tests/lint-voice.bats
 
   test:install:
     desc: 'Sandboxed install verify across both scopes and both assistants. MODE=llm for errors-only.'
@@ -90,13 +106,13 @@ tasks:
       MATRIX: 'claude-code:user claude-code:project opencode:user opencode:project'
 
   test:e2e:
-    desc: Run the end-to-end Venom suite
+    desc: 'Run the end-to-end Venom suite. MODE=llm for errors-only.'
     vars:
       REPO_ROOT:
         sh: pwd
     cmds:
       - mkdir -p .test-output
-      - venom run tests/e2e/docs-discipline.venom.yml --output-dir=.test-output --var="WORKDIR={{.REPO_ROOT}}"
+      - bash "{{.ROOT_DIR}}/.taskfiles/scripts/quiet-gate.sh" --mode {{.MODE}} test:e2e -- venom run tests/e2e/docs-discipline.venom.yml --output-dir=.test-output --var="WORKDIR={{.REPO_ROOT}}"
 
   test:diagrams:
     desc: Lint and render every mermaid fixture under tests/diagrams/ (light + dark, output in .test-output/diagrams/)
@@ -118,11 +134,12 @@ tasks:
       - task: test:e2e
 
   check:
-    desc: Run all quality gates (structural lint + content lint + diagrams + tests)
+    desc: Run all quality gates (structural lint + content lint + diagrams + voice lint + tests)
     cmds:
       - task: lint
       - task: lint:content
       - task: lint:diagrams
+      - task: lint:voice
       - task: test
 
   cleanroom:build:

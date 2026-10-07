@@ -294,6 +294,9 @@ tests/fixtures/                             deliberately-broken modules for the 
 tests/lint-structure.bats                   tests for the structural linter
 tests/lint-quoted-paths.bats                checks that $SKILL_DIR/$ADR_DIR expansions in module/ prompts are quoted
 tests/verify-oracle.bats                    tests for the install oracle
+tests/quiet-gate.bats                       tests for the errors-only gate wrapper (quiet-gate.sh)
+tests/module-policy.bats                    checks the public names and explicit-invocation contract of module/
+tests/lint-voice.bats                       tests for the house-voice word lint (lint-voice.mjs)
 eval/                                       /docs-audit lane evaluation (maintainer research)
 .github/workflows/                          CI and release
 ```
@@ -304,7 +307,11 @@ stays outside it.
 
 ## Where to go next
 
-- **For maintainers/contributors:** `AGENTS.md` at the repo root.
+- **For maintainers/contributors:** [`docs/dev/architecture.md`](docs/dev/architecture.md)
+  (how it works), [`docs/dev/maintaining.md`](docs/dev/maintaining.md)
+  (procedures), and [`docs/dev/vendoring.md`](docs/dev/vendoring.md)
+  (bundled dependencies). `AGENTS.md` holds the house-voice rules and
+  protected names for AI assistants.
 - **For the lola module format:** see <https://lobstertrap.org/lola/>
 - **For MADR:** see <https://adr.github.io/madr/>
 

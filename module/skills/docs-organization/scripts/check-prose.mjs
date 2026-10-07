@@ -85,7 +85,7 @@ const NEGATION_WINDOW = 10;
 // A block's prose fragments joined in order: no separator within a line (so
 // "**not** uncommon" and "un*common*" rejoin), a newline between lines (so a
 // soft-wrapped line never glues two words). spans maps offsets back to lines.
-function proseBlocks(model) {
+export function proseBlocks(model) {
   const blocks = new Map();
   for (const t of model.texts) {
     if (!t.prose) continue;
@@ -102,7 +102,7 @@ function proseBlocks(model) {
   return [...blocks.values()];
 }
 
-function lineAt(block, offset) {
+export function lineAt(block, offset) {
   let line = block.spans[0].line;
   for (const s of block.spans) {
     if (s.start > offset) break;

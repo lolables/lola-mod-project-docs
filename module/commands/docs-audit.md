@@ -461,7 +461,7 @@ pass.
           in the report.
        2. **Missing diagrams (info-level encouragement, strict bar):**
           "Read <file>. Identify sections where adding a mermaid diagram
-          would actively clarify a complicated concept — not restate a
+          would clarify a complicated concept — not restate a
           simple list. A candidate must satisfy **both**: (a) the
           relationships are non-obvious from a linear top-to-bottom
           read (real branching, parallelism, state transitions, or
