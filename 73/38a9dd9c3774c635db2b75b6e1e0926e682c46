@@ -1,0 +1,23 @@
+AGENTS.md
+  s_ec323bf71d3c09::t_bbc594e9e29b25 39-42
+tests/lint-voice.bats
+  s_ec323bf71d3c09::t_c6d5ac3f592749 135-140
+Taskfile.yml
+  s_ec323bf71d3c09::t_c6d5ac3f592749 59,61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7338a9dd9c3774c635db2b75b6e1e0926e682c46",
+  "prompts": {},
+  "sessions": {
+    "s_ec323bf71d3c09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c3a756a-db46-4160-bb7e-cab308855086",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
