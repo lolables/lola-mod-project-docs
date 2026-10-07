@@ -1,0 +1,74 @@
+module/commands/docs-audit.md
+  s_ec323bf71d3c09::t_63962846553834 464
+tests/quiet-gate.bats
+  s_ec323bf71d3c09::t_34103afb29ab18 3-5,7-8,11-12,22-23,26,30-32,34-35,37-39,59-65,72,74,76-78,80,88-90,92,94-96,98,100-102,104,106-108
+  s_ec323bf71d3c09::t_f22c293fbe99aa 6
+  s_ec323bf71d3c09::t_270d92c99b9e1f 1-2,9-10,13-21,24-25,27-29,33,36,40-58,66-71,73,75,79,81-87,91,93,97,99,103,105,109-117
+docs/dev/architecture.md
+  s_ec323bf71d3c09::t_c32d6f53702464 191-192,550
+  s_ec323bf71d3c09::t_4baff1bd515633 534-549,551-552
+README.md
+  s_ec323bf71d3c09::t_c32d6f53702464 297-298,310-314
+  s_ec323bf71d3c09::t_63962846553834 299
+tests/module-policy.bats
+  s_ec323bf71d3c09::t_a6881b176284ae 142-145
+  s_ec323bf71d3c09::t_1ff5baf278a25f 1-78,80-90,92-141,146
+  s_ec323bf71d3c09::t_025fc54cf28a21 79,91
+Taskfile.yml
+  s_ec323bf71d3c09::t_a53c9a637a453b 42,50,66,70,72-74,77,109,115
+  s_ec323bf71d3c09::t_4ab74fd91bc010 86-87
+  s_ec323bf71d3c09::t_04a94d8731c410 56-58,60,62-64,95,137,142
+  s_ec323bf71d3c09::t_5249108b9c5605 79
+  s_ec323bf71d3c09::t_c6d5ac3f592749 59,61
+  s_ec323bf71d3c09::t_8f57ce2cea60be 67
+  s_ec323bf71d3c09::t_f22c293fbe99aa 80-85
+tests/lint-voice.bats
+  s_ec323bf71d3c09::t_cbea266a759a92 10
+  s_ec323bf71d3c09::t_7339fdd6f667d6 40,69,81
+  s_ec323bf71d3c09::t_71a1cd4a2a5225 129-134
+  s_ec323bf71d3c09::t_c6d5ac3f592749 135-140
+  s_ec323bf71d3c09::t_b0ef2f83dd2a4c 1-9,11-39,41-68,70-80,82-128
+.taskfiles/scripts/lint-voice.mjs
+  s_ec323bf71d3c09::t_17b47c38ae306f 1-14,16-89
+  s_ec323bf71d3c09::t_71a1cd4a2a5225 15
+AGENTS.md
+  s_ec323bf71d3c09::t_2810388eb52faa 3-22,24-25,34-35
+  s_ec323bf71d3c09::t_8f57ce2cea60be 23
+  s_ec323bf71d3c09::t_bbc594e9e29b25 39-42
+  s_ec323bf71d3c09::t_63962846553834 43
+tests/scripts/docs-organization/linearity.test.mjs
+  s_ec323bf71d3c09::t_b1e2e024433e20 1-17,19-21,23-24,36
+  s_ec323bf71d3c09::t_f5c58c1876e4bb 22,25,29-30,32-35
+  s_ec323bf71d3c09::t_89a1e3938484a7 26-28,31
+  s_ec323bf71d3c09::t_c4e0b0803f80c2 18
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_ec323bf71d3c09::t_71a1cd4a2a5225 88,105
+.taskfiles/scripts/quiet-gate.sh
+  s_ec323bf71d3c09::t_c68e03b6ed85b3 3-5,30-34,39
+  s_ec323bf71d3c09::t_d5a20b4172cb10 40
+  s_ec323bf71d3c09::t_5a43f7c1b019c8 1-2,6-29,35-38,41-42
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_ec323bf71d3c09::t_38453ffb01c281 10,399-404,406
+  s_ec323bf71d3c09::t_c4e0b0803f80c2 405
+tests/scripts/docs-organization/format-asciidoc.test.mjs
+  s_ec323bf71d3c09::t_38453ffb01c281 6,265,668,671-674
+  s_ec323bf71d3c09::t_3873c031278a8f 258-264
+tests/scripts/docs-organization/linearity.mjs
+  s_ec323bf71d3c09::t_f2de72f4a78b48 1-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9df3c93faeb71f079804830942cade2fbd78438b",
+  "prompts": {},
+  "sessions": {
+    "s_ec323bf71d3c09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c3a756a-db46-4160-bb7e-cab308855086",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
