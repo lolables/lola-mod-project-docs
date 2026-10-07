@@ -1,0 +1,25 @@
+.taskfiles/scripts/lint-voice.mjs
+  s_ec323bf71d3c09::t_17b47c38ae306f 1-117
+Taskfile.yml
+  s_ec323bf71d3c09::t_04a94d8731c410 56-65,96,138,143
+tests/lint-voice.bats
+  s_ec323bf71d3c09::t_b0ef2f83dd2a4c 1-9,11-39,41-68,70-80,82-128
+  s_ec323bf71d3c09::t_cbea266a759a92 10
+  s_ec323bf71d3c09::t_7339fdd6f667d6 40,69,81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "52776aebbda2fb92b4a7692eb22efc1d9de664b5",
+  "prompts": {},
+  "sessions": {
+    "s_ec323bf71d3c09": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2c3a756a-db46-4160-bb7e-cab308855086",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
