@@ -6,7 +6,7 @@ import { isIP } from 'node:net';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, mkdirSync, realpathSync, rmSync, chmodSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   extractCitations, isBlockedAddress, checkUrl, fetchCitation, snapshotName, snapshotContent, run, LIMITS,
@@ -646,13 +646,18 @@ test('files outside --root are unread: parent traversal, deep traversal, absolut
   mkdirSync(dir);
   const file = join(dir, 'doc.md');
   writeFileSync(join(top, 'outside.md'), 'secret\n');
-  writeFileSync(file, '[a](../outside.md)\n\n[b](../../../../etc/hostname)\n\n[c](/etc/passwd)\n');
+  const elsewhere = mktemp(); // a second tree, so the targets exist but sit outside --root
+  writeFileSync(join(elsewhere, 'deep.md'), 'secret\n');
+  writeFileSync(join(elsewhere, 'abs.md'), 'secret\n');
+  const deep = relative(dir, join(elsewhere, 'deep.md'));
+  const abs = join(elsewhere, 'abs.md');
+  writeFileSync(file, `[a](../outside.md)\n\n[b](${deep})\n\n[c](${abs})\n`);
   const res = await localRun(dir, file);
   assert.deepEqual(res.localSources, []);
   assert.deepEqual(res.unreadSources, [
     { file, line: 1, target: '../outside.md', reason: 'outside the audited tree' },
-    { file, line: 3, target: '../../../../etc/hostname', reason: 'outside the audited tree' },
-    { file, line: 5, target: '/etc/passwd', reason: 'outside the audited tree' },
+    { file, line: 3, target: deep, reason: 'outside the audited tree' },
+    { file, line: 5, target: abs, reason: 'outside the audited tree' },
   ]);
 });
 
