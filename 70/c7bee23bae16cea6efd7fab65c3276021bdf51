@@ -1,0 +1,20 @@
+tests/scripts/docs-organization/fetch-citations.test.mjs
+  s_5cae27f46e816b::t_f89ec0769c6a09 649-654,660
+  s_5cae27f46e816b::t_02259776d5f4ed 9,659
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "70c7bee23bae16cea6efd7fab65c3276021bdf51",
+  "prompts": {},
+  "sessions": {
+    "s_5cae27f46e816b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a443bd83-61fa-4325-93c0-b00c5c26d9ed",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
