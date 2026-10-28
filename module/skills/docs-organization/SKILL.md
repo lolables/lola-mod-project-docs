@@ -160,7 +160,11 @@ git-tracked file set. A link to a missing path (`REF_BROKEN`) or to a real but
 gitignored/unstaged file (`REF_NOT_IN_GIT`) dangles for anyone who clones. It
 also surfaces `§` section citations that carry no link (`UNLINKED_REF`) — a
 cheap tell for a prose reference (often to an internal spec) the reader can't
-follow. The rule is "a reference should be followable", not "everything
+follow. It likewise flags stock pointer phrases with no link in the same
+block — "contact the maintainers", "see the contributing guide", "open an
+issue" (`UNLINKED_POINTER`) — because a reader must never have to search
+the docs for clarifying or relevant information. The fix is a link, or the
+content included in place; naming where to look does not count. The rule is "a reference should be followable", not "everything
 referenced must be committed": some references are legitimately private or
 external, so the script only surfaces danglers and the author resolves them in
 `/docs-update` (link, commit, or mark external — never strip a `§` citation).

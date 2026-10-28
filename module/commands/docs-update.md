@@ -73,7 +73,7 @@ present, skip the `adr` activation.
      `STALE_README`, `STALE_DOC`, `WALL_OF_TEXT`, `DENSE_BULLET`,
      `SPLIT_CANDIDATE`, `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`, `NOUN_STRING`,
      `HIDDEN_VERB`, `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`,
-     `PARSE_WARNING` (fix: correct the markup the parser names),
+     `UNLINKED_POINTER`, `PARSE_WARNING` (fix: correct the markup the parser names),
      `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
      `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`, `UNAPPROVED_CLASSNAME`,
      `UNAPPROVED_STYLE` findings, and anything else needing judgment. Exclude
@@ -322,7 +322,7 @@ present, skip the `adr` activation.
        verbatim and leaving a short pointer stub in the original. Confirm the
        README (or parent) stays self-sufficient for onboarding after the move.
        Default to *not* splitting a maintainer design doc unless the user asks.
-     - For `REF_BROKEN` / `REF_NOT_IN_GIT` / `UNLINKED_REF`: a reference should
+     - For `REF_BROKEN` / `REF_NOT_IN_GIT` / `UNLINKED_REF` / `UNLINKED_POINTER`: a reference should
        be *followable*, but how to make it so is the author's call — present
        options, do not auto-pick. Link fixes are format-neutral; when writing
        a replacement link, use the file's own syntax: `[text](path)` in
@@ -331,7 +331,12 @@ present, skip the `adr` activation.
        in-repo target; (b) commit the referenced file if it belongs in the repo;
        (c) convert it to an explicit external link if it is intentionally
        private/external. For `UNLINKED_REF` (a `§` citation), the fix is to add a
-       link — **never strip the `§` citation**. When the right target is unclear,
+       link — **never strip the `§` citation**. For `UNLINKED_POINTER`, link the phrase to
+       its destination (a contact route, `CONTRIBUTING.md`, `SECURITY.md`, an
+       issue tracker URL), or include the needed content in place when it is
+       short. Rewording to name a location ("see the Security section") is not
+       a fix — the reader would still have to search. When the repo has no such
+       page, offer to create it rather than inventing a URL. When the right target is unclear,
        leave it for the user rather than guessing.
      - For `COLD_READ`: a first-time-reader comprehension gap (undefined term,
        missing step, dangling reference, contradiction, terminology drift,

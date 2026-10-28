@@ -127,6 +127,66 @@ test('a § citation whose inline block also links a document is not flagged', as
   assert.deepEqual(await analyzeFile(join(root, 'README.md'), root, trackedSet), []);
 });
 
+const pointerFindings = async (doc, extra = {}) => {
+  const { root, trackedSet } = makeRepo({ 'README.md': doc, ...extra }, ['README.md', ...Object.keys(extra)]);
+  return analyzeFile(join(root, 'README.md'), root, trackedSet);
+};
+
+test('each pointer phrase with no link flags UNLINKED_POINTER', async () => {
+  const phrases = [
+    'Contact the maintainers.',
+    'Ask your maintainer.',
+    'Email the project maintainers for access.',
+    'See the contributing guide.',
+    'Read our security policy.',
+    'Refer to the code of conduct page.',
+    'See the documentation.',
+    'Check the README.',
+    'Open an issue.',
+    'File an issue first.',
+    'Report a security vulnerability.',
+    'Please report bugs.',
+  ];
+  for (const p of phrases) {
+    assert.deepEqual(codes(await pointerFindings(p)), ['UNLINKED_POINTER'], p);
+  }
+});
+
+test('a pointer phrase whose inline block also links is not flagged', async () => {
+  const doc = 'Contact the maintainers via [SUPPORT.md](SUPPORT.md).';
+  assert.deepEqual(await pointerFindings(doc, { 'SUPPORT.md': '# support\n' }), []);
+});
+
+test('a linked phrase is not flagged (the link text is the pointer)', async () => {
+  const doc = 'See the [contributing guide](CONTRIBUTING.md).';
+  assert.deepEqual(await pointerFindings(doc, { 'CONTRIBUTING.md': '# c\n' }), []);
+});
+
+test('a pointer phrase is still flagged when the only link is in a different block', async () => {
+  const doc = 'Intro.\n\nContact the maintainers.\n\nSee [SUPPORT.md](SUPPORT.md).\n';
+  assert.deepEqual(lines(await pointerFindings(doc, { 'SUPPORT.md': '# s\n' })), [['UNLINKED_POINTER', 3]]);
+});
+
+test('a pointer phrase split by wrapping or emphasis is still found, at its own line', async () => {
+  const doc = 'Questions? Please contact the\n**maintainers** soon.';
+  assert.deepEqual(lines(await pointerFindings(doc)), [['UNLINKED_POINTER', 1]]);
+});
+
+test('a pointer phrase in a code block or inline code is not flagged', async () => {
+  const doc = 'Run `open an issue`.\n\n```\ncontact the maintainers\n```\n';
+  assert.deepEqual(await pointerFindings(doc), []);
+});
+
+test('near-miss wording is not flagged', async () => {
+  const doc = [
+    'Maintainers review pull requests weekly.',
+    'See the security implications below.',
+    'The report generator emits bugs.csv.',
+    'An issue tracker is optional.',
+  ].join('\n\n');
+  assert.deepEqual(await pointerFindings(doc), []);
+});
+
 test('a § citation is still flagged when the only link is in a different block', async () => {
   const doc = 'Per §3.2, retries back off.\n\nSee the [spec](spec.md).\n';
   const { root, trackedSet } = makeRepo({ 'README.md': doc, 'spec.md': '# spec\n' }, ['README.md', 'spec.md']);

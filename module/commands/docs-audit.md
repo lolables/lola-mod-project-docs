@@ -234,6 +234,14 @@ pass.
        A cheap deterministic tell for a reference (often to an external/internal
        spec) the reader can't follow. The fix is to *link* it or confirm the
        target ships — **never strip the citation**.
+     - `UNLINKED_POINTER` — a stock phrase that sends the reader somewhere
+       ("contact the maintainers", "see the contributing guide", "open an
+       issue", "report a vulnerability", "see the docs") with no link in the
+       same paragraph, heading, or table cell. **Info.** The reader has to hunt
+       for the destination. The fix is to *link* it, or to include the content in
+       place; naming where to look ("see the Security section") is still a hunt.
+       When the repo has no such page, create it (a contact route,
+       `CONTRIBUTING.md`, `SECURITY.md`).
      - `PARSE_WARNING` — the AsciiDoc parser warned (an unterminated block, a
        malformed list) — Markdown never produces it; the doc may render
        differently from what the checks read. **Info.** Fix the markup.
@@ -487,7 +495,13 @@ pass.
           prose that contradicts its own example or command; the same thing
           called by two different names; an unstated prerequisite; an example
           that would not work as written; or a reference to a spec/phase/ticket
-          the reader cannot resolve in this repo. Do NOT report style/tone
+          the reader cannot resolve in this repo; an instruction that sends
+          the reader to a person, team, file, page, tool, or setting without
+          a link to it or its content included in place — a reader must never
+          have to search the docs for it, and 'see the Security section' is
+          still a search (the deterministic
+          `UNLINKED_POINTER` lane catches only stock phrases such as 'contact
+          the maintainers'; report the paraphrases and the rest). Do NOT report style/tone
           preferences or code-vs-doc drift (other lanes cover those). Quote the
           exact text for each. Return `COLD_READ` findings with the line, the
           quote, why a first-time reader stumbles, and `actionable: yes` when
@@ -646,7 +660,8 @@ pass.
        - Lane 2: `STALENESS_NOT_ASSESSED`, `STALE_README`, `STALE_DOC`.
        - Lane 3: `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE`,
          `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`.
-       - Lane 4: `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`, `PARSE_WARNING`.
+       - Lane 4: `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`,
+         `UNLINKED_POINTER`, `PARSE_WARNING`.
        - Lane 5: `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`,
          `MISSING_HOUSE_STYLE_HEADER`, `LEGACY_HOUSE_STYLE_HEADER`,
          `UNAPPROVED_CLASSNAME`, `UNAPPROVED_STYLE`, `LOW_CONTRAST_TEXT`,
@@ -718,6 +733,9 @@ pass.
          `/docs-update` (repoint, commit, or make it an explicit external link).
        - `UNLINKED_REF`: the `§` citation snippet. Info. Fix is to add a link
          to the referenced section — never strip the citation.
+       - `UNLINKED_POINTER`: the matched phrase. Info. Fix is to link where the
+         reader goes next, or include that content in place; if no such page
+         exists, create it. Naming a location is not a fix.
        - `PARSE_WARNING`: the parser's message. Info. Fixable by correcting
          the markup the parser names.
        - `SYNTAX_ERROR`: merval's error message and line/column, plus a hint
@@ -895,6 +913,7 @@ A run against a small project part-way through cleanup might report:
 | `DENSE_BULLET` | `docs/dev/architecture.md` | 88 | flat bullet ~150 words; break into sub-bullets |
 | `SPLIT_CANDIDATE` | `README.md` | 1 | file is 820 lines (> 600); extract a how-to under `docs/` |
 | `UNLINKED_REF` | `docs/dev/architecture.md` | 202 | `§10.9` citation, no link; link the section (keep the citation) |
+| `UNLINKED_POINTER` | `README.md` | 58 | "contact the maintainers" — no link; add the contact route (issue tracker, `SUPPORT.md`) |
 | `COLD_READ` | `README.md` | 12 | "run `sync`" — first-time reader must authenticate first, never stated |
 | `MODE_MIXING` | `docs/how-to-rotate-keys.md` | 14 | `how-to` interrupted by an `explanation` detour ("Why signing works…"); move it to a linked concept doc |
 | `INCOMPLETE_FOR_TYPE` | `docs/troubleshooting.md` | 8 | `troubleshooting`: 3 symptoms listed with causes but no resolutions — reader can't fix anything |
