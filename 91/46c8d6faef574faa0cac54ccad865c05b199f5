@@ -1,0 +1,44 @@
+CHANGELOG.md
+  s_b217e27b1986ab::t_e97b30936fe8d9 20-24
+module/commands/docs-update.md
+  s_b217e27b1986ab::t_1d4d4e09a8dec3 76,325,334-335
+  s_b217e27b1986ab::t_788a00af81180d 336-339
+module/skills/docs-organization/SKILL.md
+  s_b217e27b1986ab::t_1d4d4e09a8dec3 163-164
+  s_b217e27b1986ab::t_788a00af81180d 165-167
+docs/dev/architecture.md
+  s_b217e27b1986ab::t_e97b30936fe8d9 525-526
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_b217e27b1986ab::t_6007b16bfc6f0a 87-88,95
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_b217e27b1986ab::t_4b71658cb5e6ea 19-21,198
+  s_b217e27b1986ab::t_1d4d4e09a8dec3 54
+  s_b217e27b1986ab::t_6007b16bfc6f0a 15-18,69,103-116,127-134,158,195-197
+  s_b217e27b1986ab::t_7fa5a561bd9c51 199-200
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_b217e27b1986ab::t_5692ea548a7eb0 130-189
+tests/scripts/docs-organization/rule-sources.test.mjs
+  s_b217e27b1986ab::t_1d4d4e09a8dec3 25
+module/skills/docs-organization/reference/scripts.md
+  s_b217e27b1986ab::t_1d4d4e09a8dec3 20-21
+module/commands/docs-audit.md
+  s_b217e27b1986ab::t_4b71658cb5e6ea 241-244,500-502
+  s_b217e27b1986ab::t_1d4d4e09a8dec3 237-240,498-499,503-504,663-664,916
+  s_b217e27b1986ab::t_788a00af81180d 736-738
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9146c8d6faef574faa0cac54ccad865c05b199f5",
+  "prompts": {},
+  "sessions": {
+    "s_b217e27b1986ab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3bc5f912-28a2-4957-9f68-aad3c1384d1a",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
