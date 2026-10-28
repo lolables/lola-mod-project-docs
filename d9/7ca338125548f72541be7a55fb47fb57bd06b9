@@ -1,0 +1,32 @@
+CHANGELOG.md
+  h_4db53f42b9be42 20-24
+docs/dev/architecture.md
+  h_4db53f42b9be42 525-526
+module/commands/docs-audit.md
+  h_4db53f42b9be42 237-244,498-504,663-664,736-738,916
+module/commands/docs-update.md
+  h_4db53f42b9be42 76,325,334-339
+module/skills/docs-organization/SKILL.md
+  h_4db53f42b9be42 163-167
+module/skills/docs-organization/reference/scripts.md
+  h_4db53f42b9be42 20-21
+module/skills/docs-organization/scripts/check-prose.mjs
+  h_4db53f42b9be42 87-88,95
+module/skills/docs-organization/scripts/check-refs.mjs
+  h_4db53f42b9be42 15-21,54,69,103-116,127-134,158,195-200
+tests/scripts/docs-organization/check-refs.test.mjs
+  h_4db53f42b9be42 130-189
+tests/scripts/docs-organization/rule-sources.test.mjs
+  h_4db53f42b9be42 25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d97ca338125548f72541be7a55fb47fb57bd06b9",
+  "prompts": {},
+  "humans": {
+    "h_4db53f42b9be42": {
+      "author": "Trevor Vaughan <peiriannydd@gmail.com>"
+    }
+  }
+}
