@@ -1,0 +1,22 @@
+.taskfiles/vendor/package-lock.json
+  h_4db53f42b9be42 12,14-15,35-37,495-497,499-509,567-569,583,610-612,626-628
+.taskfiles/vendor/package.json
+  h_4db53f42b9be42 11,13-14
+module/skills/docs-organization/scripts/vendor/LICENSES.md
+  h_4db53f42b9be42 40,158,186,188,204
+module/skills/docs-organization/scripts/vendor/asciidoctor.mjs
+  h_4db53f42b9be42 3227,8505,11286,11549,11569,19007,20617-20619
+module/skills/docs-organization/scripts/vendor/markdown-it.mjs
+  h_4db53f42b9be42 3024-3031,3098-3101,3126-3134,3166-3169,3356-3359,3586-3622,3624,3628-3630,3632-3635,3637,3641-3650,3652-3657,3659-3666,3672,3674-3675,3677-3685,3687-3691,3694,3700,3704,3707,3711,3714,3719-3720,3803,4113,4276-4287,4761-4787,4793,4795-4800,4803,4807,5832
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "686ee634614a50f43fd52136d96b85216f64baf0",
+  "prompts": {},
+  "humans": {
+    "h_4db53f42b9be42": {
+      "author": "Trevor Vaughan <peiriannydd@gmail.com>"
+    }
+  }
+}
