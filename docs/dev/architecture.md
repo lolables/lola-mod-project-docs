@@ -522,8 +522,8 @@ that drifts the moment lola adds a flag. The README documents the `lola`
 commands directly.
 
 There is nothing left to wrap. Install is two `lola` commands (see the
-README's Install section) with no prerequisites, because the dependencies ship
-vendored — see the next section.
+[README's Install section](../../README.md#install)) with no prerequisites, because the
+dependencies ship vendored — see [Vendored dependencies](#vendored-dependencies).
 
 ## Vendored dependencies
 

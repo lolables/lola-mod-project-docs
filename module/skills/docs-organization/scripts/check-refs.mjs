@@ -12,6 +12,13 @@
 //                  something (often an external/internal spec) the reader can't
 //                  follow. Info only: the fix is to LINK it (or confirm the
 //                  target ships), never to strip the citation.
+//   UNLINKED_POINTER  a stock phrase that sends the reader somewhere ("contact
+//                  the maintainers", "see the contributing guide", "open an
+//                  issue") with no link in the same inline block — the reader
+//                  must hunt for the destination. Info only; the fix is to
+//                  LINK the destination (or include its content in place), or
+//                  to create it if the repo has none. Naming where to look
+//                  ("see the Security section") is not a fix.
 //   PARSE_WARNING  the format's parser warned about the file (an unterminated
 //                  block, a malformed list). Info: reported here, once per
 //                  file, because this lane already reads every doc.
@@ -44,7 +51,7 @@
 //     link resolves from the path a reader opened, and an installed module is
 //     read from the symlink's location. A broken/untracked-link finding on a
 //     symlinked path names the canonical file. Content-only findings
-//     (UNLINKED_REF, PARSE_WARNING) don't depend on which path they're read
+//     (UNLINKED_REF, UNLINKED_POINTER, PARSE_WARNING) don't depend on which path they're read
 //     from, so they are attributed to the canonical path (when it's in scope)
 //     and reported once.
 //
@@ -59,6 +66,7 @@ import { readFileSync, existsSync, lstatSync, realpathSync, statSync } from 'nod
 import { execFileSync } from 'node:child_process';
 import { basename, dirname, join, resolve, relative } from 'node:path';
 import { parseDoc } from './formats/index.mjs';
+import { proseBlocks, lineAt } from './check-prose.mjs';
 import { walkDocs } from './doc-files.mjs';
 import { isMain } from './is-main.mjs';
 
@@ -92,7 +100,20 @@ function decodeTarget(t) {
 // text, or table cell) holds a link — "§3.2 of [spec](spec.md)" already tells
 // the reader where to go. Images and bare URLs don't count as that link: an
 // image is not a pointer to read, and a bare URL was not written as one.
-const CONTENT_ONLY = new Set(['UNLINKED_REF', 'PARSE_WARNING']);
+const CONTENT_ONLY = new Set(['UNLINKED_REF', 'UNLINKED_POINTER', 'PARSE_WARNING']);
+
+// Stock phrases that name a destination without saying where it is. A short,
+// high-precision list: a phrase here nearly always needs a link, and wording
+// outside it is left to the cold-read lane. Whole-word matches only; \s+ lets a
+// phrase wrap across lines.
+const POINTER_PHRASES = [
+  String.raw`(?:contact|ask|email|ping|message)\s+(?:the|our|your)\s+(?:project\s+)?maintainers?`,
+  String.raw`(?:see|read|check|consult|refer\s+to)\s+(?:the|our)\s+(?:contributing|security|support|governance|architecture|code\s+of\s+conduct)\s+(?:guide|guidelines|docs?|documentation|file|policy|page|section)`,
+  String.raw`(?:see|read|check|consult|refer\s+to)\s+(?:the|our)\s+(?:docs|documentation|readme)`,
+  String.raw`(?:open|file|raise|submit|create)\s+an?\s+issue`,
+  String.raw`report\s+(?:a\s+|any\s+)?(?:security\s+)?(?:vulnerabilit(?:y|ies)|bugs?)`,
+];
+const POINTER_RE = new RegExp(`(?<![\\p{L}\\p{N}])(?:${POINTER_PHRASES.join('|')})(?![\\p{L}\\p{N}])`, 'giu');
 
 function extract(model) {
   const links = model.links.filter((l) => !l.bare);
@@ -103,7 +124,14 @@ function extract(model) {
     const m = t.text.match(/§\s*[\w.\-]*/);
     sections.push({ line: t.line, snippet: (m ? m[0] : '§').slice(0, 24) });
   }
-  return { links, sections };
+  const pointers = [];
+  for (const block of proseBlocks(model)) {
+    if (linked.has(block.id)) continue;
+    for (const m of block.text.matchAll(POINTER_RE)) {
+      pointers.push({ line: lineAt(block, m.index), phrase: m[0].replace(/\s+/g, ' ') });
+    }
+  }
+  return { links, sections, pointers };
 }
 
 const DESCRIBE = { image: 'image', include: 'include of', link: 'link to', xref: 'link to' };
@@ -127,7 +155,7 @@ export async function analyzeFile(file, root, tracked) {
   const findings = [];
   const seen = new Set();
   const trackedDirs = tracked ? trackedDirsOf(tracked) : null;
-  const { links, sections } = extract(model);
+  const { links, sections, pointers } = extract(model);
   for (const ref of links) {
     const target = ref.target;
     if (!target || isExternal(target)) continue;
@@ -162,6 +190,12 @@ export async function analyzeFile(file, root, tracked) {
     findings.push({
       code: 'UNLINKED_REF', severity: 'info', line: s.line,
       message: `section citation "${s.snippet}" has no link — verify the referenced section is followable and add a link (keep the citation)`,
+    });
+  }
+  for (const p of pointers) {
+    findings.push({
+      code: 'UNLINKED_POINTER', severity: 'info', line: p.line,
+      message: `"${p.phrase}" names a destination without a link — link it, or include the content here; a reader must never have to search for it (if the repo has no such page, create it)`,
     });
   }
   for (const d of model.diagnostics) {

@@ -17,7 +17,8 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   `DOUBLE_NEGATIVE` (negator plus negative-meaning word in one clause) and
   `SLASH_ALTERNATIVE` (`word/word` in prose).
 - `scripts/check-refs.mjs` — `REF_NOT_IN_GIT`, `REF_BROKEN` (untracked docs:
-  checked on disk), `UNLINKED_REF` (bare `§`), `PARSE_WARNING` (parser
+  checked on disk), `UNLINKED_REF` (bare `§`), `UNLINKED_POINTER` (stock phrase such as "contact the
+  maintainers" with no link), `PARSE_WARNING` (parser
   warned; AsciiDoc only — Markdown never produces it).
 - `scripts/lint-mermaid.mjs` — merval parse, init header, palette,
   contrast.

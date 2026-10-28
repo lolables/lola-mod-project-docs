@@ -17,6 +17,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   audited. Front matter is skipped, not audited. Footnotes, GFM alerts,
   MkDocs `!!!` admonitions, and `:::` containers are understood, so links
   and diagrams inside them are checked.
+- **`UNLINKED_POINTER`** (info, `/docs-audit` Lane 4) flags stock phrases
+  that send a reader somewhere with no link in the same block — "contact the
+  maintainers", "see the contributing guide", "open an issue". The fix is a
+  link or the content included in place, never a reworded location. The
+  cold-read prompt also reports unlinked pointers the phrase list misses.
 - **`PARSE_WARNING`** (info, `/docs-audit` Lane 4, AsciiDoc only) reports
   parser warnings such as an unterminated block — Markdown never produces
   it.

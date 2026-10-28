@@ -84,14 +84,15 @@ const NEGATION_WINDOW = 10;
 
 // A block's prose fragments joined in order: no separator within a line (so
 // "**not** uncommon" and "un*common*" rejoin), a newline between lines (so a
-// soft-wrapped line never glues two words). spans maps offsets back to lines.
+// soft-wrapped line never glues two words). spans maps offsets back to lines;
+// id is the inline block the fragments came from (as in model.links[].block).
 export function proseBlocks(model) {
   const blocks = new Map();
   for (const t of model.texts) {
     if (!t.prose) continue;
     let b = blocks.get(t.block);
     if (!b) {
-      b = { text: '', spans: [] };
+      b = { id: t.block, text: '', spans: [] };
       blocks.set(t.block, b);
     }
     const last = b.spans[b.spans.length - 1];
