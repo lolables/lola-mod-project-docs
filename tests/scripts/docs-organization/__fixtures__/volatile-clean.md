@@ -15,6 +15,7 @@ gridctl requires Node.js ≥ 20 and listens on port 8080 by default.
 - A section over 100 lines (one range at 150 lines or fewer) is split.
 - A change needs 2 reviewers, and 2 users must approve a release.
 - Lane 4 checks links; Python 3 scripts and Go 1.22 are both supported.
+- It binds 127.0.0.1, as section 3.2.1 of the guide says.
 - Create a new branch, then install the latest release.
 
 Now run `gridctl apply`. You can now open the dashboard. The old flag no

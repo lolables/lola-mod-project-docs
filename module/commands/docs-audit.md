@@ -173,12 +173,14 @@ pass.
      - `SLASH_ALTERNATIVE` — `word/word` in running prose. Paths, URLs,
        inline code, numbers, and established terms (`I/O`, `CI/CD`) are
        already excluded. A candidate, not a verdict.
-     - `VOLATILE_DETAIL` — a digit count, metric, or popularity figure that
-       goes stale as the project changes: `147 tests`, `94% coverage`,
-       `3x faster`, `1.2k stars`. The message names the kind (`count`,
-       `metric`, `popularity`). A number after a label word (`step 3`,
-       `port 8080`, `Python 3`) and spelled-out numbers are already
-       excluded. A candidate, not a verdict.
+     - `VOLATILE_DETAIL` — a digit count, metric, popularity figure, or
+       software version that goes stale as the project changes: `147 tests`,
+       `94% coverage`, `3x faster`, `1.2k stars`, `markdown-it 14.1.0`. The
+       message names the kind (`count`, `metric`, `popularity`, `version`).
+       A number after a label word (`step 3`, `port 8080`, `Python 3`) and
+       spelled-out numbers are already excluded. A full version after a
+       software label (`Node 20.11.0`) is still a candidate. A candidate,
+       not a verdict.
      - `TIME_ANCHORED` — a phrase that dates the text: `currently`,
        `as of v2`, `now supports`, `coming soon`. A bare `now`, `new`,
        `latest`, and `no longer` are already excluded. A candidate, not a
@@ -979,7 +981,7 @@ A run against a small project part-way through cleanup might report:
 - `DOUBLE_NEGATIVE` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
 - `NOUN_STRING` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
 - `VOLATILE_DETAIL` — Google developer documentation style guide, Excessive claims — the `metric` kind only: <https://developers.google.com/style/excessive-claims>
-- `VOLATILE_DETAIL` — house convention — the `count` and `popularity` kinds: `VOLATILE_NOUNS` in `scripts/check-prose.mjs`
+- `VOLATILE_DETAIL` — house convention — the `count`, `popularity`, and `version` kinds: `VOLATILE_NOUNS` and `VERSION_AT_RE` in `scripts/check-prose.mjs`
 - `TIME_ANCHORED` — Google developer documentation style guide, Timeless documentation: <https://developers.google.com/style/timeless-documentation>
 
 Then: "Run /docs-update to fix these findings interactively."

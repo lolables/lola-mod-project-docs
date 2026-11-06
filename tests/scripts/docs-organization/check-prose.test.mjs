@@ -1,6 +1,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeProse, THRESHOLDS, VOLATILE_NOUNS, LABEL_WORDS, TIME_PHRASES } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
+import { analyzeProse, THRESHOLDS, VOLATILE_NOUNS, LABEL_WORDS, SOFTWARE_LABELS, TIME_PHRASES } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
 import { parseDoc } from '../../../module/skills/docs-organization/scripts/formats/index.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync, realpathSync, cpSync, rmSync, readFileSync } from 'node:fs';
@@ -492,6 +492,73 @@ test('VOLATILE_DETAIL: a label word before the number skips it', async () => {
   for (const label of LABEL_WORDS) assert.deepEqual(await vd(`See ${label} 3 checks.\n`), [], label);
 });
 
+test('VOLATILE_DETAIL: software versions are candidates', async () => {
+  for (const [src, phrase] of [
+    ['It uses markdown-it 14.1.0 today.', 'markdown-it 14.1.0'],
+    ['Data from 2025.01.15 onward.', '2025.01.15'],
+    ['Upgrade to v2.1 first.', 'v2.1'],
+    ['Tag v1.2.3 ships it.', 'Tag v1.2.3'],
+    ['Tag V1.2.3 ships it.', 'Tag V1.2.3'],
+    ['Install markdown-it@14.1.0 globally.', 'markdown-it@14.1.0'],
+    ['Pin actions/checkout@v4 in CI.', 'checkout@v4'],
+    ['Install @scope/pkg@1.0.0 first.', 'pkg@1.0.0'],
+    ['Try 1.2.3-beta.1 builds.', 'Try 1.2.3-beta.1'],
+    ['Ship 2.0.0-rc1 soon.', 'Ship 2.0.0-rc1'],
+    ['Try v2.1-beta.2 builds.', 'Try v2.1-beta.2'],
+    ['Needs lola 0.7.0+ installed.', 'lola 0.7.0+'],
+    ['Requires Node 20.11.0 or later.', 'Node 20.11.0'],
+    ['Set version 2.3.1 here.', 'version 2.3.1'],
+    ['It ships 2.3.1.', 'ships 2.3.1'],
+  ]) {
+    const f = await vd(`${src}\n`);
+    assert.equal(f.length, 1, src);
+    assert.equal(f[0].message, `volatile version: "${phrase}"; delete it or point to the command that reports it`, src);
+    assert.equal(f[0].severity, 'info');
+    assert.equal(f[0].line, 1);
+  }
+});
+
+test('VOLATILE_DETAIL: IPs, short numbers, bare v-labels, ranges, and slugs are not versions', async () => {
+  for (const src of [
+    'Bind to 127.0.0.1 locally.',
+    'Requires Node 20.',
+    'Python 3.12 works.',
+    'It took 1.5 seconds.',
+    'Ship v2 first.',
+    'Use v1.2.x ranges.',
+    'Match 1.2.3a builds.',
+    'A foo-1.2.3 slug.',
+    'Ping me @ v4 today.',
+    'Run `npm i markdown-it@14.1.0` once.',
+    'Run ssh root@10.0.0.1 now.',
+  ]) {
+    assert.deepEqual(await vd(`${src}\n`), [], src);
+  }
+  assert.deepEqual(await vd('# Release 14.1.0\n'), []);
+});
+
+test('VOLATILE_DETAIL: a structural label skips a version, a software label does not', async () => {
+  for (const label of LABEL_WORDS) {
+    const got = (await vd(`See ${label} 3.2.1 now.\n`)).length;
+    assert.equal(got, SOFTWARE_LABELS.has(label) ? 1 : 0, label);
+  }
+});
+
+test('VOLATILE_DETAIL: a version in a TIME_ANCHORED slot yields only the time anchor', async () => {
+  for (const src of ['As of v2.1.0 it works.', 'As of 2.3.1 it works.', 'New in 1.4.0: export.']) {
+    assert.deepEqual(await vd(`${src}\n`), [], src);
+    assert.equal((await ta(`${src}\n`)).length, 1, src);
+  }
+  const rc = 'As of 2.0.0-rc1 it works.\n';
+  assert.equal((await vd(rc)).length, 1);
+  assert.deepEqual(await ta(rc), []);
+});
+
+test('VOLATILE_DETAIL: a version excerpt never reuses the previous finding\'s words', async () => {
+  const f = await vd('We had 94% coverage 1.2.3 now.\n');
+  assert.deepEqual(f.map((x) => x.message.match(/"([^"]+)"/)[1]), ['94% coverage', '1.2.3']);
+});
+
 test('TIME_ANCHORED: point-in-time phrases are candidates', async () => {
   for (const [src, phrase] of [
     ['It currently supports X.', 'currently'],
@@ -595,6 +662,11 @@ test('VOLATILE_DETAIL and TIME_ANCHORED: adversarial runs complete without quadr
     await vd(`${'12 unit '.repeat(n)}\n`);
     await vd(`1${'-a'.repeat(n)} tests\n`);
     await vd(`1${'k'.repeat(n)} tests\n`);
+    await vd(`${'1.'.repeat(n)}1\n`);
+    await vd(`v${'1.'.repeat(n)}1\n`);
+    await vd(`${'1.1-a.'.repeat(n)}1\n`);
+    await vd(`1-${'a.'.repeat(n)}a\n`);
+    await vd(`${'x@1 '.repeat(n)}\n`);
     return ta(`${'at the time of '.repeat(n)}\n`);
   };
   const ratio = await scalingRatio(scan, 5000);
@@ -622,6 +694,8 @@ test('corpus: the filler README yields exactly its volatile details', async () =
     '11 VOLATILE_DETAIL 40+ built-in checks',
     '11 TIME_ANCHORED currently',
     '15 TIME_ANCHORED As of v2.1',
+    '18 VOLATILE_DETAIL markdown-it 14.1.0',
+    '18 VOLATILE_DETAIL fastgrid@2.0.0-rc1',
     '15 TIME_ANCHORED now supports',
     '15 TIME_ANCHORED coming soon',
     '16 VOLATILE_DETAIL 30 contributors',
@@ -654,6 +728,10 @@ const SELF_SCAN_ALLOWED = [
   // Measured design rationale for the staleness walk, not a project inventory.
   ['docs/dev/architecture.md', 'VOLATILE_DETAIL', '4x slower'],
   ['docs/dev/architecture.md', 'VOLATILE_DETAIL', '35k commits'],
+  // The minimum lola release a reader must install; the README pins it on purpose.
+  ['README.md', 'VOLATILE_DETAIL', '0.7.0'],
+  // Names the lola release whose hook-runner bug the rationale describes (history).
+  ['docs/dev/vendoring.md', 'VOLATILE_DETAIL', 'lola v0.7.0'],
   // An ADR is a snapshot genre; its context section describes the time of the decision.
   ['module/skills/adr/reference/example-adr.md', 'TIME_ANCHORED', 'currently'],
 ];

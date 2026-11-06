@@ -15,7 +15,7 @@
 //   SPLIT_CANDIDATE    the whole file, or one H2 section, over the size threshold
 //   DOUBLE_NEGATIVE    a negator and a negative-meaning word in one clause (candidate)
 //   SLASH_ALTERNATIVE  word/word in running prose (candidate)
-//   VOLATILE_DETAIL    a digit count, metric, or popularity figure (candidate)
+//   VOLATILE_DETAIL    a digit count, metric, popularity figure, or version (candidate)
 //   TIME_ANCHORED      a phrase that dates the text: "currently", "as of v2" (candidate)
 //
 // Output: JSON {status, scanned, findings:[{code, severity, file, line, message}]}
@@ -184,7 +184,8 @@ function slashAlternatives(block) {
 }
 
 // Volatile details: numbers that go stale as the project changes ("147 tests",
-// "94% coverage", "1.2k stars"). Every pattern needs a trigger word after (or,
+// "94% coverage", "1.2k stars", "markdown-it 14.1.0"). Every count, metric, and
+// popularity pattern needs a trigger word after (or,
 // for popularity and coverage, around) a digit number, so a bare number is
 // never a candidate and spelled-out numbers ("six") are never scanned.
 // "lines" is deliberately absent from the nouns: "100 lines" is as often a
@@ -201,6 +202,10 @@ export const LABEL_WORDS = new Set([
   'step', 'phase', 'lane', 'stage', 'part', 'version', 'v', 'port', 'exit', 'code', 'line',
   'section', 'chapter', 'page', 'rfc', 'issue', 'pr', 'python', 'node', 'node.js', 'java', 'go',
 ]);
+// The label words that name software. A full version after one ("Node
+// 20.11.0") is still a version candidate; the other labels are structural
+// ("section 3.2.1") and skip it.
+export const SOFTWARE_LABELS = new Set(['version', 'v', 'python', 'node', 'node.js', 'java', 'go']);
 // A count may have one adjective between number and noun ("1,200 unit tests"),
 // never a connective: "2 or more files" and "a SHA-256 per file" are not counts.
 const COUNT_GAP_BLOCK = new Set(['of', 'or', 'and', 'per', 'to', 'in', 'at', 'on', 'for', 'from', 'with', 'by']);
@@ -222,6 +227,14 @@ const VERSION_RE = /^(?:v\d+(?:\.\d+)*|\d+(?:\.\d+)+|\d{4})$/;
 // overlap, so a long digit or separator run scans in linear time.
 const VTOKEN_RE = /\d+(?:[,.]\d+)*(?:[kKmM](?![\p{L}\p{N}]))?(?:[+%×]|[xX](?![\p{L}\p{N}])|-\p{L}+)?[\p{L}\p{N}]*|\p{L}[\p{L}\p{N}]*(?:['’.-][\p{L}\p{N}]+)*|[^\s\p{L}\p{N}]/gu;
 const NUMBER_RE = /^\d+(?:[,.]\d+)*[km]?(?:([+%×x])|-(\p{L}+))?$/u;
+// A version at a token start: a core of dotted numbers, an optional
+// pre-release ("-beta.1"), an optional minimum mark ("+"). VTOKEN_RE splits a
+// numeric pre-release across tokens ("1.2.3-beta", ".", "1"), so this runs on
+// the block text. Every part after the core is optional and no quantifier
+// overlaps, so a match never backtracks and a long run scans in linear time.
+const VERSION_AT_RE = /([vV]?)(\d+(?:\.\d+)*)(?:-[\p{L}\p{N}]+(?:\.[\p{L}\p{N}]+)*)?\+?/uy;
+// A letter or digit (or a dot before one) right after the match: "1.2.3a", "v1.2.x".
+const VERSION_TAIL_RE = /\.?[\p{L}\p{N}]/uy;
 
 function lowerTokens(text) {
   return [...text.matchAll(VTOKEN_RE)].map((m) => ({ w: m[0].toLowerCase(), at: m.index, end: m.index + m[0].length }));
@@ -237,7 +250,37 @@ function volatileDetails(block) {
   };
   const out = [];
   let lastEnd = -1;
+  // The excerpt start and end offsets of a version at token i, or undefined.
+  const versionAt = (i) => {
+    if (!/^v?\d/.test(toks[i].w)) return undefined;
+    VERSION_AT_RE.lastIndex = toks[i].at;
+    const m = VERSION_AT_RE.exec(block.text);
+    if (!m) return undefined;
+    VERSION_TAIL_RE.lastIndex = VERSION_AT_RE.lastIndex;
+    if (VERSION_TAIL_RE.test(block.text)) return undefined;
+    const parts = m[2].split('.').length;
+    const at = toks[i - 1]?.w === '@' && toks[i - 1].end === toks[i].at && toks[i - 2]?.end === toks[i - 1].at && word(i - 2);
+    if (at && (m[1] || parts <= 3)) return { start: toks[i - 2].at, end: VERSION_AT_RE.lastIndex };
+    if (m[1] ? parts < 2 : parts !== 3) return undefined;
+    const label = word(toks[i - 1]?.w === '#' ? i - 2 : i - 1);
+    if (LABEL_WORDS.has(label) && !SOFTWARE_LABELS.has(label)) return undefined;
+    if (TIME_PHRASES.some((p) => p.includes('<version>') && phraseAt(toks, i - p.indexOf('<version>')) === p)) return undefined;
+    const named = i - 1 > lastEnd && word(i - 1) && !COUNT_GAP_BLOCK.has(word(i - 1));
+    return { start: toks[named ? i - 1 : i].at, end: VERSION_AT_RE.lastIndex };
+  };
   for (let i = 0; i < toks.length; i++) {
+    const ver = versionAt(i);
+    if (ver) {
+      out.push({
+        code: 'VOLATILE_DETAIL',
+        severity: 'info',
+        line: lineAt(block, ver.start),
+        message: `volatile version: "${excerpt(block.text.slice(ver.start, ver.end))}"; delete it or point to the command that reports it`,
+      });
+      while (toks[i + 1] && toks[i + 1].at < ver.end) i++;
+      lastEnd = i;
+      continue;
+    }
     const num = NUMBER_RE.exec(toks[i].w);
     if (!num || LABEL_WORDS.has(word(toks[i - 1]?.w === '#' ? i - 2 : i - 1))) continue;
     const [, mark, hyphenWord] = num;
@@ -296,15 +339,19 @@ function volatileDetails(block) {
   return out;
 }
 
-function timeAnchors(block) {
-  const toks = lowerTokens(block.text);
-  const matches = (phrase, i) => phrase.every((w, k) => {
+// The TIME_PHRASES entry that starts at token i, if any.
+function phraseAt(toks, i) {
+  return TIME_PHRASES.find((phrase) => phrase.every((w, k) => {
     const t = toks[i + k]?.w;
     return t !== undefined && (w === '<version>' ? VERSION_RE.test(t) : t === w);
-  });
+  }));
+}
+
+function timeAnchors(block) {
+  const toks = lowerTokens(block.text);
   const out = [];
   for (let i = 0; i < toks.length; i++) {
-    const phrase = TIME_PHRASES.find((p) => matches(p, i));
+    const phrase = phraseAt(toks, i);
     if (!phrase) continue;
     const end = i + phrase.length - 1;
     out.push({

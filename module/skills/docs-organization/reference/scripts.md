@@ -16,8 +16,8 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   level-2 section), and plain-language candidates for the LLM to adjudicate:
   `DOUBLE_NEGATIVE` (negator plus negative-meaning word in one clause),
   `SLASH_ALTERNATIVE` (`word/word` in prose), `VOLATILE_DETAIL` (a digit
-  count, metric, or popularity figure), and `TIME_ANCHORED` (a phrase that
-  dates the text).
+  count, metric, popularity figure, or software version), and
+  `TIME_ANCHORED` (a phrase that dates the text).
 - `scripts/check-refs.mjs` — `REF_NOT_IN_GIT`, `REF_BROKEN` (untracked docs:
   checked on disk), `UNLINKED_REF` (bare `§`), `UNLINKED_POINTER` (stock phrase such as "contact the
   maintainers" with no link), `PARSE_WARNING` (parser
