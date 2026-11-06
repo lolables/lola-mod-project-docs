@@ -169,7 +169,8 @@ The linter uses merval, a strict subset of mermaid's grammar:
 
 1. **Quote labels containing `:`, `,`, `(`, or `)`** — `B["Lane 1: structural"]` not `B[Lane 1: structural]`.
 2. **Only some flowchart shapes parse.** These are valid mermaid but the
-   linter's parser (merval 1.0.7, the latest release) rejects them with a
+   linter's parser (merval, at the version in
+   [`scripts/vendor/LICENSES.md`](../scripts/vendor/LICENSES.md)) rejects them with a
    misleading "Expected closing bracket" error, so the `SYNTAX_ERROR` message
    names the shape:
 

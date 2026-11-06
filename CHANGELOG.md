@@ -25,6 +25,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`PARSE_WARNING`** (info, `/docs-audit` Lane 4, AsciiDoc only) reports
   parser warnings such as an unterminated block — Markdown never produces
   it.
+- **`VOLATILE_DETAIL` and `TIME_ANCHORED`** (info, `/docs-audit` Lane 3)
+  flag details that go stale — counts ("147 tests"), metrics ("94%
+  coverage"), popularity figures ("1.2k stars"), software versions
+  ("markdown-it 14.1.0") — and phrases that date the text ("currently",
+  "as of v2"). The LLM drops a candidate the reader needs, such as a version
+  pin, and suppresses both in changelogs, release notes, and ADRs. The fix
+  deletes the detail or points to the command that reports it.
 
 ### Changed
 

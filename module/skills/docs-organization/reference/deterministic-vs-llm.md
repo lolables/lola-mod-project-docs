@@ -72,12 +72,15 @@ model for judgment.
 
 Volatile details follow the same split. A digit count followed by a noun from
 a closed list (`147 tests`), a coverage or comparative figure (`94% coverage`,
-`3x faster`), a popularity figure (`1.2k stars`), or a dating phrase
-(`currently`, `as of v2`) is lexical, so `check-prose.mjs` finds every one.
-Whether the reader needs it is not lexical: `port 8080` and a documented
-limit look like filler and are not. The script skips the obvious pins (a
-number after a label word such as `step` or `Python`), and the LLM judges the
-rest.
+`3x faster`), a popularity figure (`1.2k stars`), a software version
+(`markdown-it 14.1.0`), or a dating phrase (`currently`, `as of v2`) is
+lexical, so `check-prose.mjs` finds every one. Whether the reader needs it is
+not lexical: `port 8080`, a documented limit, and a minimum version pin look
+like filler and are not. The script skips the obvious pins (a number after a
+label word such as `step` or `Python`), and the LLM judges the rest,
+including a full version after `Node` or `Python`. The script does not read
+manifests: that would need a parser per ecosystem and still miss tools no
+manifest declares.
 
 Noun strings ("shared dev/prod applies") and hidden verbs ("make a
 determination") are not lexical. Telling a stack of noun modifiers from an
