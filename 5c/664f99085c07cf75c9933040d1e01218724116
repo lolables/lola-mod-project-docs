@@ -1,0 +1,42 @@
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_db922b76c40253::t_c10c449017a750 3,495-532,534-556,665-669
+  s_db922b76c40253::t_3791cb0488f2a0 533,557-559
+  s_db922b76c40253::t_67071a4ecba1ad 560-561
+  s_db922b76c40253::t_cc263833de7033 697-698,731-734
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_db922b76c40253::t_04f141e340b71e 18,187-188,205-208,230-237,253-262,264-267,269-270,272-283,342-344,347-351,354
+  s_db922b76c40253::t_848af9502c667a 251-252,263,268
+tests/scripts/docs-organization/__fixtures__/volatile-filler.md
+  s_db922b76c40253::t_cc263833de7033 18-19
+tests/scripts/docs-organization/__fixtures__/volatile-clean.md
+  s_db922b76c40253::t_cc263833de7033 18
+module/skills/docs-organization/reference/mermaid-house-style.md
+  s_db922b76c40253::t_cc263833de7033 172-173
+module/skills/docs-organization/reference/deterministic-vs-llm.md
+  s_db922b76c40253::t_e19b93d5e91415 75-83
+CHANGELOG.md
+  s_db922b76c40253::t_63385af4de29eb 28-34
+module/skills/docs-organization/reference/scripts.md
+  s_db922b76c40253::t_37c31a2fab0806 19-20
+module/commands/docs-audit.md
+  s_db922b76c40253::t_b179d9c80fa41a 176-183
+  s_db922b76c40253::t_983ac74c7e061f 984
+module/skills/docs-organization/reference/rule-sources.md
+  s_db922b76c40253::t_536bb282e6c95e 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5c664f99085c07cf75c9933040d1e01218724116",
+  "prompts": {},
+  "sessions": {
+    "s_db922b76c40253": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea4b0c31-1cc8-4cfa-9424-6b391028464e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
