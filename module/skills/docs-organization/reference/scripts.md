@@ -14,8 +14,10 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   `WALL_OF_TEXT` (dense top-level or callout paragraph), `DENSE_BULLET` (fat
   flat list item with no sub-bullets), `SPLIT_CANDIDATE` (oversized file or
   level-2 section), and plain-language candidates for the LLM to adjudicate:
-  `DOUBLE_NEGATIVE` (negator plus negative-meaning word in one clause) and
-  `SLASH_ALTERNATIVE` (`word/word` in prose).
+  `DOUBLE_NEGATIVE` (negator plus negative-meaning word in one clause),
+  `SLASH_ALTERNATIVE` (`word/word` in prose), `VOLATILE_DETAIL` (a digit
+  count, metric, or popularity figure), and `TIME_ANCHORED` (a phrase that
+  dates the text).
 - `scripts/check-refs.mjs` — `REF_NOT_IN_GIT`, `REF_BROKEN` (untracked docs:
   checked on disk), `UNLINKED_REF` (bare `§`), `UNLINKED_POINTER` (stock phrase such as "contact the
   maintainers" with no link), `PARSE_WARNING` (parser

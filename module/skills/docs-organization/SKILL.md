@@ -141,10 +141,11 @@ LLM asked to enumerate under-reports on long files. The LLM lane adjudicates
 only the candidates the script surfaces: choppy rhythm, and dense-prose
 *genres* (academic, legal, formal spec) where `WALL_OF_TEXT` should be
 suppressed, and `reference` enumerations (glossaries, changelogs, punch
-lists) where `SPLIT_CANDIDATE` may be. The same script enumerates two lexical
-plain-language candidates (`DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`) for the LLM
-to keep or drop; noun strings and hidden verbs need part-of-speech judgment, so
-a chunked Lane 6 prompt finds them. A procedure spread across many small
+lists) where `SPLIT_CANDIDATE` may be. The same script enumerates lexical
+candidates for the LLM to keep or drop: plain language (`DOUBLE_NEGATIVE`,
+`SLASH_ALTERNATIVE`) and details that go stale as the project changes
+(`VOLATILE_DETAIL`, `TIME_ANCHORED`); noun strings and hidden verbs need
+part-of-speech judgment, so a chunked Lane 6 prompt finds them. A procedure spread across many small
 blocks trips no size check but is absence-of-structure, so it belongs to the
 grounded `NEEDS_STRUCTURE` sub-check in Lane 6.
 
