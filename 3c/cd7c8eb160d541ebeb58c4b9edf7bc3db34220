@@ -1,0 +1,21 @@
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_e3e28ca05baaaf::t_8b516e38fe7cb7 196
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_e3e28ca05baaaf::t_da040f54515daf 429
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3ccd7c8eb160d541ebeb58c4b9edf7bc3db34220",
+  "prompts": {},
+  "sessions": {
+    "s_e3e28ca05baaaf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8388f67a-9b3a-4d86-beb2-227daf93e871",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
