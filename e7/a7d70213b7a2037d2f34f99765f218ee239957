@@ -1,0 +1,23 @@
+module/skills/docs-organization/SKILL.md
+  s_e3e28ca05baaaf::t_6ae09635814b6a 144-148
+module/commands/docs-audit.md
+  s_e3e28ca05baaaf::t_6ae09635814b6a 189-191,234-235,240,244-248,896
+module/commands/docs-update.md
+  s_e3e28ca05baaaf::t_6ae09635814b6a 76-77,221,281-282,293-297
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e7a7d70213b7a2037d2f34f99765f218ee239957",
+  "prompts": {},
+  "sessions": {
+    "s_e3e28ca05baaaf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8388f67a-9b3a-4d86-beb2-227daf93e871",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
