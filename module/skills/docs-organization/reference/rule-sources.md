@@ -17,6 +17,8 @@ and `LANE_FAILED`.
 | --- | --- | --- | --- |
 | `DOUBLE_NEGATIVE` | Google developer documentation style guide, Write for a global audience | "Avoid negative constructions when possible." This check enforces only the double case. | <https://developers.google.com/style/translation> |
 | `SLASH_ALTERNATIVE` | Google developer documentation style guide, Slashes | "Don't use slashes to separate alternatives." | <https://developers.google.com/style/slashes> |
+| `VOLATILE_DETAIL` | Google developer documentation style guide, Excessive claims — the `metric` kind only | "Makes a statement about performance or cost that isn't easily verifiable with data that's available to the reader." | <https://developers.google.com/style/excessive-claims> |
+| `TIME_ANCHORED` | Google developer documentation style guide, Timeless documentation | "Words like now, new, and currently can render such documentation inaccurate, outdated, or unmeaningful." | <https://developers.google.com/style/timeless-documentation> |
 | `NOUN_STRING` | Google developer documentation style guide, Write for a global audience | "don't use more than two nouns as modifiers of another noun" | <https://developers.google.com/style/translation> |
 | `HIDDEN_VERB` | digital.gov plain-language guide, Writing | "A hidden verb (or nominalization) is a verb converted into a noun. It often needs an extra verb to make sense." | <https://digital.gov/guides/plain-language/writing> |
 | `NEEDS_STRUCTURE` | Google developer documentation style guide, Procedures | "A procedure is a sequence of numbered steps for accomplishing a task." | <https://developers.google.com/style/procedures> |
@@ -31,6 +33,7 @@ and `LANE_FAILED`.
 | Code | Authority | Rule | Source |
 | --- | --- | --- | --- |
 | `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE` | house convention | A paragraph of 120+ words, a flat bullet of 90+ words, a file over 600 lines, or a level-2 section over 250 lines. Set when the lane was first written; not derived from an external standard or tuned against test runs. | `THRESHOLDS` in `scripts/check-prose.mjs` |
+| `VOLATILE_DETAIL` | house convention — the `count` and `popularity` kinds | A digit count of things that grow with the project (tests, files, rules, dependencies, contributors), or a popularity figure (stars, downloads, "used by" a number of teams). Each one must be refreshed on every change, and the reader rarely needs it to act. | `VOLATILE_NOUNS` in `scripts/check-prose.mjs` |
 | `COLD_READ` | house convention — every category except an undefined term or acronym | A missing or out-of-order step, a dangling cross-reference, prose contradicting its own example, two names for one thing, an unstated prerequisite, an example that would not work as written, or an unresolvable spec reference. | The cold-read prompt in `/docs-audit`; `reference/diataxis-grounding.md` |
 | `MISSING_DIAGRAM` | house convention (encouragement) | A section whose relationships a reader must draw in their head to follow. | The missing-diagram prompt in `/docs-audit` |
 | `MISSING_DEMO` | house convention (encouragement) | A user-facing tool's README with no demo of the tool running. | The hero-demo prompt in `/docs-audit` |

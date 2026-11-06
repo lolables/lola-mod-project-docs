@@ -1,11 +1,12 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeProse, THRESHOLDS } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
+import { analyzeProse, THRESHOLDS, VOLATILE_NOUNS, LABEL_WORDS, TIME_PHRASES } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
 import { parseDoc } from '../../../module/skills/docs-organization/scripts/formats/index.mjs';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync, realpathSync, cpSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync, realpathSync, cpSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
+import { walkDocs } from '../../../module/skills/docs-organization/scripts/doc-files.mjs';
 import { fileURLToPath } from 'node:url';
 import { scalingRatio, LINEAR_LIMIT } from './linearity.mjs';
 
@@ -410,4 +411,263 @@ test('SLASH_ALTERNATIVE: a long run of edge punctuation completes without quadra
   const f = await sa(`${'('.repeat(50000)}dev/prod${run}\n`);
   assert.equal(f.length, 1);
   assert.ok(f[0].message.includes('"dev/prod"'));
+});
+
+
+const vd = only('VOLATILE_DETAIL');
+const ta = only('TIME_ANCHORED');
+
+test('VOLATILE_DETAIL: counts, metrics, and popularity figures are candidates', async () => {
+  for (const [src, kind, phrase] of [
+    ['The suite has 147 tests.', 'count', '147 tests'],
+    ['It ships 40+ built-in checks.', 'count', '40+ built-in checks'],
+    ['We have 1,200 unit tests.', 'count', '1,200 unit tests'],
+    ['It has 147 test cases.', 'count', '147 test cases'],
+    ['A 300-line script.', 'count', '300-line'],
+    ['A 2k-LOC module.', 'count', '2k-LOC'],
+    ['Over 50 integrations.', 'count', '50 integrations'],
+    ['The CLI provides approximately 22 commands.', 'count', '22 commands'],
+    ['It supports 12 languages.', 'count', '12 languages'],
+    ['It finds 3 `.md` files.', 'count', '3 files'],
+    ['We hit 94% coverage.', 'metric', '94% coverage'],
+    ['Line coverage is 94% today.', 'metric', 'coverage is 94%'],
+    ['It is 3x faster.', 'metric', '3x faster'],
+    ['It is 3× faster.', 'metric', '3× faster'],
+    ['It is 3X faster.', 'metric', '3X faster'],
+    ['It is 40% faster.', 'metric', '40% faster'],
+    ['About ~2k LOC.', 'metric', '2k LOC'],
+    ['Only 500 lines of code.', 'metric', '500 lines of code'],
+    ['The repo has 1.2k stars.', 'popularity', '1.2k stars'],
+    ['It has 10,000 downloads.', 'popularity', '10,000 downloads'],
+    ['It is used by 50+ teams.', 'popularity', 'used by 50+ teams'],
+  ]) {
+    const f = await vd(`${src}\n`);
+    assert.equal(f.length, 1, src);
+    assert.ok(f[0].message.startsWith(`volatile ${kind}: "${phrase}"`), `${src}: ${f[0].message}`);
+    assert.equal(f[0].severity, 'info');
+    assert.equal(f[0].line, 1);
+  }
+});
+
+test('VOLATILE_DETAIL: every listed noun is a count after a number', async () => {
+  for (const noun of VOLATILE_NOUNS) assert.equal((await vd(`It has 12 ${noun}.\n`)).length, 1, noun);
+});
+
+test('VOLATILE_DETAIL: pins, labels, limits, and spelled-out counts are not candidates', async () => {
+  for (const src of [
+    'There are six slash commands.',
+    'Requires Node.js ≥ 20.',
+    'Uses MADR 4.0 format.',
+    'Listen on port 8080.',
+    'It returns exit 2 on error.',
+    'Go to step 3 next.',
+    'See RFC 2119 for terms.',
+    'Pass 2 arguments.',
+    'Lane 4 checks whenever.',
+    'Python 3 scripts work.',
+    'Split 2 or more files.',
+    'It stores a SHA-256 per file.',
+    'Keep 100 lines (one range at 150 lines or fewer).',
+    'Text needs WCAG 4.5:1.',
+    '2 users must approve.',
+    'It times out after 30 seconds.',
+    'It has 12 tests-to-be.',
+    'Supports 3rd-party plugins.',
+    'The 2nd-level checks run.',
+    'Store 0x1F files.',
+    'Took 100ms tests.',
+    'It has 147tests.',
+    'Use PR #12 tests.',
+    'See issue #12 checks.',
+  ]) {
+    assert.deepEqual(await vd(`${src}\n`), [], src);
+  }
+});
+
+test('VOLATILE_DETAIL: one coverage word yields one finding', async () => {
+  assert.equal((await vd('We hit 94% coverage 95% of the time.\n')).length, 1);
+});
+
+test('VOLATILE_DETAIL: a label word before the number skips it', async () => {
+  for (const label of LABEL_WORDS) assert.deepEqual(await vd(`See ${label} 3 checks.\n`), [], label);
+});
+
+test('TIME_ANCHORED: point-in-time phrases are candidates', async () => {
+  for (const [src, phrase] of [
+    ['It currently supports X.', 'currently'],
+    ['At present it works.', 'At present'],
+    ['At the moment it works.', 'At the moment'],
+    ['At the time of writing it works.', 'At the time of writing'],
+    ['As of v2 it works.', 'As of v2'],
+    ['As of 2.3.1 it works.', 'As of 2.3.1'],
+    ['As of 2025 it works.', 'As of 2025'],
+    ['New in 2.3: export.', 'New in 2.3'],
+    ['It now supports X.', 'now supports'],
+    ['It now has X.', 'now has'],
+    ['It now includes X.', 'now includes'],
+    ['It now uses X.', 'now uses'],
+    ['Export is coming soon.', 'coming soon'],
+    ['Skip it for now.', 'for now'],
+    ['It ships in a future release.', 'in a future release'],
+  ]) {
+    const f = await ta(`${src}\n`);
+    assert.equal(f.length, 1, src);
+    assert.ok(f[0].message.startsWith(`time-anchored: "${phrase}"`), `${src}: ${f[0].message}`);
+    assert.equal(f[0].severity, 'info');
+  }
+});
+
+test('TIME_ANCHORED: every listed phrase is a candidate', async () => {
+  for (const phrase of TIME_PHRASES) {
+    const src = phrase.map((w) => (w === '<version>' ? 'v2' : w)).join(' ');
+    assert.equal((await ta(`Note: ${src} here.\n`)).length, 1, src);
+  }
+});
+
+test('TIME_ANCHORED: sequencing, deprecation, and recency words are not candidates', async () => {
+  for (const src of [
+    'Create a new branch.',
+    'Now run the script.',
+    'The file is now ready.',
+    'You can now open localhost:8080.',
+    'Install the latest release.',
+    'The code no longer exists.',
+    'Open the newly created branch.',
+    'Files touched recently.',
+    'As of then, it works.',
+    'New in this guide: a section.',
+    'It runs as of 10 seconds.',
+  ]) {
+    assert.deepEqual(await ta(`${src}\n`), [], src);
+  }
+});
+
+test('VOLATILE_DETAIL and TIME_ANCHORED: headings, code, tables, quotations, and link text are not prose', async () => {
+  const skipped = [
+    '# Has 147 tests currently',
+    '',
+    '```',
+    'has 147 tests currently',
+    '```',
+    '',
+    'Uses `147 tests currently` inline.',
+    '',
+    '| a | b |',
+    '|---|---|',
+    '| 147 tests | currently |',
+    '',
+    '> It has 147 tests currently.',
+    '',
+    'See [147 tests currently](x.md).',
+    '',
+  ].join('\n');
+  assert.deepEqual(await vd(skipped), []);
+  assert.deepEqual(await ta(skipped), []);
+  const md = '> [!NOTE]\n> It has 147 tests.\n\n- currently fine\n';
+  assert.deepEqual((await vd(md)).map((f) => f.line), [2]);
+  assert.deepEqual((await ta(md)).map((f) => f.line), [4]);
+});
+
+test('VOLATILE_DETAIL and TIME_ANCHORED: line across emphasis and a soft wrap', async () => {
+  const bold = await vd('# T\n\nIntro.\n\nThe suite has **147** tests.\n');
+  assert.equal(bold.length, 1);
+  assert.equal(bold[0].line, 5);
+  assert.ok(bold[0].message.includes('"147 tests"'), bold[0].message);
+  const wrapped = await vd('It is used by\n50+ teams.\n');
+  assert.equal(wrapped.length, 1);
+  assert.equal(wrapped[0].line, 1);
+  assert.ok(wrapped[0].message.includes('"used by 50+ teams"'), wrapped[0].message);
+  const time = await ta('It works at the\ntime of writing.\n');
+  assert.equal(time.length, 1);
+  assert.equal(time[0].line, 1);
+});
+
+test('AsciiDoc: VOLATILE_DETAIL and TIME_ANCHORED in a paragraph, not in a quote block', async () => {
+  const adoc = 'It currently has 147 tests.\n\n____\nIt currently has 147 tests.\n____\n';
+  assert.deepEqual((await vd(adoc, 'doc.adoc')).map((f) => f.line), [1]);
+  assert.deepEqual((await ta(adoc, 'doc.adoc')).map((f) => f.line), [1]);
+});
+
+test('VOLATILE_DETAIL and TIME_ANCHORED: adversarial runs complete without quadratic cost', async () => {
+  const scan = async (n) => {
+    await vd(`${'1,'.repeat(n)}1 tests\n`);
+    await vd(`${'step 1 '.repeat(n)}\n`);
+    await vd(`${'12 unit '.repeat(n)}\n`);
+    await vd(`1${'-a'.repeat(n)} tests\n`);
+    await vd(`1${'k'.repeat(n)} tests\n`);
+    return ta(`${'at the time of '.repeat(n)}\n`);
+  };
+  const ratio = await scalingRatio(scan, 5000);
+  assert.ok(ratio < LINEAR_LIMIT, `4x input cost ${ratio.toFixed(1)}x`);
+});
+
+const FIXTURES = fileURLToPath(new URL('./__fixtures__/', import.meta.url));
+const REPO = fileURLToPath(new URL('../../../', import.meta.url));
+const VOLATILE_CODES = new Set(['VOLATILE_DETAIL', 'TIME_ANCHORED']);
+const volatileOf = (findings) => findings.filter((f) => VOLATILE_CODES.has(f.code));
+const quoted = (f) => f.message.match(/"([^"]+)"/)[1];
+
+test('corpus: the filler README yields exactly its volatile details', async () => {
+  const src = readFileSync(join(FIXTURES, 'volatile-filler.md'), 'utf8');
+  const got = volatileOf(await analyze(src)).map((f) => `${f.line} ${f.code} ${quoted(f)}`);
+  assert.deepEqual(got.sort(), [
+    '3 VOLATILE_DETAIL 1.2k stars',
+    '3 VOLATILE_DETAIL used by 50+ teams',
+    '8 VOLATILE_DETAIL 3x faster',
+    '9 VOLATILE_DETAIL 94% coverage',
+    '9 VOLATILE_DETAIL 1,200 unit tests',
+    '10 VOLATILE_DETAIL 8k LOC',
+    '10 VOLATILE_DETAIL 4 dependencies',
+    '11 VOLATILE_DETAIL 12 languages',
+    '11 VOLATILE_DETAIL 40+ built-in checks',
+    '11 TIME_ANCHORED currently',
+    '15 TIME_ANCHORED As of v2.1',
+    '15 TIME_ANCHORED now supports',
+    '15 TIME_ANCHORED coming soon',
+    '16 VOLATILE_DETAIL 30 contributors',
+    '16 VOLATILE_DETAIL 2,400 commits',
+  ].sort());
+});
+
+test('corpus: a number-heavy doc of pins, limits, and labels yields no volatile details', async () => {
+  const src = readFileSync(join(FIXTURES, 'volatile-clean.md'), 'utf8');
+  assert.deepEqual(volatileOf(await analyze(src)), []);
+});
+
+test('CLI: the filler fixture reports volatile findings with file paths', async () => {
+  const { code, out } = runCli(REPO, join(FIXTURES, 'volatile-filler.md'));
+  assert.equal(code, 1);
+  assert.equal(out.status, 'findings');
+  assert.equal(out.scanned, 1);
+  for (const c of VOLATILE_CODES) {
+    const hits = out.findings.filter((f) => f.code === c);
+    assert.ok(hits.length >= 1, `no ${c} finding`);
+    assert.ok(hits.every((f) => f.file), `${c} finding lacks file`);
+  }
+});
+
+// The repo must pass its own audit. Each entry is a candidate a reviewer
+// judged intentional; it is keyed on the quoted excerpt, never the line, so
+// unrelated edits do not break it. A new candidate fails this test: fix the
+// prose, put a literal example in inline code, or add an entry with a reason.
+const SELF_SCAN_ALLOWED = [
+  // Measured design rationale for the staleness walk, not a project inventory.
+  ['docs/dev/architecture.md', 'VOLATILE_DETAIL', '4x slower'],
+  ['docs/dev/architecture.md', 'VOLATILE_DETAIL', '35k commits'],
+  // An ADR is a snapshot genre; its context section describes the time of the decision.
+  ['module/skills/adr/reference/example-adr.md', 'TIME_ANCHORED', 'currently'],
+];
+
+test('self-scan: this repo\'s docs have only the allowed volatile details', async () => {
+  // The same scope /docs-audit sweeps in a lola module repo: README, docs/
+  // (docs/superpowers/ is gitignored scratch, so only docs/dev), and module/.
+  const files = ['README.md', 'docs/dev', 'module'].flatMap((t) => [...walkDocs(join(REPO, t))]);
+  assert.ok(files.length > 10, `self-scan found only ${files.length} docs`);
+  const got = [];
+  for (const file of files) {
+    for (const f of volatileOf(analyzeProse(await parseDoc(file, readFileSync(file, 'utf8'))))) {
+      got.push(`${relative(REPO, file)} ${f.code} ${quoted(f)}`);
+    }
+  }
+  assert.deepEqual(got.sort(), SELF_SCAN_ALLOWED.map((e) => e.join(' ')).sort());
 });

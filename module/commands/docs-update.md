@@ -71,10 +71,10 @@ present, skip the `adr` activation.
      ranked menu; skip by default if the user declines and never auto-apply.
    - **Semantic:** `CONTENT_DRIFT` (content and diagram drift), `FORKED_COPY`,
      `STALE_README`, `STALE_DOC`, `WALL_OF_TEXT`, `DENSE_BULLET`,
-     `SPLIT_CANDIDATE`, `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`, `NOUN_STRING`,
-     `HIDDEN_VERB`, `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`,
-     `UNLINKED_POINTER`, `PARSE_WARNING` (fix: correct the markup the parser names),
-     `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
+     `SPLIT_CANDIDATE`, `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`,
+     `VOLATILE_DETAIL`, `TIME_ANCHORED`, `NOUN_STRING`, `HIDDEN_VERB`,
+     `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`, `UNLINKED_POINTER`,
+     `PARSE_WARNING` (fix: correct the markup the parser names), `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
      `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`, `UNAPPROVED_CLASSNAME`,
      `UNAPPROVED_STYLE` findings, and anything else needing judgment. Exclude
      "Other" lines marked `suppressed: …`, `dropped: …`, or `content drift: …`
@@ -218,7 +218,7 @@ present, skip the `adr` activation.
 6. **Apply semantic fixes one at a time:**
    - For each semantic finding, show the user:
      - The file and location.
-     - What the doc currently says (exact excerpt).
+     - What the doc says (exact excerpt).
      - What the code actually does (citation). For `WALL_OF_TEXT` there is
        no code citation; instead show the proposed paragraph breaks.
      - Proposed rewrite. For `WALL_OF_TEXT`, pick the lighter of two structure
@@ -274,6 +274,17 @@ present, skip the `adr` activation.
          pipeline in a hybrid environment".
        - `HIDDEN_VERB`: restore the verb and drop the support verb — "perform
          an evaluation of the logs" → "evaluate the logs".
+     - For `VOLATILE_DETAIL`: delete the claim, or replace it with the
+       command or artifact that produces the number ("`task test` prints the
+       count"). Never update the number in place: a refreshed number goes
+       stale again. Keep the rest of the sentence; show it before and after.
+       Skip a claim already presented together with its `CONTENT_DRIFT`
+       finding.
+     - For `TIME_ANCHORED`: state what is true without the anchor (`It
+       currently supports X` → `It supports X`). Keep a real version boundary
+       as a fact ("requires v2 or later"). Show the sentence before and after.
+       Skip a sentence already rewritten together with its `CONTENT_DRIFT`
+       finding.
      - For `CONTENT_DRIFT`: the code is the source of truth. Re-read the cited
        code first (the audit may be stale), then rewrite only the doc's claim to
        match it, keeping the surrounding text. Present `CONTENT_DRIFT` blockers
@@ -282,6 +293,14 @@ present, skip the `adr` activation.
        code bug" for the user. For a file outside any git repo (document
        mode) the cited source the finding names is the source of truth
        instead of code.
+       When a `CONTENT_DRIFT` finding and a kept `VOLATILE_DETAIL` name the
+       same claim, present them together at the `CONTENT_DRIFT` position:
+       offer the deletion first; if the user declines it, apply the drift fix
+       instead, so the claim is never left wrong. When a kept `TIME_ANCHORED`
+       sits in the same sentence as a `CONTENT_DRIFT` finding, fix both in one
+       rewrite at the `CONTENT_DRIFT` position: state the current behavior
+       from the code, without the anchor (`The gateway currently skips auth`
+       → `The gateway checks auth on every request`).
        - A local source (a relative link, not a URL): never take its path
          from the finding's `Note` on trust — re-derive it.
          1. Find the file's root in the audit's document-mode `Mode:`

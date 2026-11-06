@@ -173,12 +173,22 @@ pass.
      - `SLASH_ALTERNATIVE` — `word/word` in running prose. Paths, URLs,
        inline code, numbers, and established terms (`I/O`, `CI/CD`) are
        already excluded. A candidate, not a verdict.
+     - `VOLATILE_DETAIL` — a digit count, metric, or popularity figure that
+       goes stale as the project changes: `147 tests`, `94% coverage`,
+       `3x faster`, `1.2k stars`. The message names the kind (`count`,
+       `metric`, `popularity`). A number after a label word (`step 3`,
+       `port 8080`, `Python 3`) and spelled-out numbers are already
+       excluded. A candidate, not a verdict.
+     - `TIME_ANCHORED` — a phrase that dates the text: `currently`,
+       `as of v2`, `now supports`, `coming soon`. A bare `now`, `new`,
+       `latest`, and `no longer` are already excluded. A candidate, not a
+       verdict.
    - This lane is **deterministic**: it counts words and line spans over each
      file's parsed structure (code blocks, tables, quotations, and nested
-     lists are distinguished by the format's parser), and matches the two
-     plain-language patterns over the same parsed prose, so it enumerates
-     every violation and candidate exhaustively and returns byte-identical
-     results every run. Do **not**
+     lists are distinguished by the format's parser), and matches the
+     plain-language and volatile-detail patterns over the same parsed prose,
+     so it enumerates every violation and candidate exhaustively and returns
+     byte-identical results every run. Do **not**
      ask an LLM to hunt for wall-of-text or dense bullets — an LLM
      under-reports on long files (its recall fades toward the end) and the
      result is not reproducible.
@@ -219,6 +229,28 @@ pass.
      codes. List each drop under "Other" as `dropped: <code> — <file>:<line>
      — <reason>; not for /docs-update`, so an all-dropped lane never reads
      as an unrun one.
+   - **Volatile-detail adjudication (LLM, every candidate):** for each
+     `VOLATILE_DETAIL` and `TIME_ANCHORED` candidate, read its sentence and
+     keep or drop it. Judge only the candidates the script reports; never add
+     one it did not. Keep a candidate when the detail is decoration. Drop it
+     when a reader needs it to act *and* something keeps it correct: a
+     version pin, a documented limit or default, a count the project treats
+     as public API.
+     - In a snapshot genre (changelog, release notes, ADR, blog post) a dated
+       count or time phrase is history, not drift. Suppress either
+       code there; record it as `suppressed: <code> — <file> (<genre>); not
+       for /docs-update`.
+     - When a kept `VOLATILE_DETAIL` and a `CONTENT_DRIFT` finding name the
+       same claim, report both. `/docs-update` offers the deletion first and
+       falls back to the drift fix. When a kept `TIME_ANCHORED` and a
+       `CONTENT_DRIFT` finding sit in the same sentence, report both too: the
+       anchor often marks the claim that drifted. `/docs-update` fixes them
+       in one rewrite.
+     - A short count in an instruction the reader follows right there
+       (`Run the 3 tests below`, `Exactly 2 checks must pass`) is a drop:
+       the adjacent text keeps it correct.
+     - List each drop under "Other" as `dropped: <code> — <file>:<line> —
+       <reason>; not for /docs-update`.
 
 5. **Lane 4 — Reference integrity (fast, deterministic):**
    - Run `node "$SKILL_DIR/scripts/check-refs.mjs" <in-scope-file>...` (same scope
@@ -659,7 +691,8 @@ pass.
          `SUPERPOWERS_IN_GIT`, `MISSING_ADR_INDEX`, `FORKED_COPY`.
        - Lane 2: `STALENESS_NOT_ASSESSED`, `STALE_README`, `STALE_DOC`.
        - Lane 3: `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE`,
-         `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`.
+         `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`, `VOLATILE_DETAIL`,
+         `TIME_ANCHORED`.
        - Lane 4: `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`,
          `UNLINKED_POINTER`, `PARSE_WARNING`.
        - Lane 5: `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`,
@@ -726,6 +759,11 @@ pass.
          Info. The fix is a positive rewrite that keeps any condition.
        - `SLASH_ALTERNATIVE`: the quoted slash pair. Info. The fix is "or" or
          "and", whichever the sentence means; ambiguous ones go to the user.
+       - `VOLATILE_DETAIL`: the kind and the quoted detail. Info. The fix is
+         to delete the claim or point to the command that produces the
+         number; never update the number in place.
+       - `TIME_ANCHORED`: the quoted phrase. Info. The fix states the current
+         behavior without the anchor and keeps any real version boundary.
        - `NOUN_STRING` / `HIDDEN_VERB`: the quoted text, why a first-time
          reader stumbles, and the subagent's rewrite. Info.
        - `REF_BROKEN` / `REF_NOT_IN_GIT`: the link target and whether it is
@@ -858,7 +896,7 @@ pass.
      including an item missing from a list that names its items one by
      one — is `CONTENT_DRIFT`, never "Other". "Other" also lists the
      content-drift coverage lines, stated suppressions (`suppressed:
-     <code> — <file> (<mode>); not for /docs-update`), and dropped
+     <code> — <file> (<mode or genre>); not for /docs-update`), and dropped
      plain-language candidates (`dropped: …`), all of which `/docs-update`
      skips.
    - When a `COLD_READ` finding and a `NOUN_STRING` or `HIDDEN_VERB` finding
@@ -883,7 +921,7 @@ pass.
 
 A run against a small project part-way through cleanup might report:
 
-`3 blockers, 5 warnings, 13 info`
+`3 blockers, 5 warnings, 16 info`
 
 ### Blockers
 
@@ -920,6 +958,8 @@ A run against a small project part-way through cleanup might report:
 | `NEEDS_STRUCTURE` | `README.md` | 14 | "Install" — ~6 commands run together as unbroken prose; break into a numbered list |
 | `MISSING_DEMO` | `README.md` | 1 | user-facing CLI, no demo; record `init → sync --dry-run → sync` as an asciinema/VHS clip at the top |
 | `DOUBLE_NEGATIVE` | `README.md` | 51 | double negative: "not valid unless"; state it positively |
+| `VOLATILE_DETAIL` | `README.md` | 9 | volatile count: "1,200 unit tests"; delete it or point to the command that reports it |
+| `TIME_ANCHORED` | `README.md` | 15 | time-anchored: "now supports"; describe the behavior without the time anchor |
 | `NOUN_STRING` | `docs/how-to-rotate-keys.md` | 22 | "cluster node pool autoscaler setting" — four nouns before "setting"; rewrite: "the autoscaler setting for the cluster's node pool" |
 
 ### Other
@@ -938,6 +978,9 @@ A run against a small project part-way through cleanup might report:
 - `MISSING_DEMO` — house convention (encouragement): The hero-demo prompt in `/docs-audit`
 - `DOUBLE_NEGATIVE` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
 - `NOUN_STRING` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
+- `VOLATILE_DETAIL` — Google developer documentation style guide, Excessive claims — the `metric` kind only: <https://developers.google.com/style/excessive-claims>
+- `VOLATILE_DETAIL` — house convention — the `count` and `popularity` kinds: `VOLATILE_NOUNS` in `scripts/check-prose.mjs`
+- `TIME_ANCHORED` — Google developer documentation style guide, Timeless documentation: <https://developers.google.com/style/timeless-documentation>
 
 Then: "Run /docs-update to fix these findings interactively."
 

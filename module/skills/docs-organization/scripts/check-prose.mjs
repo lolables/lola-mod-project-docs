@@ -15,6 +15,8 @@
 //   SPLIT_CANDIDATE    the whole file, or one H2 section, over the size threshold
 //   DOUBLE_NEGATIVE    a negator and a negative-meaning word in one clause (candidate)
 //   SLASH_ALTERNATIVE  word/word in running prose (candidate)
+//   VOLATILE_DETAIL    a digit count, metric, or popularity figure (candidate)
+//   TIME_ANCHORED      a phrase that dates the text: "currently", "as of v2" (candidate)
 //
 // Output: JSON {status, scanned, findings:[{code, severity, file, line, message}]}
 // on stdout. `scanned` is the number of distinct documents read, so an empty
@@ -181,6 +183,141 @@ function slashAlternatives(block) {
   return out;
 }
 
+// Volatile details: numbers that go stale as the project changes ("147 tests",
+// "94% coverage", "1.2k stars"). Every pattern needs a trigger word after (or,
+// for popularity and coverage, around) a digit number, so a bare number is
+// never a candidate and spelled-out numbers ("six") are never scanned.
+// "lines" is deliberately absent from the nouns: "100 lines" is as often a
+// documented threshold as filler; "N lines of code" and "300-line" catch the
+// filler. Rule sources: reference/rule-sources.md.
+export const VOLATILE_NOUNS = new Set([
+  'tests', 'assertions', 'specs', 'fixtures', 'files', 'rules', 'checks', 'lints', 'scripts',
+  'modules', 'dependencies', 'packages', 'endpoints', 'contributors', 'commits', 'integrations',
+  'plugins', 'languages', 'providers', 'commands',
+]);
+// A number right after one of these is a label or a pin ("Lane 4", "port
+// 8080", "Python 3"), not a count.
+export const LABEL_WORDS = new Set([
+  'step', 'phase', 'lane', 'stage', 'part', 'version', 'v', 'port', 'exit', 'code', 'line',
+  'section', 'chapter', 'page', 'rfc', 'issue', 'pr', 'python', 'node', 'node.js', 'java', 'go',
+]);
+// A count may have one adjective between number and noun ("1,200 unit tests"),
+// never a connective: "2 or more files" and "a SHA-256 per file" are not counts.
+const COUNT_GAP_BLOCK = new Set(['of', 'or', 'and', 'per', 'to', 'in', 'at', 'on', 'for', 'from', 'with', 'by']);
+const COMPARATIVES = new Set(['faster', 'slower', 'smaller', 'larger', 'fewer', 'less', 'more']);
+const POPULARITY_NOUNS = new Set(['stars', 'forks', 'downloads', 'installs']);
+const AUDIENCE_NOUNS = new Set(['users', 'teams', 'companies', 'organizations', 'projects']);
+// Time anchors. A bare "now", "is now", "can now" marks a step in a sequence
+// ("Now run the script"); "no longer" usually states a real deprecation; a bare
+// "new" and "latest" are ordinary words. None of them is listed.
+// '<version>' matches a version or a year: v2, 2.3.1, 2025.
+export const TIME_PHRASES = [
+  ['currently'], ['at', 'present'], ['at', 'the', 'moment'], ['at', 'the', 'time', 'of', 'writing'],
+  ['as', 'of', '<version>'], ['new', 'in', '<version>'], ['now', 'supports'], ['now', 'has'],
+  ['now', 'includes'], ['now', 'uses'], ['coming', 'soon'], ['for', 'now'], ['in', 'a', 'future', 'release'],
+];
+const VERSION_RE = /^(?:v\d+(?:\.\d+)*|\d+(?:\.\d+)+|\d{4})$/;
+// A number (1,200 / 1.2k / 40+ / 94% / 3x / 300-line), a word (node.js and
+// built-in stay whole), or one punctuation mark. No nested quantifier can
+// overlap, so a long digit or separator run scans in linear time.
+const VTOKEN_RE = /\d+(?:[,.]\d+)*(?:[kKmM](?![\p{L}\p{N}]))?(?:[+%×]|[xX](?![\p{L}\p{N}])|-\p{L}+)?[\p{L}\p{N}]*|\p{L}[\p{L}\p{N}]*(?:['’.-][\p{L}\p{N}]+)*|[^\s\p{L}\p{N}]/gu;
+const NUMBER_RE = /^\d+(?:[,.]\d+)*[km]?(?:([+%×x])|-(\p{L}+))?$/u;
+
+function lowerTokens(text) {
+  return [...text.matchAll(VTOKEN_RE)].map((m) => ({ w: m[0].toLowerCase(), at: m.index, end: m.index + m[0].length }));
+}
+
+function volatileDetails(block) {
+  const toks = lowerTokens(block.text);
+  const word = (j) => (toks[j] && /^\p{L}/u.test(toks[j].w) ? toks[j].w : undefined);
+  const nounEnd = (j) => {
+    if (VOLATILE_NOUNS.has(word(j))) return j;
+    if (word(j) === 'test' && word(j + 1) === 'cases') return j + 1;
+    return -1;
+  };
+  const out = [];
+  let lastEnd = -1;
+  for (let i = 0; i < toks.length; i++) {
+    const num = NUMBER_RE.exec(toks[i].w);
+    if (!num || LABEL_WORDS.has(word(toks[i - 1]?.w === '#' ? i - 2 : i - 1))) continue;
+    const [, mark, hyphenWord] = num;
+    let kind;
+    let start = i;
+    let end = -1;
+    if (hyphenWord) {
+      if (hyphenWord === 'line' || hyphenWord === 'loc') {
+        kind = 'count';
+        end = i;
+      }
+    } else if (mark === '%' || mark === 'x' || mark === '×') {
+      if (COMPARATIVES.has(word(i + 1))) {
+        kind = 'metric';
+        end = i + 1;
+      } else if (mark === '%') {
+        const after = [i + 1, i + 2].find((j) => word(j) === 'coverage');
+        const before = [i - 1, i - 2].find((j) => j > lastEnd && word(j) === 'coverage');
+        if (after !== undefined) {
+          kind = 'metric';
+          end = after;
+        } else if (before !== undefined) {
+          kind = 'metric';
+          start = before;
+          end = i;
+        }
+      }
+    } else if (POPULARITY_NOUNS.has(word(i + 1))) {
+      kind = 'popularity';
+      end = i + 1;
+    } else if ((word(i - 2) === 'used' || word(i - 2) === 'trusted') && word(i - 1) === 'by' && AUDIENCE_NOUNS.has(word(i + 1))) {
+      kind = 'popularity';
+      start = i - 2;
+      end = i + 1;
+    } else if (word(i + 1) === 'loc') {
+      kind = 'metric';
+      end = i + 1;
+    } else if (word(i + 1) === 'lines' && word(i + 2) === 'of' && word(i + 3) === 'code') {
+      kind = 'metric';
+      end = i + 3;
+    } else {
+      end = nounEnd(i + 1);
+      if (end < 0 && word(i + 1) && !COUNT_GAP_BLOCK.has(word(i + 1))) end = nounEnd(i + 2);
+      if (end >= 0) kind = 'count';
+    }
+    if (!kind) continue;
+    out.push({
+      code: 'VOLATILE_DETAIL',
+      severity: 'info',
+      line: lineAt(block, toks[start].at),
+      message: `volatile ${kind}: "${excerpt(block.text.slice(toks[start].at, toks[end].end))}"; delete it or point to the command that reports it`,
+    });
+    i = end;
+    lastEnd = end;
+  }
+  return out;
+}
+
+function timeAnchors(block) {
+  const toks = lowerTokens(block.text);
+  const matches = (phrase, i) => phrase.every((w, k) => {
+    const t = toks[i + k]?.w;
+    return t !== undefined && (w === '<version>' ? VERSION_RE.test(t) : t === w);
+  });
+  const out = [];
+  for (let i = 0; i < toks.length; i++) {
+    const phrase = TIME_PHRASES.find((p) => matches(p, i));
+    if (!phrase) continue;
+    const end = i + phrase.length - 1;
+    out.push({
+      code: 'TIME_ANCHORED',
+      severity: 'info',
+      line: lineAt(block, toks[i].at),
+      message: `time-anchored: "${excerpt(block.text.slice(toks[i].at, toks[end].end))}"; describe the behavior without the time anchor`,
+    });
+    i = end;
+  }
+  return out;
+}
+
 function countWords(text) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
@@ -247,7 +384,9 @@ export function analyzeProse(model) {
     }
   }
 
-  for (const block of proseBlocks(model)) findings.push(...doubleNegatives(block), ...slashAlternatives(block));
+  for (const block of proseBlocks(model)) {
+    findings.push(...doubleNegatives(block), ...slashAlternatives(block), ...volatileDetails(block), ...timeAnchors(block));
+  }
   findings.sort((a, b) => (a.line || 0) - (b.line || 0));
   return findings;
 }

@@ -70,6 +70,15 @@ pairs a negator with a negative word that it does not negate, and a bare
 candidate and lists the drops, the same split as size: script for recall,
 model for judgment.
 
+Volatile details follow the same split. A digit count followed by a noun from
+a closed list (`147 tests`), a coverage or comparative figure (`94% coverage`,
+`3x faster`), a popularity figure (`1.2k stars`), or a dating phrase
+(`currently`, `as of v2`) is lexical, so `check-prose.mjs` finds every one.
+Whether the reader needs it is not lexical: `port 8080` and a documented
+limit look like filler and are not. The script skips the obvious pins (a
+number after a label word such as `step` or `Python`), and the LLM judges the
+rest.
+
 Noun strings ("shared dev/prod applies") and hidden verbs ("make a
 determination") are not lexical. Telling a stack of noun modifiers from an
 established compound needs part-of-speech tagging, which would add an NLP
