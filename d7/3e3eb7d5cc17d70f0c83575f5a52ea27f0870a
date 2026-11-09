@@ -1,0 +1,21 @@
+module/skills/docs-organization/scripts/antora.mjs
+  s_e724ed46208c4b::t_3b40e817074162 101
+tests/scripts/docs-organization/antora.test.mjs
+  s_e724ed46208c4b::t_5a49510dfe1308 92-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "d73e3eb7d5cc17d70f0c83575f5a52ea27f0870a",
+  "prompts": {},
+  "sessions": {
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
