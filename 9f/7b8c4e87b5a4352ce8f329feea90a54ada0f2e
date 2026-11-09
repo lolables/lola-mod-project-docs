@@ -1,0 +1,96 @@
+eval/fixtures/walkthrough-mkdocs/expected.json
+  s_e724ed46208c4b::t_c50eb6d9648770 1-7
+eval/fixtures/walkthrough-mkdocs/docs/upgrading.md
+  s_e724ed46208c4b::t_fa4aa51e1f0142 1-4
+eval/fixtures/walkthrough-repo/docs/usage/README.md
+  s_e724ed46208c4b::t_aed71cc3608749 1-5
+eval/fixtures/walkthrough-repo/SECURITY.md
+  s_e724ed46208c4b::t_6b7e72bf24f411 1-9
+eval/fixtures/walkthrough-repo/LICENSE
+  s_e724ed46208c4b::t_868c3d4ecce66a 1
+eval/fixtures/walkthrough-mkdocs/mkdocs.yml
+  s_e724ed46208c4b::t_5c9fe2bfc13a0d 1-7
+eval/fixtures/walkthrough-mkdocs/docs/configuration.md
+  s_e724ed46208c4b::t_20e2fac2b836f4 1-10
+eval/fixtures/walkthrough-mkdocs/docs/security.md
+  s_e724ed46208c4b::t_baa3d2bd0a1857 1-12
+eval/fixtures/walkthrough-mkdocs/docs/index.md
+  s_e724ed46208c4b::t_b89a33c1c466ff 1-12
+eval/fixtures/walkthrough-repo/docs/usage/configuration.md
+  s_e724ed46208c4b::t_1a7fb59a494aa2 1-11
+eval/fixtures/walkthrough-mkdocs/README.md
+  s_e724ed46208c4b::t_0ef64c7f32e1d6 1-6
+eval/fixtures/walkthrough-mkdocs/docs/contributing.md
+  s_e724ed46208c4b::t_83aa1a13657b93 1-10
+eval/fixtures/walkthrough-repo/expected.json
+  s_e724ed46208c4b::t_62c9e45bb442a5 1-7
+eval/run_walkthrough.py
+  s_e724ed46208c4b::t_b721b65c72a546 1-15,17-24,26-35,38-47,50-58,60-96,98-143
+  s_e724ed46208c4b::t_a2a9e905626efa 59
+  s_e724ed46208c4b::t_08d24544fd6744 48-49
+  s_e724ed46208c4b::t_7183d751c03313 97
+  s_e724ed46208c4b::t_ae5a07a4332a1d 36-37
+  s_e724ed46208c4b::t_33436c284e868b 16
+  s_e724ed46208c4b::t_9e5299cbc03c9e 25
+eval/fixtures/walkthrough-repo/README.md
+  s_e724ed46208c4b::t_352443a8420596 1-21
+eval/fixtures/walkthrough-repo/docs/dev/README.md
+  s_e724ed46208c4b::t_71759d1bd2b8b6 1-12
+eval/fixtures/walkthrough-repo/docs/dev/architecture.md
+  s_e724ed46208c4b::t_ec3a12c0554e3c 1-16
+eval/fixtures/walkthrough-repo/docs/dev/testing.md
+  s_e724ed46208c4b::t_c708944373175b 1-7
+eval/README.md
+  s_e724ed46208c4b::t_0fac43e314132e 36
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_e724ed46208c4b::t_85c64ff2d286f1 12-13
+  s_e724ed46208c4b::t_4d5cb2dce7f693 178
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_e724ed46208c4b::t_1d5e8b287b12cf 239-241,243-248
+  s_e724ed46208c4b::t_d45d156411d65e 242
+docs/dev/architecture.md
+  s_e724ed46208c4b::t_7bfdf4230906cb 231-233
+  s_e724ed46208c4b::t_82ce00874c74e6 61
+module/commands/docs-audit.md
+  s_e724ed46208c4b::t_5659c606a21856 150,711-718,723-731,733-740,745-757,759-768,772-788
+  s_e724ed46208c4b::t_409879d9f82ef7 732
+eval/prompts/locate.txt
+  s_e724ed46208c4b::t_c428dab517e501 1-6
+eval/prompts/walkthrough.txt
+  s_e724ed46208c4b::t_d5af10923335ab 1-13
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_e724ed46208c4b::t_82ce00874c74e6 49-51,131-133,150,153,159-161,164
+  s_e724ed46208c4b::t_083980c6d5f941 138-140
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_e724ed46208c4b::t_d57fc4186662b3 719-758
+CHANGELOG.md
+  s_e724ed46208c4b::t_083980c6d5f941 75-79
+module/skills/docs-organization/scripts/antora.mjs
+  s_e724ed46208c4b::t_82ce00874c74e6 14-15,63,91
+  s_e724ed46208c4b::t_3b40e817074162 101
+tests/scripts/docs-organization/antora.test.mjs
+  s_e724ed46208c4b::t_5a49510dfe1308 92-97
+eval/REPORT.md
+  s_e724ed46208c4b::t_496863f1f32278 1090
+  s_e724ed46208c4b::t_df73e14e6b9f2b 1049-1089,1091-1106
+eval/results/r17-walkthrough-k2.json
+  s_e724ed46208c4b::t_469cf2803301a4 1-73
+eval/results/r17-walkthrough.json
+  s_e724ed46208c4b::t_9a86c545824fb4 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9f7b8c4e87b5a4352ce8f329feea90a54ada0f2e",
+  "prompts": {},
+  "sessions": {
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}

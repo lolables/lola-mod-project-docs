@@ -1,0 +1,116 @@
+module/skills/docs-organization/reference/personas.md
+  s_24da9642f2cfd5::t_ce1b6a03f42b62 1-56
+tests/scripts/docs-organization/personas.test.mjs
+  s_24da9642f2cfd5::t_41b9ddfeadfad2 1-61
+  s_24da9642f2cfd5::t_66cfff5e86f950 62-66
+module/skills/docs-organization/scripts/personas.mjs
+  s_24da9642f2cfd5::t_82dfdaa85a0519 1-163
+module/skills/docs-organization/reference/placement-rules.md
+  s_24da9642f2cfd5::t_ad8413ddce560c 1-45
+module/skills/docs-organization/reference/rule-sources.md
+  s_24da9642f2cfd5::t_5e5d2017aeaa05 40-43
+module/commands/docs-audit.md
+  s_24da9642f2cfd5::t_490130d2d47366 746-749
+  s_24da9642f2cfd5::t_cbe72cec7005de 815,817
+  s_24da9642f2cfd5::t_9c84c7fb533fae 1035
+  s_24da9642f2cfd5::t_c3fbe81eb8fcda 1047,1057,1069,1077-1082
+  s_24da9642f2cfd5::t_786759f3d45bd1 34,42-45,116-126,133,149,152-173,708-711,714-715,767-769,775-776,912-931,1004-1006
+  s_24da9642f2cfd5::t_4df46b31abe68a 204,712-713,716-723,816,1025
+tests/scripts/docs-organization/routing-fixtures.mjs
+  s_24da9642f2cfd5::t_7a2bcfb602ac9b 1,4,6-7,10,14-21,23-58
+  s_24da9642f2cfd5::t_e4d99ab5fad479 13,22
+  s_24da9642f2cfd5::t_97af6490c3bdda 2-3
+  s_24da9642f2cfd5::t_378b837121d05e 59-140
+  s_24da9642f2cfd5::t_e7bda75aeef933 5,8-11
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_24da9642f2cfd5::t_9d49e947ab9974 1-23,27-38,40,42-96,98-110,121-183
+  s_24da9642f2cfd5::t_9cea10d6907dee 24-26,39,41,97,111-120
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_24da9642f2cfd5::t_7ce04ce2c0d846 1-3,5-7,9-67,71-103,115-140,142-146,149-150,152-154
+  s_24da9642f2cfd5::t_e4d99ab5fad479 4,8,68-70,104-114,141,147-148,151
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_24da9642f2cfd5::t_01e026fc3950e1 77,89,141,215
+module/skills/docs-organization/scripts/check-routing.mjs
+  s_24da9642f2cfd5::t_049d8dc2193a1a 1-14,30-31,50-56,61-136
+  s_24da9642f2cfd5::t_6215e32e8f07af 45-46,50
+  s_24da9642f2cfd5::t_320355d7639571 15-18
+  s_24da9642f2cfd5::t_91896370aeafaf 137-171,173-174,176-192
+  s_24da9642f2cfd5::t_fc3b5fcfd1f1e4 47-49
+  s_24da9642f2cfd5::t_c001eb0523d532 19-29,32-43
+  s_24da9642f2cfd5::t_5d915462fdae58 57-60
+  s_24da9642f2cfd5::t_4da252a01f93fb 253-255
+  s_24da9642f2cfd5::t_500e7e4fb8409a 257-259
+  s_e52e8a231e7d6e::t_e114331e7a5dad 193-215,218-219,221-252,260-283,285-322
+  s_24da9642f2cfd5::t_1ac783ef92da37 217
+  s_24da9642f2cfd5::t_19631bf13cd983 216,220,256,284
+  s_24da9642f2cfd5::t_41bbb7b135eb76 172,175
+tests/scripts/docs-organization/check-routing.test.mjs
+  s_24da9642f2cfd5::t_a0a14192293764 1-3,9-93
+  s_24da9642f2cfd5::t_7d126c484dc8b6 94-111,119-159
+  s_24da9642f2cfd5::t_4867a5e928eca8 7
+  s_24da9642f2cfd5::t_98ff8be3263c9e 4-6
+  s_24da9642f2cfd5::t_5381a2075cb621 160-169,171-253,256-257,259-297
+  s_24da9642f2cfd5::t_79ea7347a4d2fc 170,254-255,258,298-330
+  s_24da9642f2cfd5::t_04a2917ed641d0 331-351
+  s_24da9642f2cfd5::t_8db261cb8ff2bb 8
+  s_24da9642f2cfd5::t_41bbb7b135eb76 112-118
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_24da9642f2cfd5::t_586407bccc2983 40,60-68,421,439
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_24da9642f2cfd5::t_39a62892a3c95c 752-760
+module/commands/docs-update.md
+  s_24da9642f2cfd5::t_dc28f847290a46 343-345
+  s_24da9642f2cfd5::t_951bf373d4d365 79-80,354-358,366-367,373-377,382,384-388,391-395,521-522
+  s_24da9642f2cfd5::t_f98cac2bb22f5f 381
+  s_24da9642f2cfd5::t_119cbf8cae303f 81-82,87,347-352,359-365,368-372,378-380,383,389-390,519-520
+module/commands/docs-init.md
+  s_24da9642f2cfd5::t_8d12fa29c5506f 63-64
+  s_24da9642f2cfd5::t_1034bd9eacfb55 40-42,47-49,76-82,90-93,110-119,122
+  s_24da9642f2cfd5::t_694b4450a774a7 83-86,94-97,136-138
+module/skills/docs-organization/reference/readme-template.md
+  s_24da9642f2cfd5::t_fb2ad69b789d1c 37-43
+  s_24da9642f2cfd5::t_680e45271aa2f9 5-8
+module/skills/docs-organization/reference/docs-tree-template.md
+  s_24da9642f2cfd5::t_ae4e0eb0baa259 116-118
+  s_24da9642f2cfd5::t_c8ea22b973dfbd 44-45
+  s_24da9642f2cfd5::t_e05f26d835cc38 58-60
+  s_24da9642f2cfd5::t_aa174a5a3b44bd 23-38
+module/skills/docs-organization/SKILL.md
+  s_24da9642f2cfd5::t_0d9cd4fb1f65fb 212,215-216
+  s_24da9642f2cfd5::t_ecf0224d83b410 213-214
+CHANGELOG.md
+  s_24da9642f2cfd5::t_a014e7251076b6 11-22
+module/skills/docs-organization/reference/scripts.md
+  s_24da9642f2cfd5::t_0d9cd4fb1f65fb 10-21,23-25
+  s_24da9642f2cfd5::t_5c21f1bc7bc9d1 22
+README.md
+  s_24da9642f2cfd5::t_3671309f916ddd 260-263
+docs/dev/architecture.md
+  s_24da9642f2cfd5::t_3671309f916ddd 58,195-222,226-229
+  s_24da9642f2cfd5::t_3dd8ffb946a61c 230
+  s_24da9642f2cfd5::t_5435455a79ed47 223-225
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "ec913e09834a8d19f3abcf1a2f9eb1f6a470d856",
+  "prompts": {},
+  "sessions": {
+    "s_24da9642f2cfd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ea69f78-c5d1-48d9-ac25-00d738851a73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e52e8a231e7d6e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a454ce3cc5a944eb2",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}

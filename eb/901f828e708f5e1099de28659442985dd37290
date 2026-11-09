@@ -1,0 +1,120 @@
+docs/dev/vendoring.md
+  s_24da9642f2cfd5::t_0e630da288417a 26,54-55,59,73,75,78,80-82,102-103
+.taskfiles/scripts/build-vendor.sh
+  s_24da9642f2cfd5::t_354edc256b217a 133
+  s_24da9642f2cfd5::t_7cc2c9e76c8743 49-51,62,80,87
+module/skills/docs-organization/scripts/vendor/LICENSES.md
+  s_24da9642f2cfd5::t_0045254a025cae 5,173-200
+module/skills/docs-organization/scripts/vendor/js-yaml.mjs
+  s_24da9642f2cfd5::t_908666dbcf9e52 1-2507
+module/skills/docs-organization/scripts/link-targets.mjs
+  s_24da9642f2cfd5::t_f8834a4a26367d 1-33
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_24da9642f2cfd5::t_f8834a4a26367d 80
+  s_66098f209c01da::t_4510c13b412af9 47-48,52-53,81-82,137,141-142,151-152,154-158,162-163,165-167,259-270,303
+  s_66098f209c01da::t_f646acd8c16d88 79,317
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_24da9642f2cfd5::t_13d66820ada471 4-5
+  s_24da9642f2cfd5::t_7d07a2f28afba8 46-48,53
+  s_66098f209c01da::t_389598a806d38e 10-15,21-31,49-50,80-100,116-118,121,127-133,138-163
+module/skills/docs-organization/scripts/docs-mode.mjs
+  s_24da9642f2cfd5::t_7d07a2f28afba8 1-52
+tests/scripts/docs-organization/site-yaml.test.mjs
+  s_24da9642f2cfd5::t_c3bc6524cfbd26 1-2,4-29,32-38
+  s_24da9642f2cfd5::t_901fd4520194ce 30-31
+  s_66098f209c01da::t_bd24cd6f66eafd 3,39-44
+module/skills/docs-organization/scripts/site-yaml.mjs
+  s_24da9642f2cfd5::t_3b9362b44192db 1-43,52-54,57-58,60,62-64,66-68
+  s_24da9642f2cfd5::t_4a82f5c2e5888b 55-56
+  s_66098f209c01da::t_398b48c4fed01a 44-51,59,61,65
+tests/scripts/docs-organization/mkdocs.test.mjs
+  s_24da9642f2cfd5::t_7a780f35413800 1-2,4-52
+  s_66098f209c01da::t_8eca6a80d4cc7c 3,53-71
+module/skills/docs-organization/scripts/mkdocs.mjs
+  s_24da9642f2cfd5::t_093435dd6e3c47 1-21,23-29,31-32,34-38,40-45,47-55,57,59,64-74
+  s_24da9642f2cfd5::t_834cae3c6cd30a 58
+  s_24da9642f2cfd5::t_ec45840bf3f1ca 22,30,33,39,46,56,60-63
+tests/scripts/docs-organization/antora.test.mjs
+  s_24da9642f2cfd5::t_d2a25908fef659 1-84
+  s_66098f209c01da::t_ce204377d71a5a 85-91
+module/skills/docs-organization/scripts/antora.mjs
+  s_24da9642f2cfd5::t_6bbd0da96bfcfb 1-13,16-23,25-32,34-35,37-39,42-62,64-90,92,98-100,102-109,113-118
+  s_24da9642f2cfd5::t_8c712881432bfe 24
+  s_24da9642f2cfd5::t_c9aea3c4ad7957 33,36,40-41,93-97,110-112
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_66098f209c01da::t_77db424f818e25 8,155-218
+tests/scripts/docs-organization/routing-fixtures.mjs
+  s_66098f209c01da::t_af0dfa38301d37 130-176,179-180,185
+module/skills/docs-organization/scripts/check-routing.mjs
+  s_66098f209c01da::t_827714550aed90 33-45,50-51,177-178,187,210,216,287-323,326-329,343-350,353-354,356
+  s_66098f209c01da::t_95cb64f7a5806f 62,377
+tests/scripts/docs-organization/check-routing.test.mjs
+  s_66098f209c01da::t_5062c9df202717 8,254,280,352-432,434-436
+  s_66098f209c01da::t_c212e41e4e43c8 433
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_66098f209c01da::t_bf8c088e504c59 3,9,669-700,758
+  s_66098f209c01da::t_ca77c86c973eba 701-717
+module/commands/docs-update.md
+  s_24da9642f2cfd5::t_62abb6873129b0 368-370,382-384,389-392,395-399
+  s_24da9642f2cfd5::t_08299d9c5ed3a1 393-394
+  s_24da9642f2cfd5::t_3018efedd52b98 371-372
+module/commands/docs-audit.md
+  s_24da9642f2cfd5::t_df15641c613aa4 122,138,328-330,933,937,1096,1098-1099,1106-1108
+  s_24da9642f2cfd5::t_e60922343a1e7b 1097
+  s_24da9642f2cfd5::t_00f948e007c342 123-126
+  s_24da9642f2cfd5::t_fbfd5410f0dfe8 938-939
+  s_24da9642f2cfd5::t_94d69c95b03341 161-165
+  s_24da9642f2cfd5::t_cb4007c9e14970 934-935
+module/skills/docs-organization/reference/personas.md
+  s_24da9642f2cfd5::t_0ca3da6bc7c54a 45-47
+module/skills/docs-organization/reference/scripts.md
+  s_24da9642f2cfd5::t_0ca3da6bc7c54a 18-21,23,29-35,52-53
+  s_24da9642f2cfd5::t_cb237ce5870771 24-26
+docs/dev/architecture.md
+  s_24da9642f2cfd5::t_50011db788d011 220-227
+CHANGELOG.md
+  s_24da9642f2cfd5::t_50011db788d011 24-28
+  s_24da9642f2cfd5::t_298a81aada3e27 19
+  s_24da9642f2cfd5::t_0151bba8b056eb 29-31
+  s_24da9642f2cfd5::t_8612dcc808ead0 20-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "eb901f828e708f5e1099de28659442985dd37290",
+  "prompts": {},
+  "sessions": {
+    "s_24da9642f2cfd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ea69f78-c5d1-48d9-ac25-00d738851a73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_61b4178157253e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aa775ba7a0efa754f",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_66098f209c01da": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a52f76e730dd8a9dc",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
