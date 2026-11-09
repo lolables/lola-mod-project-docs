@@ -1,0 +1,21 @@
+module/commands/docs-audit.md
+  s_e724ed46208c4b::t_ce29327ea2bfd3 52-53,62-63,150,704-723,726-764,973-977,1060-1061
+  s_e724ed46208c4b::t_b25291bf353ece 724-725
+  s_e724ed46208c4b::t_dd7b8ca3afede4 800-803,1070-1071,1094,1116,1149,1198-1200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "3ad3b3ba2d599ff48768c012c6ebe1fb504d4f5a",
+  "prompts": {},
+  "sessions": {
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
