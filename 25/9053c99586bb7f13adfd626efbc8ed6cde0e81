@@ -1,0 +1,24 @@
+eval/REPORT.md
+  s_e724ed46208c4b::t_496863f1f32278 1090
+  s_e724ed46208c4b::t_df73e14e6b9f2b 1049-1089,1091-1106
+eval/results/r17-walkthrough-k2.json
+  s_e724ed46208c4b::t_469cf2803301a4 1-73
+eval/results/r17-walkthrough.json
+  s_e724ed46208c4b::t_9a86c545824fb4 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "259053c99586bb7f13adfd626efbc8ed6cde0e81",
+  "prompts": {},
+  "sessions": {
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
