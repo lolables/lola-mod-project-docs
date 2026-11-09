@@ -1,0 +1,51 @@
+module/skills/docs-organization/reference/lane6-prompts/diagram-drift.md
+  s_8cd2ee9896e93d::t_54b278d5d7e930 1-7
+module/skills/docs-organization/reference/lane6-prompts/drift-cited.md
+  s_8cd2ee9896e93d::t_54b278d5d7e930 1-9
+module/skills/docs-organization/reference/lane6-prompts/completeness.md
+  s_8cd2ee9896e93d::t_948c5650806606 1
+  s_8cd2ee9896e93d::t_87ccafc4de1142 2-8
+module/skills/docs-organization/reference/lane6-prompts/cold-read.md
+  s_8cd2ee9896e93d::t_948c5650806606 1
+  s_8cd2ee9896e93d::t_9c680c4f91878f 2-7
+module/skills/docs-organization/reference/lane6-prompts/adjudicate.md
+  s_8cd2ee9896e93d::t_575decc104d5b0 5
+  s_8cd2ee9896e93d::t_54b278d5d7e930 1-4,6-14
+module/skills/docs-organization/reference/lane6-prompts/procedure-structure.md
+  s_8cd2ee9896e93d::t_948c5650806606 1
+  s_8cd2ee9896e93d::t_81d8b7aaa94a4d 2-7
+module/skills/docs-organization/reference/lane6-prompts/_grounding-note.md
+  s_8cd2ee9896e93d::t_ee2add0689ea95 1-4
+module/skills/docs-organization/reference/lane6-prompts/_read-only.md
+  s_8cd2ee9896e93d::t_18764f41c6716f 1
+module/skills/docs-organization/reference/lane6-prompts/_untrusted.md
+  s_8cd2ee9896e93d::t_bd08cd20c42d5c 1
+module/skills/docs-organization/reference/lane6-prompts/drift-extract.md
+  s_8cd2ee9896e93d::t_07b6e6ecb21fcf 1-5
+module/skills/docs-organization/reference/lane6-prompts/drift-verify.md
+  s_8cd2ee9896e93d::t_26c665a2e8316e 1-10
+module/skills/docs-organization/reference/lane6-prompts/grounding.md
+  s_8cd2ee9896e93d::t_c6f43c3259d940 1-7
+module/skills/docs-organization/reference/lane6-prompts/hero-demo.md
+  s_8cd2ee9896e93d::t_6949dd60f2135c 1-8
+module/skills/docs-organization/reference/lane6-prompts/missing-diagrams.md
+  s_8cd2ee9896e93d::t_bae2d211b55118 1-7
+module/skills/docs-organization/reference/lane6-prompts/plain-language.md
+  s_8cd2ee9896e93d::t_48c850f2685d27 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "5e7854c14d8a7d7a8d5e4b7e159e66d62a6c3cb6",
+  "prompts": {},
+  "sessions": {
+    "s_8cd2ee9896e93d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "454fcbba-80fb-4c82-8cfc-4d7fbec420e2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
