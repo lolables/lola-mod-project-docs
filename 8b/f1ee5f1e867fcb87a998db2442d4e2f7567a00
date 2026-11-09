@@ -1,0 +1,26 @@
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_f9f47c1462725d::t_34985976fd1a7c 36-38
+  s_f9f47c1462725d::t_7921d3a0c93898 59,110-112,114-133,230
+eval/run_walkthrough.py
+  s_f9f47c1462725d::t_34985976fd1a7c 94-95,106-107
+module/commands/docs-audit.md
+  s_f9f47c1462725d::t_34985976fd1a7c 792
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_f9f47c1462725d::t_fe55cb09ac6702 390-400
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8bf1ee5f1e867fcb87a998db2442d4e2f7567a00",
+  "prompts": {},
+  "sessions": {
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
