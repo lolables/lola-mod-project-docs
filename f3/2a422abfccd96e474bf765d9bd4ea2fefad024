@@ -1,0 +1,32 @@
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_e724ed46208c4b::t_687b0d9cd63a0a 38
+  s_e724ed46208c4b::t_4c653c19e650b7 1-37,39-46
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_61b4178157253e::t_8f7480c3c349dc 1-95
+tests/scripts/docs-organization/routing-fixtures.mjs
+  s_61b4178157253e::t_f09ce479845a1e 176-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "f32a422abfccd96e474bf765d9bd4ea2fefad024",
+  "prompts": {},
+  "sessions": {
+    "s_61b4178157253e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aa775ba7a0efa754f",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
