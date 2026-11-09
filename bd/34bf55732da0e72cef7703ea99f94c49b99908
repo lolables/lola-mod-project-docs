@@ -1,0 +1,32 @@
+module/skills/docs-organization/scripts/antora.mjs
+  s_f9f47c1462725d::t_5a8eb0a0a3ddd8 21-26,103,123,131,138,140
+module/commands/docs-audit.md
+  s_f9f47c1462725d::t_1faab04baf348c 341-343
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_f9f47c1462725d::t_bf3a1a336f760e 812,816-818
+  s_f9f47c1462725d::t_2c63b7aceef609 709-727,781-789,791
+  s_f9f47c1462725d::t_d86db3d9943416 790,792
+module/skills/docs-organization/reference/scripts.md
+  s_f9f47c1462725d::t_1faab04baf348c 59-61
+tests/scripts/docs-organization/antora.test.mjs
+  s_f9f47c1462725d::t_2c63b7aceef609 87-93,117
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_f9f47c1462725d::t_5a8eb0a0a3ddd8 166,171-172,174-175
+  s_f9f47c1462725d::t_bf3a1a336f760e 173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "bd34bf55732da0e72cef7703ea99f94c49b99908",
+  "prompts": {},
+  "sessions": {
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
