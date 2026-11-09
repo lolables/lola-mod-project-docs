@@ -1,0 +1,25 @@
+eval/run_walkthrough.py
+  s_e724ed46208c4b::t_a2a9e905626efa 56
+eval/prompts/locate.txt
+  s_e724ed46208c4b::t_c428dab517e501 1-6
+module/commands/docs-audit.md
+  s_e724ed46208c4b::t_409879d9f82ef7 732
+eval/prompts/walkthrough.txt
+  s_e724ed46208c4b::t_d5af10923335ab 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a030a3bc699c3789e09837df082dbfc7ecfc41ac",
+  "prompts": {},
+  "sessions": {
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
