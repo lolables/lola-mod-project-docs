@@ -1,0 +1,37 @@
+docs/dev/architecture.md
+  s_e4efd1239c30e4::t_4d94ba48babcc7 220-223
+module/commands/docs-audit.md
+  s_e4efd1239c30e4::t_61cdd13c178ad4 125-126,335-339
+module/skills/docs-organization/reference/scripts.md
+  s_e4efd1239c30e4::t_82e1fa42614a13 58-59
+module/skills/docs-organization/scripts/antora.mjs
+  s_e4efd1239c30e4::t_965b373515da68 17-19,33-34,51,55,117
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_e4efd1239c30e4::t_2a3381b901246b 78,142-144,152,155,160-166
+module/skills/docs-organization/scripts/docs-mode.mjs
+  s_e4efd1239c30e4::t_25d41a9b246adf 12-14,25-35,38-42
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_e4efd1239c30e4::t_8bdf5cc9e04a3e 138
+tests/scripts/docs-organization/antora.test.mjs
+  s_e4efd1239c30e4::t_53c262359b22a3 51-59
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_e4efd1239c30e4::t_19fd7c0419cd70 779-806
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_e4efd1239c30e4::t_af9d6e63174fcf 22-30,210-221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "98b161a814632d58603ad079de621688b931820e",
+  "prompts": {},
+  "sessions": {
+    "s_e4efd1239c30e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a425b3cf94600ecd9",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
