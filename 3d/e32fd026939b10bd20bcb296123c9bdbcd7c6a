@@ -1,0 +1,59 @@
+eval/prompts/walkthrough.txt
+  s_e724ed46208c4b::t_8cd452e59de652 1
+eval/fixtures/walkthrough-mkdocs/expected.json
+  s_e724ed46208c4b::t_c50eb6d9648770 1-7
+eval/fixtures/walkthrough-mkdocs/docs/upgrading.md
+  s_e724ed46208c4b::t_fa4aa51e1f0142 1-4
+eval/fixtures/walkthrough-repo/docs/usage/README.md
+  s_e724ed46208c4b::t_aed71cc3608749 1-5
+eval/fixtures/walkthrough-repo/SECURITY.md
+  s_e724ed46208c4b::t_6b7e72bf24f411 1-9
+eval/fixtures/walkthrough-repo/LICENSE
+  s_e724ed46208c4b::t_868c3d4ecce66a 1
+eval/fixtures/walkthrough-mkdocs/mkdocs.yml
+  s_e724ed46208c4b::t_5c9fe2bfc13a0d 1-7
+eval/fixtures/walkthrough-mkdocs/docs/configuration.md
+  s_e724ed46208c4b::t_20e2fac2b836f4 1-10
+eval/fixtures/walkthrough-mkdocs/docs/security.md
+  s_e724ed46208c4b::t_baa3d2bd0a1857 1-12
+eval/fixtures/walkthrough-mkdocs/docs/index.md
+  s_e724ed46208c4b::t_b89a33c1c466ff 1-12
+eval/prompts/locate.txt
+  s_e724ed46208c4b::t_7e233e2774a8a4 1
+eval/fixtures/walkthrough-repo/docs/usage/configuration.md
+  s_e724ed46208c4b::t_1a7fb59a494aa2 1-11
+eval/fixtures/walkthrough-mkdocs/README.md
+  s_e724ed46208c4b::t_0ef64c7f32e1d6 1-6
+eval/fixtures/walkthrough-mkdocs/docs/contributing.md
+  s_e724ed46208c4b::t_83aa1a13657b93 1-10
+eval/fixtures/walkthrough-repo/expected.json
+  s_e724ed46208c4b::t_62c9e45bb442a5 1-7
+eval/run_walkthrough.py
+  s_e724ed46208c4b::t_b721b65c72a546 1-140
+eval/fixtures/walkthrough-repo/README.md
+  s_e724ed46208c4b::t_352443a8420596 1-21
+eval/fixtures/walkthrough-repo/docs/dev/README.md
+  s_e724ed46208c4b::t_71759d1bd2b8b6 1-12
+eval/fixtures/walkthrough-repo/docs/dev/architecture.md
+  s_e724ed46208c4b::t_ec3a12c0554e3c 1-16
+eval/fixtures/walkthrough-repo/docs/dev/testing.md
+  s_e724ed46208c4b::t_c708944373175b 1-7
+eval/README.md
+  s_e724ed46208c4b::t_0fac43e314132e 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "3de32fd026939b10bd20bcb296123c9bdbcd7c6a",
+  "prompts": {},
+  "sessions": {
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
