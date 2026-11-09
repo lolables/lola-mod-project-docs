@@ -1,0 +1,38 @@
+module/commands/docs-audit.md
+  s_f9f47c1462725d::t_1e4ff7b6a5ebcd 346-351,353-356,360-361
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_f9f47c1462725d::t_63c5cadb490e36 196-218
+tests/scripts/docs-organization/antora.test.mjs
+  s_f9f47c1462725d::t_b6b29f716ea0ea 6,168-200
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_f9f47c1462725d::t_604abf19cd20c0 68,182-183,190
+module/skills/docs-organization/scripts/antora.mjs
+  s_f9f47c1462725d::t_529648eac25f68 31-41,191-203
+  s_f9f47c1462725d::t_ff03306fad857d 51,59-70
+  s_f9f47c1462725d::t_f1a46e40b97aac 71
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_f9f47c1462725d::t_1e6a6536ecdd51 771,803-815,839-845
+  s_f9f47c1462725d::t_63c5cadb490e36 944-952
+  s_f9f47c1462725d::t_5f5ce2ae0c1e66 846
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_f9f47c1462725d::t_604abf19cd20c0 90,166-168,172-173
+  s_f9f47c1462725d::t_ced3a101945278 83
+module/skills/docs-organization/reference/scripts.md
+  s_f9f47c1462725d::t_1e4ff7b6a5ebcd 64-69,72-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "704c4663cb9568d96f9d4c2cd87657a219953419",
+  "prompts": {},
+  "sessions": {
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
