@@ -1,0 +1,36 @@
+module/skills/docs-organization/scripts/mkdocs.mjs
+  s_f9f47c1462725d::t_408f2d7220a5b5 63
+  s_f9f47c1462725d::t_ce86a0128f3b12 74
+tests/scripts/docs-organization/check-routing.test.mjs
+  s_f9f47c1462725d::t_1b88d103331184 252-255,257-271
+  s_f9f47c1462725d::t_46611f5148e62f 256
+  s_f9f47c1462725d::t_eabb95e8bff2fe 391,393,395
+module/skills/docs-organization/scripts/check-routing.mjs
+  s_f9f47c1462725d::t_9dfddb6831010b 401-403
+  s_f9f47c1462725d::t_a959952e2449b8 197
+  s_f9f47c1462725d::t_882a61e7dee12e 207
+  s_f9f47c1462725d::t_940fdd1f86edaf 69,237,243
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_f9f47c1462725d::t_940fdd1f86edaf 112,123,167,169,239-241,282,286
+  s_f9f47c1462725d::t_29bf8de848bcd5 165-166,231,234
+tests/scripts/docs-organization/mkdocs.test.mjs
+  s_f9f47c1462725d::t_157226d2292317 90-94
+module/skills/docs-organization/reference/scripts.md
+  s_f9f47c1462725d::t_987b942084c8cf 14-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "01185d5aea57dfa5bac8b07a597238dd164109e8",
+  "prompts": {},
+  "sessions": {
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
