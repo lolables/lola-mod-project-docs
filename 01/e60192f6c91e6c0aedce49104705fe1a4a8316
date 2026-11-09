@@ -1,0 +1,36 @@
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_f9f47c1462725d::t_d197eb1ecbc0fb 229
+  s_f9f47c1462725d::t_883f63e0e8d454 123-124
+  s_f9f47c1462725d::t_4445d687329b49 230,254-255,257-263,276-286
+  s_f9f47c1462725d::t_cab0babc5d5723 121-122,125
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_f9f47c1462725d::t_6962793b37b005 361
+  s_f9f47c1462725d::t_70115b603e8c99 368
+  s_f9f47c1462725d::t_8a86ee47bc3a98 74-84
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_f9f47c1462725d::t_24aa361ffc9871 316-325
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_f9f47c1462725d::t_13b377d30135a3 175
+  s_f9f47c1462725d::t_f0eb7c964f5270 55-57
+  s_f9f47c1462725d::t_71c17d9c51f840 11-15
+tests/scripts/docs-organization/mkdocs.test.mjs
+  s_f9f47c1462725d::t_37f304792a63b1 69-86
+module/skills/docs-organization/scripts/mkdocs.mjs
+  s_f9f47c1462725d::t_b0f8f58e5d64fc 9-12,33-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "01e60192f6c91e6c0aedce49104705fe1a4a8316",
+  "prompts": {},
+  "sessions": {
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
