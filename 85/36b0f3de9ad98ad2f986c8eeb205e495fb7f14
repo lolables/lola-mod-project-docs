@@ -1,0 +1,23 @@
+module/skills/docs-organization/reference/personas.md
+  s_61b4178157253e::t_7a5ddc7dc7488d 31-33,41-58
+module/skills/docs-organization/scripts/personas.mjs
+  s_61b4178157253e::t_c170166d921f33 33-35,56,72,88,101,114,130,146,159
+tests/scripts/docs-organization/personas.test.mjs
+  s_61b4178157253e::t_6371937e38e69e 67-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8536b0f3de9ad98ad2f986c8eeb205e495fb7f14",
+  "prompts": {},
+  "sessions": {
+    "s_61b4178157253e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aa775ba7a0efa754f",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
