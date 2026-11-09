@@ -1,0 +1,23 @@
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_66098f209c01da::t_389598a806d38e 10-15,21-31,49-50,80-100,116-118,121,127-133,138-163
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_66098f209c01da::t_77db424f818e25 8,155-218
+tests/scripts/docs-organization/routing-fixtures.mjs
+  s_66098f209c01da::t_af0dfa38301d37 130-176,179-180,185
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "dfb8853654deeecff4168a44a4755e3ae5814c23",
+  "prompts": {},
+  "sessions": {
+    "s_66098f209c01da": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a52f76e730dd8a9dc",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
