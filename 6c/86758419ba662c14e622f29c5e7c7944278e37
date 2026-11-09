@@ -1,0 +1,41 @@
+module/skills/docs-organization/scripts/check-routing.mjs
+  s_f9f47c1462725d::t_969261c2f1fdbb 404
+  s_f9f47c1462725d::t_bb819acb0d45b3 66
+  s_f9f47c1462725d::t_5e651749eb65dd 188
+  s_f9f47c1462725d::t_e8c7de23147df6 69
+  s_f9f47c1462725d::t_58d22f058db884 315-323
+  s_f9f47c1462725d::t_964bb5166ca6e7 337
+  s_f9f47c1462725d::t_c5443e8f798c22 354-356
+  s_f9f47c1462725d::t_6b8ed570738b3e 387
+  s_f9f47c1462725d::t_64cf28bc027568 328
+  s_f9f47c1462725d::t_b858234df8ed87 417,420-423
+  s_f9f47c1462725d::t_83d633d5df2f9e 59-64
+tests/scripts/docs-organization/check-routing.test.mjs
+  s_f9f47c1462725d::t_ffb4a9fdaaa4af 601-608,613-617,620-630
+  s_f9f47c1462725d::t_a1b75dfed0ffd2 631
+module/commands/docs-audit.md
+  s_f9f47c1462725d::t_e94f4efebddf6f 1204-1213
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_f9f47c1462725d::t_09615cedf5f805 224
+  s_f9f47c1462725d::t_e0c9d70d4f4a5b 28-31
+  s_f9f47c1462725d::t_9835d1c0034273 167
+  s_f9f47c1462725d::t_4e749511fa1d2e 104-108,110-113,115-121,126-132,134-143
+  s_f9f47c1462725d::t_f7f51b755307d4 156
+  s_f9f47c1462725d::t_d3bd32beee455b 65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "6c86758419ba662c14e622f29c5e7c7944278e37",
+  "prompts": {},
+  "sessions": {
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
