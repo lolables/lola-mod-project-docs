@@ -1,0 +1,21 @@
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_61b4178157253e::t_3196def2059df3 38-40,104-110,119,133,183-189,202,207-220
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_61b4178157253e::t_44c5ac22d6ad4b 4,7,219-241
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "166cb8beca29191b477da9a1a88b3236923567f0",
+  "prompts": {},
+  "sessions": {
+    "s_61b4178157253e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aa775ba7a0efa754f",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
