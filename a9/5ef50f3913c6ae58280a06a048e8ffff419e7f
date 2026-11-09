@@ -1,0 +1,24 @@
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_f9f47c1462725d::t_03c672dc7d9d56 802,805,809-812
+tests/scripts/docs-organization/antora.test.mjs
+  s_f9f47c1462725d::t_cd2f3a6e12b2ce 76
+  s_f9f47c1462725d::t_f8bd805af3e748 75
+module/skills/docs-organization/scripts/antora.mjs
+  s_f9f47c1462725d::t_b36678a0346eab 109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a95ef50f3913c6ae58280a06a048e8ffff419e7f",
+  "prompts": {},
+  "sessions": {
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
