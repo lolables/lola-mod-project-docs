@@ -1,0 +1,23 @@
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_e724ed46208c4b::t_85c64ff2d286f1 12-13
+  s_e724ed46208c4b::t_4d5cb2dce7f693 178
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_e724ed46208c4b::t_1d5e8b287b12cf 239-241,243-248
+  s_e724ed46208c4b::t_d45d156411d65e 242
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7b9e0917f0d19cdfd55912a8e677291fc020ab38",
+  "prompts": {},
+  "sessions": {
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
