@@ -1,0 +1,23 @@
+module/commands/docs-audit.md
+  s_e0bad810b81ee8::t_b350f9628d3659 222-225,1067-1068
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_e0bad810b81ee8::t_ef3d1565ee7de6 36,62-64,66-69,73-76,401,433-435,440,446,454,483
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_e0bad810b81ee8::t_e9aa106e151d39 28,754-771
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "3f9b14e9633744b44c1cf166f375af7d3cdc01b3",
+  "prompts": {},
+  "sessions": {
+    "s_e0bad810b81ee8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aae11e431a10446b4",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
