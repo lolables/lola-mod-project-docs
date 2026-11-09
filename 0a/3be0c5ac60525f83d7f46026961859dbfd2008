@@ -1,0 +1,21 @@
+module/skills/docs-organization/scripts/check-routing.mjs
+  s_66098f209c01da::t_827714550aed90 33-45,50-51,176-177,186,209,215,286-322,325-328,342-349,352-353,355
+tests/scripts/docs-organization/check-routing.test.mjs
+  s_66098f209c01da::t_5062c9df202717 8,254,280,352-435
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "0a3be0c5ac60525f83d7f46026961859dbfd2008",
+  "prompts": {},
+  "sessions": {
+    "s_66098f209c01da": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a52f76e730dd8a9dc",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
