@@ -1,0 +1,21 @@
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_a7ffb5343143cf::t_76a61597f1cb63 21,47-51,89-90,92-93,96,101,103-105,108-109,117,122,232
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_a7ffb5343143cf::t_cd392a4d4e00cc 472-492
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a237bf17e6417b8c3525a1c1edc03adcb7ea41fd",
+  "prompts": {},
+  "sessions": {
+    "s_a7ffb5343143cf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a6ea3d526cd560819",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
