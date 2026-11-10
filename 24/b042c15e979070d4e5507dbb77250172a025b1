@@ -1,0 +1,583 @@
+module/skills/docs-organization/reference/personas.md
+  s_24da9642f2cfd5::t_ce1b6a03f42b62 1-16,19-21,25-31,35-37,41-42,61-67,71-82
+  s_24da9642f2cfd5::t_0ca3da6bc7c54a 68-70
+  s_f9f47c1462725d::t_4d3c54941a9535 38-40
+  s_f9f47c1462725d::t_3ab037f617ae53 17-18
+  s_f9f47c1462725d::t_25c3ec1466dd01 22-24
+tests/scripts/docs-organization/personas.test.mjs
+  s_24da9642f2cfd5::t_41b9ddfeadfad2 1-61
+  s_24da9642f2cfd5::t_66cfff5e86f950 62-66
+module/skills/docs-organization/scripts/personas.mjs
+  s_24da9642f2cfd5::t_82dfdaa85a0519 1-17,23-34,38-57,59-73,75-89,91-102,104-115,117-123,125,127-132,134-141,143,146-151,153-164,166-180
+  s_f9f47c1462725d::t_1a7cb2a5f689d8 126,142,144-145
+  s_f9f47c1462725d::t_25c3ec1466dd01 18-22,124
+module/skills/docs-organization/reference/placement-rules.md
+  s_24da9642f2cfd5::t_ad8413ddce560c 1-45
+module/skills/docs-organization/reference/rule-sources.md
+  s_24da9642f2cfd5::t_5e5d2017aeaa05 40-41,43-44
+module/commands/docs-audit.md
+  s_24da9642f2cfd5::t_490130d2d47366 898-901
+  s_24da9642f2cfd5::t_cbe72cec7005de 967,969
+  s_24da9642f2cfd5::t_9c84c7fb533fae 1201
+  s_24da9642f2cfd5::t_c3fbe81eb8fcda 1213,1223,1236,1244-1246
+  s_24da9642f2cfd5::t_786759f3d45bd1 34,42-45,119-124,135-138,162,165-168,174-190,857-860,863-864,919-921,927-928,1072-1080,1084,1088-1095,1170-1171
+  s_24da9642f2cfd5::t_4df46b31abe68a 221,861-862,865-871,968,1190
+  s_24da9642f2cfd5::t_df15641c613aa4 127,145,336,1081,1085,1263-1264
+  s_24da9642f2cfd5::t_00f948e007c342 128-131
+  s_24da9642f2cfd5::t_fbfd5410f0dfe8 1086-1087
+  s_24da9642f2cfd5::t_94d69c95b03341 169-173
+  s_24da9642f2cfd5::t_cb4007c9e14970 1082-1083
+  s_e724ed46208c4b::t_5659c606a21856 154,756-763,768-776,778-785,790-792,794-802,804-813,819-820,823-830,835-836
+  s_e724ed46208c4b::t_409879d9f82ef7 777
+  s_f9f47c1462725d::t_aa3ae85f42a213 793
+  s_f9f47c1462725d::t_6d6f2b3419e6e8 1265
+  s_e4efd1239c30e4::t_61cdd13c178ad4 125-126,337-340
+  s_f9f47c1462725d::t_c1eb6894088d61 815-818
+  s_f9f47c1462725d::t_e168196279469a 821-822,831,833-834
+  s_f9f47c1462725d::t_34985976fd1a7c 832
+  s_f9f47c1462725d::t_e94f4efebddf6f 1247-1251,1255-1258
+  s_f9f47c1462725d::t_93eb770c9c04a2 1252-1254
+  s_f9f47c1462725d::t_cf73722aa523be 132-134,1287-1290
+  s_f9f47c1462725d::t_1a5fa55c4f9c1b 1266-1271
+  s_f9f47c1462725d::t_1faab04baf348c 341-342
+  s_f9f47c1462725d::t_6be52dbb752859 343-345,352
+  s_f9f47c1462725d::t_ce5e38462ad427 357-359,362-368
+  s_f9f47c1462725d::t_1e4ff7b6a5ebcd 346-351,353-356,360-361
+  s_f9f47c1462725d::t_6617f66cc19497 485-495
+  s_f9f47c1462725d::t_8b809e241638db 1049-1052
+  s_8cd2ee9896e93d::t_792be90335b9b1 299-304
+tests/scripts/docs-organization/routing-fixtures.mjs
+  s_24da9642f2cfd5::t_7a2bcfb602ac9b 1,4,6-7,10,14-21,23-58
+  s_24da9642f2cfd5::t_e4d99ab5fad479 13,22
+  s_24da9642f2cfd5::t_97af6490c3bdda 2-3
+  s_24da9642f2cfd5::t_378b837121d05e 59-129,196-197,200-203,205
+  s_24da9642f2cfd5::t_e7bda75aeef933 5,8-11
+  s_66098f209c01da::t_af0dfa38301d37 130-175,195,198-199,204
+module/skills/docs-organization/scripts/nav-graph.mjs
+  s_24da9642f2cfd5::t_9d49e947ab9974 1-3,6-9,16-17,36-37,39-42,56-60,63,69-70,72-73,78,80-85,88-90,92-96,98-101,158,167,173-174,176-179,194-197,243-244,251,253-258,300,302,310-313,348-359,361-365
+  s_24da9642f2cfd5::t_9cea10d6907dee 18-20,61,62,91,160-163
+  s_24da9642f2cfd5::t_13d66820ada471 4-5
+  s_24da9642f2cfd5::t_7d07a2f28afba8 64,71
+  s_66098f209c01da::t_389598a806d38e 10-15,21-27,32-33,66,102-106,112,117,128-131,145-148,171,175,183-184,186-188,198-200,208-211,216-226,233-235,242
+  s_f9f47c1462725d::t_5065ed9f1218b4 50,159,318
+  s_f9f47c1462725d::t_98a249ec1c6e7a 360
+  s_f9f47c1462725d::t_c607424d43d0e0 248-250,252
+  s_f9f47c1462725d::t_2eacb8a55ad879 134
+  s_e4efd1239c30e4::t_8bdf5cc9e04a3e 185
+  s_f9f47c1462725d::t_b2da456fed42f4 87,227-232,263
+  s_f9f47c1462725d::t_b32d5677e6ac09 38,43
+  s_f9f47c1462725d::t_c9ddb9a2274f96 34-35
+  s_f9f47c1462725d::t_19b3a7245a1a90 74-77,79
+  s_f9f47c1462725d::t_903db78ebc5eba 97
+  s_f9f47c1462725d::t_3d9e90cfc22e51 212-215
+  s_f9f47c1462725d::t_7abb66dde83910 86
+  s_f9f47c1462725d::t_02b4c0324def8c 44-45
+  s_f9f47c1462725d::t_cfc780d86eb3f5 169-170
+  s_f9f47c1462725d::t_46e8df4d1c6465 46-48
+  s_f9f47c1462725d::t_cd5774811cd1c0 266-267,270,278-284,301,303-309,329-330
+  s_f9f47c1462725d::t_e0c9d70d4f4a5b 28-31
+  s_f9f47c1462725d::t_4e749511fa1d2e 107-110,113-116,118-119,124-127,135-144
+  s_f9f47c1462725d::t_f7f51b755307d4 157
+  s_f9f47c1462725d::t_d3bd32beee455b 68
+  s_f9f47c1462725d::t_b2eb34832cb7c8 52-55,238,285-287,336-345
+  s_f9f47c1462725d::t_3740021c9144ab 346-347
+  s_f9f47c1462725d::t_021330805b81ca 132-133
+  s_f9f47c1462725d::t_4445d687329b49 241,268-269,271-277,289-291,293-299
+  s_f9f47c1462725d::t_cab0babc5d5723 120-121,123
+  s_f9f47c1462725d::t_f2db30a5f75e30 172,237
+  s_f9f47c1462725d::t_36b82a34dd64f1 190-191
+  s_f9f47c1462725d::t_4eaa20226663e1 192-193
+  s_f9f47c1462725d::t_940fdd1f86edaf 111,122,166,168,245-247,288,292
+  s_f9f47c1462725d::t_29bf8de848bcd5 164-165,236,239
+  s_f9f47c1462725d::t_604abf19cd20c0 67,181-182,189
+  s_f9f47c1462725d::t_07f2f3eac49627 65,240,319-328
+  s_e0bad810b81ee8::t_1b7c69b3992799 201-207
+tests/scripts/docs-organization/nav-graph.test.mjs
+  s_24da9642f2cfd5::t_7ce04ce2c0d846 1-3,5-6,9-21,31-38,45-78,82-90,99-122,134-159,161-165,168-169,171-173
+  s_24da9642f2cfd5::t_e4d99ab5fad479 79-81,123-133,160,166-167,170
+  s_66098f209c01da::t_77db424f818e25 8,174-188,219-225,243-268,281-286,302-306,326-330
+  s_f9f47c1462725d::t_8e4a5910d01f1d 4,307-317,342-344,352
+  s_f9f47c1462725d::t_03f98701fc0294 318-325
+  s_e4efd1239c30e4::t_af9d6e63174fcf 22-30,269-280
+  s_f9f47c1462725d::t_6da3373f2d0a9a 354-361
+  s_f9f47c1462725d::t_a3b8175278cacd 91-98
+  s_f9f47c1462725d::t_119135e4d3e7a2 287-301
+  s_f9f47c1462725d::t_79674c1096cca0 7,362,373-385
+  s_f9f47c1462725d::t_7af593d66b8d05 386
+  s_f9f47c1462725d::t_41c613931d58f6 39-44
+  s_f9f47c1462725d::t_24aa361ffc9871 363-372
+  s_f9f47c1462725d::t_4873c8b2b9f6ce 189-190,192-195
+  s_f9f47c1462725d::t_b92532d0609f89 191
+  s_f9f47c1462725d::t_63c5cadb490e36 196-218
+  s_e0bad810b81ee8::t_34601bb2742609 226-242
+module/skills/docs-organization/scripts/check-routing.mjs
+  s_24da9642f2cfd5::t_049d8dc2193a1a 1-14,30-31,74-80,85-86,88,91,101,103-109,111-112,114-117,119-121,123-137,139-147,148-156,160-165
+  s_24da9642f2cfd5::t_6215e32e8f07af 66-67,74
+  s_24da9642f2cfd5::t_320355d7639571 15-18
+  s_24da9642f2cfd5::t_91896370aeafaf 166-178,180-185,191-197,200-202,205,207,210-218,220-226
+  s_24da9642f2cfd5::t_fc3b5fcfd1f1e4 72
+  s_24da9642f2cfd5::t_c001eb0523d532 19-29,32,49-52,55-58
+  s_24da9642f2cfd5::t_5d915462fdae58 81-84
+  s_24da9642f2cfd5::t_4da252a01f93fb 292,294
+  s_24da9642f2cfd5::t_500e7e4fb8409a 296-298
+  s_e52e8a231e7d6e::t_e114331e7a5dad 227-230,232,237,245-247,248-250,252-254,257-258,260-268,270-272,274-291,299-303,305-312,375-376,381-385,387-390,392-393,405,411,413-424,426-427,432-436,438-440
+  s_24da9642f2cfd5::t_19631bf13cd983 259,295,386
+  s_24da9642f2cfd5::t_41bbb7b135eb76 209
+  s_66098f209c01da::t_827714550aed90 33-41,46-48,53-54,199,231,243,313-314,324-327,330-332,345,346-353,360,362-364,366-367,369-374,377-380,394-401
+  s_66098f209c01da::t_95cb64f7a5806f 73,437
+  s_f9f47c1462725d::t_651f754927ad15 87,110,118,122,158-159
+  s_f9f47c1462725d::t_5498a1e3aad91f 42-45
+  s_f9f47c1462725d::t_518b7627203259 204,206,233-235,239,242,304
+  s_f9f47c1462725d::t_3253d1e19538cc 236,344,361,409-410
+  s_f9f47c1462725d::t_0867beff382ef6 69,90,190,203,219
+  s_f9f47c1462725d::t_92a76f0bdb29c3 89,157,240
+  s_f9f47c1462725d::t_cf8a57842cad72 92-104,113,186-188
+  s_f9f47c1462725d::t_fcfa33525ca0af 251,255-256,269,273,293
+  s_f9f47c1462725d::t_25c3ec1466dd01 179,329,333-336,338-341
+  s_f9f47c1462725d::t_a5e2dd7bcaa935 342-343
+  s_f9f47c1462725d::t_969261c2f1fdbb 412
+  s_f9f47c1462725d::t_bb819acb0d45b3 66
+  s_f9f47c1462725d::t_5e651749eb65dd 189
+  s_f9f47c1462725d::t_58d22f058db884 315-323
+  s_f9f47c1462725d::t_964bb5166ca6e7 337
+  s_f9f47c1462725d::t_c5443e8f798c22 358-359
+  s_f9f47c1462725d::t_6b8ed570738b3e 391
+  s_f9f47c1462725d::t_64cf28bc027568 328
+  s_f9f47c1462725d::t_b858234df8ed87 425,428-431
+  s_f9f47c1462725d::t_83d633d5df2f9e 59-64
+  s_f9f47c1462725d::t_b2eb34832cb7c8 406-408
+  s_f9f47c1462725d::t_09a932032f1d4c 354-356,365,368
+  s_f9f47c1462725d::t_f2db30a5f75e30 241,357
+  s_f9f47c1462725d::t_9dfddb6831010b 402-404
+  s_f9f47c1462725d::t_a959952e2449b8 198
+  s_f9f47c1462725d::t_882a61e7dee12e 208
+  s_f9f47c1462725d::t_940fdd1f86edaf 70,238,244
+  s_f9f47c1462725d::t_07f2f3eac49627 71
+  s_e0bad810b81ee8::t_6321037ec571e1 68,138
+tests/scripts/docs-organization/check-routing.test.mjs
+  s_24da9642f2cfd5::t_a0a14192293764 1-3,11-37,39-40,42-45,59-74,83-99,102-111,122-126
+  s_24da9642f2cfd5::t_7d126c484dc8b6 127-133,135-144,152-188,208-211
+  s_24da9642f2cfd5::t_4867a5e928eca8 9
+  s_24da9642f2cfd5::t_98ff8be3263c9e 4-5,8
+  s_24da9642f2cfd5::t_5381a2075cb621 212,255-259,280-283,285-298,310-377,384,387-388,390-398,400,402,404-411,413-429
+  s_24da9642f2cfd5::t_79ea7347a4d2fc 284,386,389,430-462
+  s_24da9642f2cfd5::t_04a2917ed641d0 463,473-492
+  s_24da9642f2cfd5::t_41bbb7b135eb76 145-151
+  s_66098f209c01da::t_5062c9df202717 412,493-504,515-539,557-589,641-646,655-657,664-665
+  s_66098f209c01da::t_c212e41e4e43c8 658
+  s_f9f47c1462725d::t_6711c55d9e9a1e 38,41,112-114,120-121,464-470
+  s_f9f47c1462725d::t_f21295c9e58b98 471-472
+  s_f9f47c1462725d::t_0b47f0d0fe763d 590-600,618-640
+  s_f9f47c1462725d::t_a2e754e8942d7c 7,115-117,241-253
+  s_f9f47c1462725d::t_86397fe8bbc7bb 254
+  s_f9f47c1462725d::t_387d36a3f73cb0 118-119,601-615
+  s_f9f47c1462725d::t_699630bfa5fb3c 616-617
+  s_40865a7e45160c::t_3cd0539fd74e51 551-556
+  s_f9f47c1462725d::t_c88e470b0d2cc5 238
+  s_f9f47c1462725d::t_ff106546cd7d41 6,10,46-58,213-237,239
+  s_f9f47c1462725d::t_3c63265c96823d 100-101
+  s_f9f47c1462725d::t_e45d1b9048414b 240
+  s_f9f47c1462725d::t_e5bc72d579bdaf 507
+  s_f9f47c1462725d::t_4bae401cfdff1b 505-506,508-514
+  s_f9f47c1462725d::t_0ca386046c1544 134
+  s_f9f47c1462725d::t_41200a6f8aadc1 189-207,540-549
+  s_f9f47c1462725d::t_c2de0e4f6be9be 550
+  s_f9f47c1462725d::t_ffb4a9fdaaa4af 647-654,659-663,666-676
+  s_f9f47c1462725d::t_a1b75dfed0ffd2 677
+  s_f9f47c1462725d::t_79674c1096cca0 299-309
+  s_f9f47c1462725d::t_17cfdde953566d 678-686
+  s_f9f47c1462725d::t_41c613931d58f6 378-383,385,687
+  s_f9f47c1462725d::t_1b88d103331184 260-263,265-279
+  s_f9f47c1462725d::t_46611f5148e62f 264
+  s_f9f47c1462725d::t_eabb95e8bff2fe 399,401,403
+  s_e0bad810b81ee8::t_1011f9b65dc8cd 75-82
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_24da9642f2cfd5::t_586407bccc2983 40,60-68,430,444
+  s_f9f47c1462725d::t_0867beff382ef6 384-392,438
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_24da9642f2cfd5::t_39a62892a3c95c 752-760
+module/commands/docs-update.md
+  s_24da9642f2cfd5::t_dc28f847290a46 345-347
+  s_24da9642f2cfd5::t_951bf373d4d365 79-80,356-360,368-369,380-383,402,411-415,418-422,548-549
+  s_24da9642f2cfd5::t_f98cac2bb22f5f 390
+  s_24da9642f2cfd5::t_119cbf8cae303f 82-83,88,349-354,361-367,375-379,387-389,403,416-417,546-547
+  s_24da9642f2cfd5::t_62abb6873129b0 370-372,384-386,391-394,397-401
+  s_24da9642f2cfd5::t_08299d9c5ed3a1 395-396
+  s_24da9642f2cfd5::t_3018efedd52b98 373-374
+module/commands/docs-init.md
+  s_24da9642f2cfd5::t_8d12fa29c5506f 63-64
+  s_24da9642f2cfd5::t_1034bd9eacfb55 40-42,47-49,76-82,90-93,110-119,122
+  s_24da9642f2cfd5::t_694b4450a774a7 83-86,94-97,136-138
+module/skills/docs-organization/reference/readme-template.md
+  s_24da9642f2cfd5::t_fb2ad69b789d1c 37-43
+  s_24da9642f2cfd5::t_680e45271aa2f9 5-8
+module/skills/docs-organization/reference/docs-tree-template.md
+  s_24da9642f2cfd5::t_ae4e0eb0baa259 116-118
+  s_24da9642f2cfd5::t_c8ea22b973dfbd 44-45
+  s_24da9642f2cfd5::t_e05f26d835cc38 58-60
+  s_24da9642f2cfd5::t_aa174a5a3b44bd 23-38
+module/skills/docs-organization/SKILL.md
+  s_24da9642f2cfd5::t_0d9cd4fb1f65fb 212,215-216
+  s_24da9642f2cfd5::t_ecf0224d83b410 213-214
+CHANGELOG.md
+  s_24da9642f2cfd5::t_a014e7251076b6 11-18,22-23
+  s_24da9642f2cfd5::t_50011db788d011 24-28
+  s_24da9642f2cfd5::t_298a81aada3e27 19
+  s_24da9642f2cfd5::t_0151bba8b056eb 29-31
+  s_24da9642f2cfd5::t_8612dcc808ead0 20-21
+  s_e724ed46208c4b::t_083980c6d5f941 75-79
+module/skills/docs-organization/reference/scripts.md
+  s_24da9642f2cfd5::t_0d9cd4fb1f65fb 10-13,16-18,25,35,44-45
+  s_24da9642f2cfd5::t_5c21f1bc7bc9d1 36
+  s_24da9642f2cfd5::t_0ca3da6bc7c54a 19,23-24,26,37-42,60
+  s_24da9642f2cfd5::t_cb237ce5870771 27-29
+  s_e4efd1239c30e4::t_82e1fa42614a13 61
+  s_f9f47c1462725d::t_1faab04baf348c 62-63
+  s_f9f47c1462725d::t_6be52dbb752859 43,64-65
+  s_f9f47c1462725d::t_987b942084c8cf 14-15
+  s_f9f47c1462725d::t_eb54361a0b09fa 72-73,77
+  s_f9f47c1462725d::t_1e4ff7b6a5ebcd 66-71,74-76
+  s_e0bad810b81ee8::t_22f7535a3a46c5 20-22,52
+README.md
+  s_24da9642f2cfd5::t_3671309f916ddd 260-263
+docs/dev/architecture.md
+  s_24da9642f2cfd5::t_3671309f916ddd 58,195-219,247-249,253-256
+  s_24da9642f2cfd5::t_3dd8ffb946a61c 257
+  s_24da9642f2cfd5::t_5435455a79ed47 250-252
+  s_24da9642f2cfd5::t_50011db788d011 227-234
+  s_e724ed46208c4b::t_7bfdf4230906cb 238-240
+  s_e724ed46208c4b::t_82ce00874c74e6 61
+  s_e4efd1239c30e4::t_4d94ba48babcc7 220-223
+  s_f9f47c1462725d::t_cf73722aa523be 224-226
+docs/dev/vendoring.md
+  s_24da9642f2cfd5::t_0e630da288417a 26,54-55,59,73,75,78,80-82,102-103
+.taskfiles/scripts/build-vendor.sh
+  s_24da9642f2cfd5::t_354edc256b217a 133
+  s_24da9642f2cfd5::t_7cc2c9e76c8743 49-51,62,80,87
+module/skills/docs-organization/scripts/vendor/LICENSES.md
+  s_24da9642f2cfd5::t_0045254a025cae 5,173-200
+module/skills/docs-organization/scripts/vendor/js-yaml.mjs
+  s_24da9642f2cfd5::t_908666dbcf9e52 1-2507
+module/skills/docs-organization/scripts/link-targets.mjs
+  s_24da9642f2cfd5::t_f8834a4a26367d 1-33
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_24da9642f2cfd5::t_f8834a4a26367d 87
+  s_66098f209c01da::t_4510c13b412af9 47-48,52-53,139,172-173,200,256,260,264-265,285-288
+  s_66098f209c01da::t_f646acd8c16d88 86,352
+  s_e724ed46208c4b::t_82ce00874c74e6 49-51
+  s_e724ed46208c4b::t_083980c6d5f941 140
+  s_f9f47c1462725d::t_5065ed9f1218b4 266
+  s_f9f47c1462725d::t_6b2f15396c3aa7 257-258,261-262,267-268,273-277
+  s_f9f47c1462725d::t_98b1e1573f2e1d 342-343,345-346
+  s_f9f47c1462725d::t_aec26f6a51c78b 69
+  s_f9f47c1462725d::t_fed64de125d7f6 322
+  s_e4efd1239c30e4::t_2a3381b901246b 141-142
+  s_f9f47c1462725d::t_9d398f140d8f19 176-177,180
+  s_f9f47c1462725d::t_8b92819605de9b 204
+  s_f9f47c1462725d::t_9f1087a8c27eb1 160
+  s_f9f47c1462725d::t_029611a6091e9f 155-157,174-175,178-179,181,185-186,189-199,210
+  s_f9f47c1462725d::t_a88358859aaadf 158-159
+  s_f9f47c1462725d::t_e29a09182c1558 144-147,165-166,259,269-272,315,327,329,337
+  s_f9f47c1462725d::t_efcc29a4ac2019 70-72
+  s_f9f47c1462725d::t_5a8eb0a0a3ddd8 169-170,172-173
+  s_f9f47c1462725d::t_bf3a1a336f760e 171
+  s_f9f47c1462725d::t_7e8aed50f2dfe9 134-135,143,164,182-184,187-188
+  s_f9f47c1462725d::t_4e1c7a994d5814 338-341,344
+  s_f9f47c1462725d::t_f5f5df51a317e7 81,281
+  s_f9f47c1462725d::t_707e88da99f654 263
+  s_f9f47c1462725d::t_e3566bf8204402 316
+  s_f9f47c1462725d::t_03c17c006ca86b 73-77
+  s_f9f47c1462725d::t_7b8da2eb4e3824 323-326,328
+  s_f9f47c1462725d::t_4a0104f011a6ff 278-280,282-284
+  s_f9f47c1462725d::t_604abf19cd20c0 89,161-163,167-168
+  s_f9f47c1462725d::t_ced3a101945278 82
+  s_f9f47c1462725d::t_060796ba7549e1 88,251
+module/skills/docs-organization/scripts/docs-mode.mjs
+  s_24da9642f2cfd5::t_7d07a2f28afba8 1-9,11,19-20,23-26,38-39,45-54,55-56,58-60,64-75
+  s_f9f47c1462725d::t_5065ed9f1218b4 17-18,21-22,57
+  s_e4efd1239c30e4::t_25d41a9b246adf 14-16,27-28,30-37,40-44
+  s_f9f47c1462725d::t_0db39690f50701 60-63
+  s_f9f47c1462725d::t_768321b48c45c8 10,12-13
+  s_f9f47c1462725d::t_5a2fdff3802ee3 29
+  s_f9f47c1462725d::t_060796ba7549e1 76-94
+tests/scripts/docs-organization/site-yaml.test.mjs
+  s_24da9642f2cfd5::t_c3bc6524cfbd26 1-2,4-29,32-38
+  s_24da9642f2cfd5::t_901fd4520194ce 30-31
+  s_66098f209c01da::t_bd24cd6f66eafd 3,39-44
+module/skills/docs-organization/scripts/site-yaml.mjs
+  s_24da9642f2cfd5::t_3b9362b44192db 1-43,52-54,57-58,60,62-64,66-68
+  s_24da9642f2cfd5::t_4a82f5c2e5888b 55-56
+  s_66098f209c01da::t_398b48c4fed01a 44-51,59,61,65
+tests/scripts/docs-organization/mkdocs.test.mjs
+  s_24da9642f2cfd5::t_7a780f35413800 1-2,4-52
+  s_66098f209c01da::t_8eca6a80d4cc7c 3,53-68,87-89
+  s_f9f47c1462725d::t_37f304792a63b1 69-86
+  s_f9f47c1462725d::t_157226d2292317 90-94
+module/skills/docs-organization/scripts/mkdocs.mjs
+  s_24da9642f2cfd5::t_093435dd6e3c47 1-8,13-25,27-32,40-41,43-47,49-54,56-62,64,66,68,73,75-83
+  s_24da9642f2cfd5::t_834cae3c6cd30a 67
+  s_24da9642f2cfd5::t_ec45840bf3f1ca 26,39,42,48,55,65,69-72
+  s_f9f47c1462725d::t_b0f8f58e5d64fc 9-12,33-38
+  s_f9f47c1462725d::t_408f2d7220a5b5 63
+  s_f9f47c1462725d::t_ce86a0128f3b12 74
+tests/scripts/docs-organization/antora.test.mjs
+  s_24da9642f2cfd5::t_d2a25908fef659 1-2,8-54,64-78,81-86,94-106
+  s_66098f209c01da::t_ce204377d71a5a 107-113
+  s_e724ed46208c4b::t_5a49510dfe1308 114-116,148-149
+  s_e4efd1239c30e4::t_53c262359b22a3 55-63
+  s_f9f47c1462725d::t_41200a6f8aadc1 120-125
+  s_f9f47c1462725d::t_a10029b65cc579 126-132
+  s_f9f47c1462725d::t_cd2f3a6e12b2ce 80
+  s_f9f47c1462725d::t_f8bd805af3e748 79
+  s_f9f47c1462725d::t_634d4344e5b735 3-5,7
+  s_f9f47c1462725d::t_aab473223ed59c 133-149
+  s_f9f47c1462725d::t_2c63b7aceef609 87-93,117
+  s_f9f47c1462725d::t_7bfabe4f6cb53b 150-167
+  s_f9f47c1462725d::t_b6b29f716ea0ea 6,168-200
+module/skills/docs-organization/scripts/antora.mjs
+  s_24da9642f2cfd5::t_6bbd0da96bfcfb 1-13,16,20,45-46,50,52-55,71-73,75-76,78-80,83-86,88-90,92-94,108-116,118,123-133,135-148,158-159,163-168,174-175,206-209
+  s_24da9642f2cfd5::t_8c712881432bfe 49
+  s_24da9642f2cfd5::t_c9aea3c4ad7957 74,77,81-82,153,155-157,170,173
+  s_e724ed46208c4b::t_82ce00874c74e6 14-15,117,149
+  s_e724ed46208c4b::t_3b40e817074162 161
+  s_e4efd1239c30e4::t_965b373515da68 17-19,56-57,87,91,172
+  s_f9f47c1462725d::t_25c3ec1466dd01 121-122
+  s_f9f47c1462725d::t_0db39690f50701 150-152
+  s_f9f47c1462725d::t_b36678a0346eab 160
+  s_f9f47c1462725d::t_4c307eada01a7f 47-48
+  s_f9f47c1462725d::t_51e93a5e9d2800 95-107
+  s_f9f47c1462725d::t_979c1a2586aa18 43-44
+  s_f9f47c1462725d::t_5a8eb0a0a3ddd8 21-26,134,154,162,169,171
+  s_f9f47c1462725d::t_7e8aed50f2dfe9 178
+  s_f9f47c1462725d::t_b028bd9eda15f8 27-30,42,119-120,176-177,179-190
+  s_f9f47c1462725d::t_0c7656d26ff3dd 204-205
+  s_f9f47c1462725d::t_529648eac25f68 31-41,191-203
+  s_f9f47c1462725d::t_ff03306fad857d 51,59-70
+  s_f9f47c1462725d::t_f1a46e40b97aac 71
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_66098f209c01da::t_bf8c088e504c59 3,9,669-685,728-742,973
+  s_66098f209c01da::t_ca77c86c973eba 743-745,878-880,884-892
+  s_e724ed46208c4b::t_d57fc4186662b3 894-915,926-927,935-937,964-973
+  s_f9f47c1462725d::t_116deccc38aed3 872
+  s_f9f47c1462725d::t_8e4a5910d01f1d 868-871,873-876
+  s_f9f47c1462725d::t_8a2619d268320c 746-756
+  s_e4efd1239c30e4::t_19fd7c0419cd70 974-1001
+  s_f9f47c1462725d::t_58ffbaa9718522 793-802
+  s_f9f47c1462725d::t_6913079495f84f 686-694
+  s_f9f47c1462725d::t_a10029b65cc579 695-708,758-761,791
+  s_f9f47c1462725d::t_30307a4f9c2efb 792
+  s_f9f47c1462725d::t_03c672dc7d9d56 953,956,960-963
+  s_f9f47c1462725d::t_22b521312b673b 757,762-770,772-778
+  s_f9f47c1462725d::t_bf3a1a336f760e 877,881-883
+  s_f9f47c1462725d::t_2c63b7aceef609 709-727,781-789,791
+  s_f9f47c1462725d::t_d86db3d9943416 790,792
+  s_f9f47c1462725d::t_7bfabe4f6cb53b 916-938,940-943
+  s_f9f47c1462725d::t_e71e6c76d114ca 939
+  s_f9f47c1462725d::t_6d0915c787c547 816-838,847-867
+  s_f9f47c1462725d::t_1e6a6536ecdd51 771,803-815,839-845
+  s_f9f47c1462725d::t_63c5cadb490e36 944-952
+  s_f9f47c1462725d::t_5f5ce2ae0c1e66 846
+eval/fixtures/walkthrough-mkdocs/expected.json
+  s_e724ed46208c4b::t_c50eb6d9648770 1-7
+eval/fixtures/walkthrough-mkdocs/docs/upgrading.md
+  s_e724ed46208c4b::t_fa4aa51e1f0142 1-4
+eval/fixtures/walkthrough-repo/docs/usage/README.md
+  s_e724ed46208c4b::t_aed71cc3608749 1-5
+eval/fixtures/walkthrough-repo/SECURITY.md
+  s_e724ed46208c4b::t_6b7e72bf24f411 1-9
+eval/fixtures/walkthrough-repo/LICENSE
+  s_e724ed46208c4b::t_868c3d4ecce66a 1
+eval/fixtures/walkthrough-mkdocs/mkdocs.yml
+  s_e724ed46208c4b::t_5c9fe2bfc13a0d 1-7
+eval/fixtures/walkthrough-mkdocs/docs/configuration.md
+  s_e724ed46208c4b::t_20e2fac2b836f4 1-10
+eval/fixtures/walkthrough-mkdocs/docs/security.md
+  s_e724ed46208c4b::t_baa3d2bd0a1857 1-12
+eval/fixtures/walkthrough-mkdocs/docs/index.md
+  s_e724ed46208c4b::t_b89a33c1c466ff 1-12
+eval/fixtures/walkthrough-repo/docs/usage/configuration.md
+  s_e724ed46208c4b::t_1a7fb59a494aa2 1-11
+eval/fixtures/walkthrough-mkdocs/README.md
+  s_e724ed46208c4b::t_0ef64c7f32e1d6 1-6
+eval/fixtures/walkthrough-mkdocs/docs/contributing.md
+  s_e724ed46208c4b::t_83aa1a13657b93 1-10
+eval/fixtures/walkthrough-repo/expected.json
+  s_e724ed46208c4b::t_62c9e45bb442a5 1-7
+eval/run_walkthrough.py
+  s_e724ed46208c4b::t_b721b65c72a546 1-15,17-24,26-35,38-47,60-63,65-93,96-102,104-105,108-149
+  s_e724ed46208c4b::t_a2a9e905626efa 64
+  s_e724ed46208c4b::t_08d24544fd6744 48-49
+  s_e724ed46208c4b::t_7183d751c03313 103
+  s_e724ed46208c4b::t_ae5a07a4332a1d 36-37
+  s_e724ed46208c4b::t_33436c284e868b 16
+  s_e724ed46208c4b::t_9e5299cbc03c9e 25
+  s_f9f47c1462725d::t_80a747e2fa5928 50-59
+  s_f9f47c1462725d::t_34985976fd1a7c 94-95,106-107
+eval/fixtures/walkthrough-repo/README.md
+  s_e724ed46208c4b::t_352443a8420596 1-21
+eval/fixtures/walkthrough-repo/docs/dev/README.md
+  s_e724ed46208c4b::t_71759d1bd2b8b6 1-12
+eval/fixtures/walkthrough-repo/docs/dev/architecture.md
+  s_e724ed46208c4b::t_ec3a12c0554e3c 1-16
+eval/fixtures/walkthrough-repo/docs/dev/testing.md
+  s_e724ed46208c4b::t_c708944373175b 1-7
+eval/README.md
+  s_e724ed46208c4b::t_0fac43e314132e 36
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_e724ed46208c4b::t_4d5cb2dce7f693 191
+  s_f9f47c1462725d::t_30465cb9c4ba38 29,171
+  s_f9f47c1462725d::t_0f5a47a6b2387b 166-167,169
+  s_f9f47c1462725d::t_99b98c38d3dc8f 30-32
+  s_f9f47c1462725d::t_b2da456fed42f4 173
+  s_f9f47c1462725d::t_3ab037f617ae53 91
+  s_f9f47c1462725d::t_d0635db781cc02 68
+  s_f9f47c1462725d::t_4d3c54941a9535 87-88
+  s_f9f47c1462725d::t_616d1b3c37d00f 211-212
+  s_f9f47c1462725d::t_0a18db79cfdc8d 34-37
+  s_f9f47c1462725d::t_ea166be0b5ee2b 246-249
+  s_f9f47c1462725d::t_d707f2912c09b4 99
+  s_f9f47c1462725d::t_bef43e5307a682 64-65,146-150,168,170,172
+  s_f9f47c1462725d::t_34985976fd1a7c 38-40
+  s_f9f47c1462725d::t_7921d3a0c93898 223
+  s_f9f47c1462725d::t_b2eb34832cb7c8 67,125-127,216
+  s_f9f47c1462725d::t_14c40460a2f869 84-85,113
+  s_f9f47c1462725d::t_5774fbe4448960 237,239,269-272
+  s_f9f47c1462725d::t_13b377d30135a3 186
+  s_f9f47c1462725d::t_f0eb7c964f5270 60-62
+  s_f9f47c1462725d::t_71c17d9c51f840 11-15
+  s_f9f47c1462725d::t_07f2f3eac49627 69
+  s_f9f47c1462725d::t_91639b74a32af3 45-46,233,238,241
+  s_a7ffb5343143cf::t_76a61597f1cb63 21,47-51,89-90,92-93,96,101,103-105,108-109,117,122,232
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_e724ed46208c4b::t_1d5e8b287b12cf 375-376,378-380,382-383
+  s_e724ed46208c4b::t_d45d156411d65e 377
+  s_f9f47c1462725d::t_08f8fb9c217df7 184-192
+  s_f9f47c1462725d::t_8f6dd17c54fe41 114-122,193-195,198-201,204-206
+  s_f9f47c1462725d::t_8a195e63c8b1f6 196-197,202-203
+  s_f9f47c1462725d::t_8ed66b5d0b96c3 207
+  s_f9f47c1462725d::t_6980e180c91a3c 123-136
+  s_40865a7e45160c::t_f321eff1745348 7,137-159,161-163
+  s_f9f47c1462725d::t_ff106546cd7d41 333-340
+  s_f9f47c1462725d::t_22eaafc49d516b 430-442
+  s_f9f47c1462725d::t_ac4630fd568ac4 429,454-467,469,492
+  s_f9f47c1462725d::t_f6403aeda170b5 160,218,235,245,278-280,301,304,389,396,406,420,468
+  s_f9f47c1462725d::t_fe55cb09ac6702 443-453
+  s_f9f47c1462725d::t_868136d62613be 315
+  s_f9f47c1462725d::t_d02cb4d80df489 53,55-71,267-274
+  s_f9f47c1462725d::t_16fdc66de9c055 11
+  s_f9f47c1462725d::t_1b746fba6e018a 48,52,470
+  s_f9f47c1462725d::t_31f42dab6187f6 54,275
+  s_f9f47c1462725d::t_6962793b37b005 374
+  s_f9f47c1462725d::t_70115b603e8c99 381
+  s_f9f47c1462725d::t_8a86ee47bc3a98 74-84
+  s_f9f47c1462725d::t_c40c1fbc585e6e 256,259
+  s_f9f47c1462725d::t_31b1d80718bfa0 254-255,257-258,260-266
+  s_a7ffb5343143cf::t_cd392a4d4e00cc 472-492
+eval/prompts/locate.txt
+  s_e724ed46208c4b::t_c428dab517e501 1-6
+eval/prompts/walkthrough.txt
+  s_e724ed46208c4b::t_d5af10923335ab 1-13
+eval/REPORT.md
+  s_e724ed46208c4b::t_496863f1f32278 1090
+  s_e724ed46208c4b::t_df73e14e6b9f2b 1049-1089,1091-1106
+eval/results/r17-walkthrough-k2.json
+  s_e724ed46208c4b::t_469cf2803301a4 1-73
+eval/results/r17-walkthrough.json
+  s_e724ed46208c4b::t_9a86c545824fb4 1-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "24b042c15e979070d4e5507dbb77250172a025b1",
+  "prompts": {},
+  "sessions": {
+    "s_24da9642f2cfd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ea69f78-c5d1-48d9-ac25-00d738851a73",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_40865a7e45160c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-ac02a664847c7bf20",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_61b4178157253e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aa775ba7a0efa754f",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_66098f209c01da": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a52f76e730dd8a9dc",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_8cd2ee9896e93d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "454fcbba-80fb-4c82-8cfc-4d7fbec420e2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_a7ffb5343143cf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a6ea3d526cd560819",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e0bad810b81ee8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-aae11e431a10446b4",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e4efd1239c30e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a425b3cf94600ecd9",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e52e8a231e7d6e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a454ce3cc5a944eb2",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e724ed46208c4b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9ff7bc1a-ea45-4b30-9f76-3b5530f7290f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_f9f47c1462725d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc17f20a-885f-4da8-a658-af49b34170fe",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
