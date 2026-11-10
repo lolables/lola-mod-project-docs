@@ -33,7 +33,7 @@
 // and is checked; a quotation is someone else's and is not.
 
 import { readFileSync, realpathSync, lstatSync } from 'node:fs';
-import { relative } from 'node:path';
+import { relative, basename } from 'node:path';
 import { walkDocs } from './doc-files.mjs';
 import { parseDoc } from './formats/index.mjs';
 import { isMain } from './is-main.mjs';
@@ -59,12 +59,20 @@ export const THRESHOLDS = {
 
 // Where SPLIT_CANDIDATE sends each kind of content: the holds of every
 // walkthrough reader except the new user, whose content stays (see
-// reference/placement-rules.md).
-const SPLIT_DESTINATIONS = PERSONAS
+// reference/placement-rules.md). A hold whose destination is the analyzed
+// file itself (`SECURITY.md` for SECURITY.md) is left out.
+const SPLIT_HOLDS = PERSONAS
   .filter((p) => p.mechanism === 'walkthrough' && p.id !== 'new-user')
-  .flatMap((p) => p.holds)
+  .flatMap((p) => p.holds);
+
+const splitDestinations = (file) => SPLIT_HOLDS
+  .filter((h) => !h.to.includes(`\`${basename(file)}\``))
   .map((h) => `${h.what} → ${h.to}`)
   .join('; ');
+
+// A changelog is an append-only ledger read by one reader; its length is
+// expected, and old releases are archived rather than moved to another door.
+const LEDGER_RE = /^(changelog|history|news|release-notes)(?![a-z0-9])/i;
 
 // Plain-language candidates. A lexical pass over running prose (texts with
 // prose: true — inline code, link text, and link targets already removed by
@@ -390,7 +398,7 @@ export function sectionSpan(headings, i, lines) {
   return lines + 1 - headings[i].line;
 }
 
-export function analyzeProse(model) {
+export function analyzeProse(model, file = '') {
   const findings = [];
   for (const p of model.paragraphs) {
     if (!PROSE_CONTEXTS.has(p.context)) continue;
@@ -422,18 +430,20 @@ export function analyzeProse(model) {
 
   // Size heuristics. Whole file first, then any oversized level-2 section.
   const totalLines = model.lines;
-  if (totalLines > THRESHOLDS.fileLines) {
+  const ledger = LEDGER_RE.test(basename(file));
+  const destinations = splitDestinations(file);
+  if (!ledger && totalLines > THRESHOLDS.fileLines) {
     findings.push({
       code: 'SPLIT_CANDIDATE',
       severity: 'info',
       line: 1,
-      message: `file is ${totalLines} lines (> ${THRESHOLDS.fileLines}); split it by reader (reference/personas.md): ${SPLIT_DESTINATIONS}. A SKILL.md moves detail into reference/ instead`,
+      message: `file is ${totalLines} lines (> ${THRESHOLDS.fileLines}); split it by reader (reference/personas.md): ${destinations}. A SKILL.md moves detail into reference/ instead`,
     });
   }
 
   // Section spans: from each level-2 heading to the next heading of level <= 2.
   const { headings } = model;
-  for (let i = 0; i < headings.length; i++) {
+  for (let i = 0; i < headings.length && !ledger; i++) {
     if (headings[i].level !== 2) continue;
     const span = sectionSpan(headings, i, totalLines);
     if (span > THRESHOLDS.sectionLines) {
@@ -441,7 +451,7 @@ export function analyzeProse(model) {
         code: 'SPLIT_CANDIDATE',
         severity: 'info',
         line: headings[i].line,
-        message: `section "${headings[i].title}" spans ~${span} lines (> ${THRESHOLDS.sectionLines}); move it to its reader's door (reference/personas.md): ${SPLIT_DESTINATIONS}`,
+        message: `section "${headings[i].title}" spans ~${span} lines (> ${THRESHOLDS.sectionLines}); move it to its reader's door (reference/personas.md): ${destinations}. A SKILL.md moves detail into reference/ instead`,
       });
     }
   }
@@ -470,7 +480,7 @@ async function main(argv) {
       // Keep the caller's spelling for ordinary files; name the target for symlinks.
       const shown = lstatSync(file).isSymbolicLink() ? relative(cwd, real) : file;
       const content = readFileSync(real, 'utf8');
-      for (const f of analyzeProse(await parseDoc(file, content))) findings.push({ ...f, file: shown });
+      for (const f of analyzeProse(await parseDoc(file, content), file)) findings.push({ ...f, file: shown });
     }
   }
   const payload = {

@@ -25,7 +25,7 @@ function mktemp(prefix = 'check-prose-') {
 
 const codes = (findings) => findings.map((f) => f.code);
 
-const analyze = async (src, name = 'doc.md') => analyzeProse(await parseDoc(name, src));
+const analyze = async (src, name = 'doc.md') => analyzeProse(await parseDoc(name, src), name);
 
 test('clean short prose yields no findings', async () => {
   const md = `# Title\n\nA short paragraph. Two sentences only.\n\n- a tight bullet\n- another one\n`;
@@ -110,6 +110,7 @@ test('an oversized H2 section flags SPLIT_CANDIDATE at the heading', async () =>
   const sc = findings.find((f) => f.code === 'SPLIT_CANDIDATE' && f.message.includes('Big Section'));
   assert.ok(sc, 'expected a SPLIT_CANDIDATE naming the Big Section');
   assert.equal(sc.line, 3);
+  assert.match(sc.message, /A SKILL\.md moves detail into reference\/ instead/);
 });
 
 test('a long GFM alert or admonition is the author\'s prose and flags WALL_OF_TEXT', async () => {
@@ -748,6 +749,24 @@ test('self-scan: this repo\'s docs have only the allowed volatile details', asyn
     }
   }
   assert.deepEqual(got.sort(), SELF_SCAN_ALLOWED.map((e) => e.join(' ')).sort());
+});
+
+const bigDoc = (lines, extra = '') => `# T\n\n${extra}${Array(lines).fill('line').join('\n')}\n`;
+
+test('SPLIT_CANDIDATE: a changelog or release-notes file is a ledger, never split', async () => {
+  const size = THRESHOLDS.fileLines + 5;
+  for (const name of ['CHANGELOG.md', 'changelog.adoc', 'docs/about/release-notes.md', 'HISTORY.md', 'NEWS.md']) {
+    const src = name.endsWith('.adoc') ? `= T\n\n${Array(size).fill('line').join('\n')}\n` : bigDoc(size);
+    assert.deepEqual((await analyze(src, name)).filter((f) => f.code === 'SPLIT_CANDIDATE'), [], name);
+  }
+  const section = `# T\n\n## Big\n\n${Array(THRESHOLDS.sectionLines + 5).fill('line').join('\n')}\n`;
+  assert.deepEqual((await analyze(section, 'CHANGELOG.md')).filter((f) => f.code === 'SPLIT_CANDIDATE'), []);
+});
+
+test('SPLIT_CANDIDATE: a file that is itself a destination is not told to move content into itself', async () => {
+  const sc = (await analyze(bigDoc(THRESHOLDS.fileLines + 5), 'SECURITY.md')).find((f) => f.code === 'SPLIT_CANDIDATE');
+  assert.ok(!sc.message.includes('`SECURITY.md`'), sc.message);
+  assert.ok(sc.message.includes('`CHANGELOG.md`'), sc.message);
 });
 
 test('SPLIT_CANDIDATE names the persona destinations from the registry', async () => {

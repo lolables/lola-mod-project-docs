@@ -219,6 +219,10 @@ pass.
        is the class the per-paragraph rule misses because it excludes lists.
      - `SPLIT_CANDIDATE` — the whole file, or one level-2 section (`##` / `==`), over the size
        budget; move it to its reader's door (`$SKILL_DIR/reference/personas.md`).
+       Never reported for a changelog or release-notes file (`CHANGELOG*`,
+       `HISTORY*`, `NEWS*`, `release-notes*`): its length is expected, so
+       archive old releases instead. A file that is itself a destination
+       (`SECURITY.md`) is not told to move content into itself.
      - `DOUBLE_NEGATIVE` — a negator (`not`, `no`, `never`, `cannot`, `n't`)
        followed in the same clause by a negative-meaning word (`unless`,
        `without`, `fail`, `invalid`, …), or `no fewer than` / `no less than` /
@@ -1074,7 +1078,8 @@ pass.
          moves what stands before the heading to its reader's door.
        - `LONG_QUICKSTART`: the section and its line span. Warning. The fix
          keeps the shortest path to a working result in the front door and
-         moves the full setup to `docs/usage/getting-started.md`.
+         moves the full setup to `docs/usage/getting-started.md` (`.adoc` for an
+         AsciiDoc front door).
        - `MISPLACED_SECTION`: the section title, its span, the persona you
          assigned, and its destination (see Lane 1). Warning.
        - `MISSING_DOOR`: the persona and the entry point no front door
