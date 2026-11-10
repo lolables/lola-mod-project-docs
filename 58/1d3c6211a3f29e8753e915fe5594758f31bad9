@@ -1,0 +1,26 @@
+tests/scripts/docs-organization/check-structure.test.sh
+  s_10ca6f218dc35c::t_810ef44b514fcc 9-11
+tests/e2e/docs-discipline.venom.yml
+  s_10ca6f218dc35c::t_8548d166f755d6 33-35
+  s_10ca6f218dc35c::t_4cef34a7ceac1c 40
+tests/scripts/docs-organization/check-staleness.test.mjs
+  s_10ca6f218dc35c::t_6608f441e2464a 25-27
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_10ca6f218dc35c::t_90534fa577aeb8 33-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "581d3c6211a3f29e8753e915fe5594758f31bad9",
+  "prompts": {},
+  "sessions": {
+    "s_10ca6f218dc35c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82d4a368-b642-4230-b446-e7825420da42",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
