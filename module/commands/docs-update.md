@@ -51,6 +51,10 @@ present, skip the `adr` activation.
 1. Read `$SKILL_DIR/SKILL.md` for the invariants and principles this skill enforces. The procedure below is the source of truth for what to do.
 2. **Obtain the punch list:**
    - If `$ARGUMENTS` is a path to a saved audit output, parse it.
+   - Otherwise, if this conversation holds a `` Full report: `<path>` ``
+     line from /docs-audit, parse that file: the reply above it shows only
+     the Blockers. If the file is gone, say so and ask for a fresh
+     /docs-audit; never fall back to the shortened reply.
    - Otherwise, if this conversation holds a /docs-audit punch list, use it
      as-is — never replace it with a repo sweep.
    - Otherwise (no saved file and no punch list), run /docs-audit's lanes

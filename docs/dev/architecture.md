@@ -199,6 +199,14 @@ Convention 2 in [Conventions enforced](../../README.md#conventions-enforced) —
 developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
 
+The punch list is also written to a `mktemp` report file on every run.
+Past 50 findings the reply shows only the Blockers and a `Full report:`
+line, and `/docs-update` reads the file. The reason: once `lane6.mjs` made
+every judgment job run, a 14-doc repository produced 395 findings, and the
+orchestrator summarised the Info rows and dropped 28 Warnings from its
+reply. A row missing from the reply is a row `/docs-update` never sees; a
+file has no length limit.
+
 ## Persona routing
 
 Every other lane asks whether a doc is true. Routing asks whether the right

@@ -96,7 +96,10 @@ prompt (they are slash commands, not shell commands):
 
 1. `/docs-init` — scaffold README, `docs/`, and `.gitignore`.
 2. `/docs-audit` — find drift between code and docs (read-only).
-3. `/docs-update` — apply the audit's fixes interactively.
+3. `/docs-update` — apply the audit's fixes interactively. An audit with
+   more than 50 findings prints only its Blockers and saves the full list
+   to a file; pass that path, as its `Full report:` line shows:
+   `/docs-update /tmp/docs-audit-Hq2xZa`.
 4. `/diagram-test` — lint every mermaid diagram.
 5. `/adr-new "Use Postgres for primary storage"` — draft an ADR with an
    inline self-review. It writes an `NNNN-*.md` file under the ADR

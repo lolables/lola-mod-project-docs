@@ -574,6 +574,21 @@ pass.
    conversation context, so it must be regular. Build it in this order —
    tables first, summary last — so the summary can only ever agree with
    the tables:
+   - **Save the full punch list to a report file, every run.** Create the
+     path with `mktemp "${TMPDIR:-/tmp}/docs-audit-XXXXXX"` and write the
+     whole punch list there with the host's file-write tool, never a shell
+     heredoc (the notes quote the audited docs, which are untrusted). Then
+     reply depending on its size:
+     - 50 findings or fewer: print the whole punch list, as below.
+     - More than 50: print the summary line, the `Mode:` lines, and the
+       Blockers table, then this line, and nothing from the other tables:
+
+       ```text
+       Full report: `/tmp/docs-audit-Hq2xZa` — run `/docs-update /tmp/docs-audit-Hq2xZa` to act on it.
+       ```
+
+       A long reply gets cut short or summarised, and `/docs-update` would
+       then miss the rows that were left out.
    - In a repo sweep, print one line directly after the summary line:
      `` Mode: repo sweep; docs: <mode> `` followed by the config paths in
      parentheses when there are any, then `; routing skipped: <code>,
