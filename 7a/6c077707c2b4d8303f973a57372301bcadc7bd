@@ -1,0 +1,28 @@
+tests/scripts/docs-organization/report-file-guard.test.mjs
+  s_8cd2ee9896e93d::t_5ba88ef6639bdf 1-25
+docs/dev/architecture.md
+  s_8cd2ee9896e93d::t_6cf7a079eb4455 205
+  s_8cd2ee9896e93d::t_0a85ef2de7a3df 202-204,206-209
+module/commands/docs-audit.md
+  s_8cd2ee9896e93d::t_7a0502cdec0e2f 574-588
+module/commands/docs-update.md
+  s_8cd2ee9896e93d::t_f6d42f29888a72 54-57
+README.md
+  s_8cd2ee9896e93d::t_a9cc3c30385e09 99-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7a6c077707c2b4d8303f973a57372301bcadc7bd",
+  "prompts": {},
+  "sessions": {
+    "s_8cd2ee9896e93d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "454fcbba-80fb-4c82-8cfc-4d7fbec420e2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
