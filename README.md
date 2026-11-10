@@ -257,6 +257,10 @@ repo root; both are `task`-only, so they require the full dev checkout.
 5. Every mermaid diagram begins with the house-style init header (the
    `%%{init}%%` block for one of the four palettes above) and uses palette
    classes with WCAG-verified contrast.
+6. Every reader has a door. The README links each reader's entry point that
+   exists (`docs/usage/`, `docs/dev/`, `SECURITY.md`, `LICENSE`, …), every
+   page under `docs/` is reachable from the README and links back, and the
+   README carries a `Status` line.
 
 ## Supported formats
 

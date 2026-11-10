@@ -22,6 +22,9 @@ const GENV = {
   GIT_COMMITTER_NAME: 'check-staleness-test',
   GIT_COMMITTER_EMAIL: 'check-staleness-test@invalid',
 };
+// A caller such as `git rebase --exec` exports these; inherited, they aim
+// every fixture command at the caller's repository instead of the temp one.
+for (const k of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_COMMON_DIR']) delete GENV[k];
 
 // Every temp dir any test creates is tracked here and removed once, after
 // the whole file runs.

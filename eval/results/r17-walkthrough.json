@@ -1,0 +1,39 @@
+{
+ "rows": [
+  {
+   "fixture": "fixtures/walkthrough-repo",
+   "run": 1,
+   "hits": {
+    "dev#2": true,
+    "operator#2": true
+   },
+   "spurious": [],
+   "missed": [],
+   "failed": [],
+   "fabricated": {
+    "checked": true,
+    "rejected": true
+   },
+   "calls": 6,
+   "cost_usd": 1.2988
+  },
+  {
+   "fixture": "fixtures/walkthrough-mkdocs",
+   "run": 1,
+   "hits": {
+    "operator#2": true,
+    "dev#3": true
+   },
+   "spurious": [],
+   "missed": [],
+   "failed": [],
+   "fabricated": {
+    "checked": true,
+    "rejected": true
+   },
+   "calls": 6,
+   "cost_usd": 1.2607
+  }
+ ],
+ "total_cost_usd": 2.5595
+}

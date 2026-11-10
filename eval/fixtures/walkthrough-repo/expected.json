@@ -1,0 +1,7 @@
+{
+  "cases": [
+    {"persona": "dev", "n": 2, "kind": "unreachable", "file": "docs/dev/testing.md"},
+    {"persona": "operator", "n": 2, "kind": "absent"}
+  ],
+  "fabricated": {"persona": "dev", "hop": {"from": "docs/dev/README.md", "line": 1, "to": "docs/dev/testing.md"}}
+}

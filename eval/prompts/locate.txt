@@ -1,0 +1,6 @@
+Read-only: never run the project's code, tests, builds, installers, package managers, or any command the docs describe. A $label reading this project's docs asked: $concrete (task: $task). Search this repository's documentation (Markdown, AsciiDoc, and other doc pages; not source code or comments) for the line that answers it.
+
+Reply with only this JSON object:
+{"file": "<path relative to the repository root>", "line": <n>}
+or, when no doc answers it:
+{"file": null}

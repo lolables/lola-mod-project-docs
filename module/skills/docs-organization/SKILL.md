@@ -209,7 +209,11 @@ An unaudited file is "unknown", never "clean".
 - `reference/rule-sources.md` — the published rule (or house convention)
   behind each writing-quality finding code; `/docs-audit` cites it.
 - `reference/readme-template.md` — minimum acceptable README structure.
-- `reference/docs-tree-template.md` — `docs/dev/` scaffold.
+- `reference/docs-tree-template.md` — `docs/dev/` and `docs/usage/` scaffold.
+- `reference/personas.md` — the eight fixed readers and the door each needs
+  from the front door; `check-routing.mjs` checks them.
+- `reference/placement-rules.md` — where a new fact goes; `/docs-init`
+  offers it for `AGENTS.md`.
 
 ## Cross-skill
 

@@ -37,6 +37,7 @@ import { relative } from 'node:path';
 import { walkDocs } from './doc-files.mjs';
 import { parseDoc } from './formats/index.mjs';
 import { isMain } from './is-main.mjs';
+import { PERSONAS } from './personas.mjs';
 
 // Thresholds. Word count and line span are the only *unambiguous* size metrics,
 // so those are all the size checks trigger on. A paragraph gets more slack
@@ -55,6 +56,15 @@ export const THRESHOLDS = {
   fileLines: 600,
   sectionLines: 250,
 };
+
+// Where SPLIT_CANDIDATE sends each kind of content: the holds of every
+// walkthrough reader except the new user, whose content stays (see
+// reference/placement-rules.md).
+const SPLIT_DESTINATIONS = PERSONAS
+  .filter((p) => p.mechanism === 'walkthrough' && p.id !== 'new-user')
+  .flatMap((p) => p.holds)
+  .map((h) => `${h.what} → ${h.to}`)
+  .join('; ');
 
 // Plain-language candidates. A lexical pass over running prose (texts with
 // prose: true — inline code, link text, and link targets already removed by
@@ -371,6 +381,15 @@ function countWords(text) {
 
 const PROSE_CONTEXTS = new Set(['top', 'callout']);
 
+// Lines from heading i to the next heading at the same or a higher level, or
+// to the end of the document (`lines` is the document's line count).
+export function sectionSpan(headings, i, lines) {
+  for (let j = i + 1; j < headings.length; j++) {
+    if (headings[j].level <= headings[i].level) return headings[j].line - headings[i].line;
+  }
+  return lines + 1 - headings[i].line;
+}
+
 export function analyzeProse(model) {
   const findings = [];
   for (const p of model.paragraphs) {
@@ -408,7 +427,7 @@ export function analyzeProse(model) {
       code: 'SPLIT_CANDIDATE',
       severity: 'info',
       line: 1,
-      message: `file is ${totalLines} lines (> ${THRESHOLDS.fileLines}); consider extracting detail into a linked sub-document (a README into docs/, a SKILL.md into reference/)`,
+      message: `file is ${totalLines} lines (> ${THRESHOLDS.fileLines}); split it by reader (reference/personas.md): ${SPLIT_DESTINATIONS}. A SKILL.md moves detail into reference/ instead`,
     });
   }
 
@@ -416,17 +435,13 @@ export function analyzeProse(model) {
   const { headings } = model;
   for (let i = 0; i < headings.length; i++) {
     if (headings[i].level !== 2) continue;
-    let end = totalLines + 1;
-    for (let j = i + 1; j < headings.length; j++) {
-      if (headings[j].level <= 2) { end = headings[j].line; break; }
-    }
-    const span = end - headings[i].line;
+    const span = sectionSpan(headings, i, totalLines);
     if (span > THRESHOLDS.sectionLines) {
       findings.push({
         code: 'SPLIT_CANDIDATE',
         severity: 'info',
         line: headings[i].line,
-        message: `section "${headings[i].title}" spans ~${span} lines (> ${THRESHOLDS.sectionLines}); consider extracting it into a linked sub-document`,
+        message: `section "${headings[i].title}" spans ~${span} lines (> ${THRESHOLDS.sectionLines}); move it to its reader's door (reference/personas.md): ${SPLIT_DESTINATIONS}`,
       });
     }
   }

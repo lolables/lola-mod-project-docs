@@ -749,3 +749,12 @@ test('self-scan: this repo\'s docs have only the allowed volatile details', asyn
   }
   assert.deepEqual(got.sort(), SELF_SCAN_ALLOWED.map((e) => e.join(' ')).sort());
 });
+
+test('SPLIT_CANDIDATE names the persona destinations from the registry', async () => {
+  const md = `# T\n\n${Array(THRESHOLDS.fileLines + 5).fill('line').join('\n')}\n`;
+  const sc = (await analyze(md)).find((f) => f.code === 'SPLIT_CANDIDATE' && f.line === 1);
+  for (const dest of ['`docs/usage/`', '`CHANGELOG.md`', '`docs/dev/`', '`SECURITY.md`']) {
+    assert.ok(sc.message.includes(dest), `missing ${dest}: ${sc.message}`);
+  }
+  assert.match(sc.message, /SKILL\.md/);
+});

@@ -8,6 +8,32 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Persona routing** (`/docs-audit` Lane 1). `check-routing.mjs` checks
+  that each of eight fixed readers can find their door:
+  - `FRONT_DOOR_BLOCKED`, `LONG_QUICKSTART`, and `MISPLACED_SECTION` for a
+    README that buries the first run;
+  - `MISSING_DOOR`, `ORPHAN_PAGE`, and `NO_WAY_BACK` for unlinked entry
+    points and pages;
+  - `MISSING_GATE_FILE`, `MISSING_STATUS`, and `SITE_CANDIDATE`.
+
+  The audit detects site generators by config file name and reports the
+  page-reachability checks of unsupported ones as skipped.
+  `/docs-update` gains a fix for each
+  code, and `/docs-init` offers placement rules for `AGENTS.md`. The README
+  template gains a `Status` line and one door per reader.
+  - MkDocs and Antora sites are routed through their navigation:
+    `ORPHAN_PAGE` covers pages missing from the sidebar, and the README
+    needs a door to the site. `check-refs` resolves Antora xrefs by page ID,
+    and an xref to another component is listed as unresolvable, never
+    broken. Site configs are read as data; `js-yaml` is now bundled.
+    Still skipped with a reason: `INHERIT` or `exclude_docs` in
+    `mkdocs.yml`, and `MISSING_DOOR` when a site has no home page and no
+    known URL.
+- **Persona walkthroughs** (`/docs-audit` Lane 6). `/docs-audit` walks each
+  reader's path through the docs (new user, operator, dev, security) by
+  links only and reports `WALKTHROUGH_LOST` when a task cannot be finished,
+  naming whether the answer is unreachable or absent. `/docs-update` links
+  an unreachable answer.
 - **AsciiDoc support.** Every check — structure, staleness, readability,
   references, content-drift chunking, citations, mermaid lint, and palette
   swap — runs on `.adoc`/`.asciidoc` files, and `README.adoc` satisfies the
@@ -45,6 +71,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   before.
 - Doc extensions match case-insensitively (`GUIDE.MD` is audited).
 - `MISSING_README` names every accepted README file.
+
+### Fixed
+
+- `check-refs` no longer reports Antora `image::` targets and
+  `include::partial$…` resource IDs as broken paths.
 
 ## [0.1.0] - 2026-10-01
 

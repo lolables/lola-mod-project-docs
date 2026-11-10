@@ -1,0 +1,7 @@
+{
+  "cases": [
+    {"persona": "operator", "n": 2, "kind": "unreachable", "file": "docs/upgrading.md"},
+    {"persona": "dev", "n": 3, "kind": "absent"}
+  ],
+  "fabricated": {"persona": "operator", "hop": {"from": "docs/index.md", "line": 1, "to": "docs/upgrading.md"}}
+}

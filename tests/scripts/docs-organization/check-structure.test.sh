@@ -6,6 +6,9 @@ set -euo pipefail
 # every dev machine and CI runner. Requires git ≥ 2.32.
 export GIT_CONFIG_GLOBAL=/dev/null
 export GIT_CONFIG_SYSTEM=/dev/null
+# A caller such as `git rebase --exec` exports these; inherited, they aim
+# every fixture command at the caller's repository instead of the temp one.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT="$HERE/../../../module/skills/docs-organization/scripts/check-structure.sh"

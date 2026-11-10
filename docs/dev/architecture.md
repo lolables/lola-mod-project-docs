@@ -55,12 +55,12 @@ would be faster.
 
 | Lane | Script | Finds |
 | --- | --- | --- |
-| 1 structural | `check-structure.sh` | missing or empty README, ungitignored `docs/superpowers/` (working specs and plans that planning skills such as superpowers write), drafts there tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`) |
+| 1 structural and routing | `check-structure.sh`, `check-routing.mjs` | missing or empty README, ungitignored `docs/superpowers/` (working specs and plans that planning skills such as superpowers write), drafts there tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`); readers who cannot find their door (see "Persona routing") |
 | 2 staleness | `check-staleness.mjs` | docs older than the code they describe; reports `STALENESS_NOT_ASSESSED` when no commit ever touched a file Linguist classifies as source |
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections, double-negative and slash-alternative candidates |
-| 4 reference integrity | `check-refs.mjs` | broken links and file references |
+| 4 reference integrity | `check-refs.mjs` | broken links and file references; Antora xrefs, images, and includes by resource ID |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven); `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
+| 6 LLM | — (subagent-driven); `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode; `check-walkthrough.mjs` for persona walkthroughs | content drift, missing diagrams/demo, readers who cannot finish a task by following links, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
 
 Lane 6 is the model-owned exception: a grounding subagent classifies each
 file's Diátaxis mode first, then a separate subagent runs each applicable
@@ -191,6 +191,69 @@ nothing outside `formats/` imports it.
 Convention 2 in [Conventions enforced](../../README.md#conventions-enforced) —
 developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
+
+## Persona routing
+
+Every other lane asks whether a doc is true. Routing asks whether the right
+reader can find it.
+
+- **Registry.** `scripts/personas.mjs` fixes eight readers as data: their
+  question, their entry points, and what content belongs to them.
+  `reference/personas.md` and `reference/placement-rules.md` are its
+  human tables, and `personas.test.mjs` keeps all three equal. The set is
+  not project-configurable; a real project that does not fit is the
+  trigger to revisit that.
+- **Graph seam.** `scripts/nav-graph.mjs` is the only code that reads links
+  for routing. It returns pages, link edges, and front doors through the
+  format registry, so Markdown and AsciiDoc behave the same. It resolves
+  links ignoring `?query` and `#fragment`, and leaves out tracked symlinks
+  that resolve outside the repo. Checks consume the graph and never parse
+  navigation themselves, so a site generator's navigation can be a new
+  adapter without touching a check.
+- **Docs mode.** The same script names the docs mode from site-config file
+  names. `/docs-audit` reads it before any lane. `check-routing.mjs` runs
+  page-reachability codes only when the graph's adapter reads that mode;
+  otherwise it lists them in `skipped` with the reason, along with the
+  `FRONT_DOOR_BLOCKED` pass for linking the published site. The audit never
+  executes a site config: Docusaurus keeps its navigation in JavaScript, so
+  it stays unsupported.
+  - An `antora.yml` names the mode only when tracked files sit under
+    `modules/*/pages/` beside it. A fixture or example descriptor without
+    pages must not turn the repo into a site, or hide it from the
+    repo-mode checks. The other generators are matched on names alone.
+  - A Jekyll `_config.yml` names no mode. Jekyll on GitHub Pages publishes
+    the repo's Markdown with its relative links intact, so the repo-mode
+    checks and walkthroughs apply as they are.
+  - MkDocs and Antora are routed through `mkdocs.mjs` and `antora.mjs`,
+    pure adapters over configs that `site-yaml.mjs` loads. Tags load inert,
+    nothing is run, and a malformed config exits 2 with a message that
+    names the file.
+  - An `INHERIT` or `exclude_docs` in `mkdocs.yml` is skipped with a
+    reason, because the sidebar cannot be known from one file.
+  - `link-targets.mjs` and `docs-mode.mjs` are leaf modules. They exist so
+    `check-refs.mjs` and the adapters share helpers without an import cycle.
+- **Walkthroughs.** Lane 6 sends one cold `Explore` subagent per
+  walkthrough persona through the docs by links only, and
+  `check-walkthrough.mjs` checks the walk: every recorded hop must be an
+  edge out of a file already opened (or a sidebar entry). A reply whose
+  hops no link supports, or whose answers sit in files it never opened, is
+  caught and re-dispatched.
+  Tasks it could not finish go to a second, unrestricted subagent that
+  locates the answer; the script then says whether a link path reaches it
+  (`missed`, not reported), none does (`unreachable`), or no doc holds it
+  (`absent`). The walker is cold because an agent that has read
+  `docs/dev/` cannot act like a newcomer. Hop lines are citations, not
+  matched: LLM line counts on wrapped links drift.
+- **Candidates.** `MISPLACED_SECTION` is a script-found candidate (a long
+  front-door section). The LLM decides only which reader it serves, the
+  same split as `SPLIT_CANDIDATE` in Lane 3.
+- **Thresholds.** `THRESHOLDS` in `check-routing.mjs` (the front-door lead,
+  quick-start length, section length, and the `SITE_CANDIDATE` counts) are
+  house conventions from the design, not tuned against eval runs.
+
+The test fixtures in `tests/scripts/docs-organization/routing-fixtures.mjs`
+build the template-shaped repo from the shipped templates. A template edit
+that breaks a reader's path fails `check-routing.test.mjs`.
 
 ## Path mode and document mode
 

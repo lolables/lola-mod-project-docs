@@ -76,13 +76,19 @@ present, skip the `adr` activation.
      `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`, `UNLINKED_POINTER`,
      `PARSE_WARNING` (fix: correct the markup the parser names), `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
      `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`, `UNAPPROVED_CLASSNAME`,
-     `UNAPPROVED_STYLE` findings, and anything else needing judgment. Exclude
-     "Other" lines marked `suppressed: …`, `dropped: …`, or `content drift: …`
+     `UNAPPROVED_STYLE`, `FRONT_DOOR_BLOCKED`, `LONG_QUICKSTART`,
+     `MISPLACED_SECTION`, `MISSING_DOOR`, `ORPHAN_PAGE`, `NO_WAY_BACK`,
+     `WALKTHROUGH_LOST` whose message says `unreachable:`,
+     `MISSING_STATUS`, `MISSING_GATE_FILE` whose message starts `Security` or
+     `Support seeker`, and anything else needing judgment. Exclude
+     "Other" lines marked `suppressed: …`, `dropped: …`, `missed: …`, or `content drift: …`
      — those are stated suppressions and coverage counts, not findings to fix.
      Also ignore the `### Rule sources` list: it cites rules, not findings.
      (`LANE_FAILED`, `STALENESS_NOT_ASSESSED`, `MISSING_README`,
+     `MISSING_GATE_FILE` whose message starts `Lawyer`, `SITE_CANDIDATE`,
      `NOT_VERIFIABLE`, `CITATIONS_NOT_FETCHED`, `CITATION_BLOCKED`,
-     `CITATION_FETCH_FAILED`, and `CITATION_LIMIT` are not fixable here — see
+     `CITATION_FETCH_FAILED`, `CITATION_LIMIT`, and `WALKTHROUGH_LOST` whose
+     message says `absent:` are not fixable here — see
      stop conditions.)
    - **Files not committable here** — a `File` outside any git repo, in a
      repository other than the current one, or matched by `git check-ignore`:
@@ -336,11 +342,84 @@ present, skip the `adr` activation.
        the user has not chosen to drop.
      - For `SPLIT_CANDIDATE`: the fix is **structural, and needs explicit
        consent** — it moves content between files. Propose extracting the
-       oversized file (or the named H2 section) into an audience-specific
-       how-to under `docs/` (e.g. `docs/publishing.md`), moving the content
-       verbatim and leaving a short pointer stub in the original. Confirm the
+       oversized file (or the named H2 section) to its reader's destination
+       from `node "$SKILL_DIR/scripts/personas.mjs"` (`holds`), e.g. a how-to
+       into `docs/usage/`, moving the content verbatim and leaving a short pointer stub in the original. Confirm the
        README (or parent) stays self-sufficient for onboarding after the move.
+       This is the new-page rule for every handler below that creates a
+       page: when the destination directory's index is missing, create it
+       from `$SKILL_DIR/reference/docs-tree-template.md` and link the new
+       page from it; open the new page per
+       `$SKILL_DIR/reference/placement-rules.md` (who it is for, plus a
+       back link).
        Default to *not* splitting a maintainer design doc unless the user asks.
+     - For `MISPLACED_SECTION` / `FRONT_DOOR_BLOCKED`: the fix is
+       **structural, and needs explicit consent**. Read the registry with
+       `node "$SKILL_DIR/scripts/personas.mjs"`. Move each section the
+       finding names verbatim to its persona's destination (`holds`). For
+       `FRONT_DOOR_BLOCKED`, that is each section above the getting-started
+       heading, except the title, description, and Status line. Move only
+       sections whose persona is not New user: the template's "What this
+       is" stays. When the finding says there is no getting-started
+       heading, ask the user which section is the first run, or for the
+       install command; never move sections or invent steps. Create the
+       destination file when needed, per the new-page rule under
+       `SPLIT_CANDIDATE`. Leave a one-line door in
+       the front door, for example
+       `- **Upgrading:** [CHANGELOG.md](CHANGELOG.md)`.
+       In a site docs mode, the new page goes under the site's page tree
+       (`docs_dir`, or `modules/<module>/pages/`) and gets a navigation
+       entry, as for `ORPHAN_PAGE`, instead of an index link and back link.
+       Add the entry only when a nav list already exists: a `mkdocs.yml`
+       without `nav:` gets none, because the directory tree lists the page.
+     - For `LONG_QUICKSTART`: the fix is **structural, and needs explicit
+       consent**. Keep the existing commands that reach a first result,
+       verbatim, in the front door; add no new steps. Move the full setup to
+       `docs/usage/getting-started.md`, a Diátaxis tutorial (new-page rule
+       under `SPLIT_CANDIDATE`), and make it the first door. When no short path exists, say so and stop: a long
+       minimum setup is a product finding (for example, a missing demo
+       mode), not a docs one.
+     - For `MISSING_DOOR`: add a door line for the persona to the front
+       door's "Where to go next" list (`$SKILL_DIR/reference/readme-template.md`
+       shows one per reader). For a message starting `Site:`, add a door
+       line to the README that links the site URL from the message, or the
+       home page source when the message names no URL.
+     - For `ORPHAN_PAGE`: add a link to the page from the existing page the
+       finding names. Only when it names the README, offer to create the
+       directory's index instead (new-page rule under `SPLIT_CANDIDATE`)
+       and link the page from that index and the index from the README.
+       In a site docs mode (`Mode:` line `site:mkdocs` or `site:antora`),
+       add a navigation entry, not a link:
+       - MkDocs: a `nav:` line in `mkdocs.yml`, under the section of the
+         page's reader.
+       - Antora: an `* xref:<page>.adoc[]` line in the module's `nav.adoc` that
+         `antora.yml` lists.
+
+       Show the full edited `nav` block (or `nav.adoc` list) before writing,
+       and ask. Never add a `nav:` key to a `mkdocs.yml` that has none: it
+       would replace the directory-based sidebar with a hand list. (Without
+       `nav:` there are no site orphans, so this guards a manual request.)
+     - For `NO_WAY_BACK`: add an opening line saying who the page is for,
+       with a back link to one of the pages the finding's message lists.
+     - For `WALKTHROUGH_LOST` (`unreachable:`): add a link to the answer's
+       page, from the message, in the file the finding names (the last page
+       the reader reached), on a line that says what the reader finds there,
+       for example `- **Running the tests:** [testing.md](testing.md)`. Write
+       the link relative to that file. In a site docs mode, when the
+       answer's page is missing from the site's navigation, add a
+       navigation entry instead, as for `ORPHAN_PAGE`. Show the edit and ask.
+     - When a `SITE_CANDIDATE` Note names navigation strain, say so before
+       the first `ORPHAN_PAGE` or `NO_WAY_BACK` fix. A site supplies back
+       links and navigation pages, so the maintainer may prefer migrating
+       to adding links by hand. Orphans persist on a site as pages missing
+       from its nav.
+     - For `MISSING_STATUS` and `MISSING_GATE_FILE` (messages starting
+       `Security` or `Support seeker`): ask the user for the status, or for the contact
+       channel (a private vulnerability-report address or form; a forum,
+       chat, or issue tracker), then write it. That is a `**Status:**` line
+       under the README's description, or a short `SECURITY.md` or
+       `SUPPORT.md` at the repo root with a door from the README. Never
+       invent a contact.
      - For `REF_BROKEN` / `REF_NOT_IN_GIT` / `UNLINKED_REF` / `UNLINKED_POINTER`: a reference should
        be *followable*, but how to make it so is the author's call — present
        options, do not auto-pick. Link fixes are format-neutral; when writing
@@ -464,3 +543,10 @@ Every fact is preserved — only the structure and a few connective words change
   `/docs-init`'s job (it asks for the one-line project description and
   handles the greenfield vs. existing-project split). Tell the user to run
   `/docs-init`, then re-run `/docs-audit`.
+- `MISSING_GATE_FILE` whose message starts `Lawyer`, and `SITE_CANDIDATE`,
+  are report-only.
+  Choosing a license is a legal decision, and a site migration is the
+  maintainers' call. List them for the user and change nothing.
+- A `WALKTHROUGH_LOST` whose message says `absent:` means the docs never
+  answer that reader's task. Writing the answer needs facts only the
+  maintainer has: report it, and never invent the content.

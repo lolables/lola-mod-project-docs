@@ -1,0 +1,73 @@
+{
+ "rows": [
+  {
+   "fixture": "fixtures/walkthrough-repo",
+   "run": 1,
+   "hits": {
+    "dev#2": true,
+    "operator#2": true
+   },
+   "spurious": [],
+   "missed": [],
+   "failed": [],
+   "fabricated": {
+    "checked": true,
+    "rejected": true
+   },
+   "calls": 6,
+   "cost_usd": 1.2874
+  },
+  {
+   "fixture": "fixtures/walkthrough-repo",
+   "run": 2,
+   "hits": {
+    "dev#2": true,
+    "operator#2": true
+   },
+   "spurious": [],
+   "missed": [],
+   "failed": [],
+   "fabricated": {
+    "checked": true,
+    "rejected": true
+   },
+   "calls": 6,
+   "cost_usd": 1.2984
+  },
+  {
+   "fixture": "fixtures/walkthrough-mkdocs",
+   "run": 1,
+   "hits": {
+    "operator#2": true,
+    "dev#3": true
+   },
+   "spurious": [],
+   "missed": [],
+   "failed": [],
+   "fabricated": {
+    "checked": true,
+    "rejected": true
+   },
+   "calls": 6,
+   "cost_usd": 1.2571
+  },
+  {
+   "fixture": "fixtures/walkthrough-mkdocs",
+   "run": 2,
+   "hits": {
+    "operator#2": true,
+    "dev#3": true
+   },
+   "spurious": [],
+   "missed": [],
+   "failed": [],
+   "fabricated": {
+    "checked": true,
+    "rejected": true
+   },
+   "calls": 6,
+   "cost_usd": 1.2664
+  }
+ ],
+ "total_cost_usd": 5.1093
+}
