@@ -1,0 +1,23 @@
+tests/scripts/docs-organization/lane6-kinds.test.mjs
+  s_8cd2ee9896e93d::t_37bed38e4aa8d0 39-47
+  s_8cd2ee9896e93d::t_6a3781511b47f2 25-38
+module/skills/docs-organization/scripts/lane6-kinds.mjs
+  s_8cd2ee9896e93d::t_83c7a0b60fc2d7 36-37,41-50
+  s_8cd2ee9896e93d::t_7f83768066d8a8 38-39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7d864bb11cddfdfc94a5473e186ccb49820b4db0",
+  "prompts": {},
+  "sessions": {
+    "s_8cd2ee9896e93d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "454fcbba-80fb-4c82-8cfc-4d7fbec420e2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
