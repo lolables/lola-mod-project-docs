@@ -1,0 +1,21 @@
+README.md
+  s_8cd2ee9896e93d::t_951e3e1c79648a 110-118
+docs/dev/architecture.md
+  s_8cd2ee9896e93d::t_788d8ca8ad9c7e 210-234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "01708406b818e6ced0bf75455542f5804a00aeaa",
+  "prompts": {},
+  "sessions": {
+    "s_8cd2ee9896e93d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "454fcbba-80fb-4c82-8cfc-4d7fbec420e2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
