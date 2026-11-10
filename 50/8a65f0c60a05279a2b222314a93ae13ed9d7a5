@@ -1,0 +1,21 @@
+CHANGELOG.md
+  s_8cd2ee9896e93d::t_91a926e3df38a7 97
+  s_8cd2ee9896e93d::t_42c6e25df8a573 61-69,73-80
+  s_8cd2ee9896e93d::t_466a367422f8e4 81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "508a65f0c60a05279a2b222314a93ae13ed9d7a5",
+  "prompts": {},
+  "sessions": {
+    "s_8cd2ee9896e93d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "454fcbba-80fb-4c82-8cfc-4d7fbec420e2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
