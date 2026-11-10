@@ -148,10 +148,12 @@ flowchart TD
   class DT,Unread,NF sysF
 ```
 
-`/docs-audit` with no arguments sweeps the repository's project docs. Name
-one or more files or directories to audit exactly those, including drafts
-the sweep skips (gitignored files, dot-directories like `.issue-draft/`,
-files outside any repository); `.mmd` diagram files are left to
+`/docs-audit` with no arguments sweeps the docs written for people: the
+root README and `docs/`, minus anything written for an AI assistant (skills,
+slash commands, agent prompts). Name one or more files or directories to
+audit exactly those, including what the sweep skips (gitignored files,
+dot-directories like `.issue-draft/`, files outside any repository, and
+LLM-facing docs); `.mmd` diagram files are left to
 `/diagram-test`:
 
 ```bash

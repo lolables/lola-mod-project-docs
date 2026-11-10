@@ -200,10 +200,14 @@ pass.
    - In a repo sweep, enumerate project documentation files per the scope rules in
      `$SKILL_DIR/SKILL.md` (§ "Scope of audit"): the root README (`README.md`,
      `README.adoc`, or any registered README
-     name), every doc file under `docs/`, and (for lola module repos)
-     project-shipped docs under `module/`. **Exclude** `.gitignore`-matched paths, dot-directories
-     (`.git/`, `.claude/`, `.opencode/`, `.lola/`, etc.), and LLM-config
-     files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursorrules`). Prefer
+     name) and every doc file under `docs/`. **Exclude** `.gitignore`-matched paths, dot-directories
+     (`.git/`, `.claude/`, `.opencode/`, `.lola/`, etc.), LLM-config
+     files (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.cursorrules`), and any
+     other doc written for an LLM rather than a person: skill definitions,
+     slash commands, agent prompts, prompt templates. Decide from context
+     (frontmatter, text addressed to an assistant, a directory that ships to
+     one, such as a lola module's `module/`). Only an explicit path audits
+     them. Prefer
      the host's built-in Glob tool; if the host has none, use `git -c
      core.quotePath=false ls-files --cached --others --exclude-standard`
      (never bare `find`, which ignores `.gitignore`; without
