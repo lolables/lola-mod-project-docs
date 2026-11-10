@@ -60,29 +60,38 @@ would be faster.
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections, double-negative and slash-alternative candidates |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references; Antora xrefs, images, and includes by resource ID |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven); `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode; `check-walkthrough.mjs` for persona walkthroughs | content drift, missing diagrams/demo, readers who cannot finish a task by following links, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
+| 6 LLM | `lane6.mjs` (dispatch), `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode; `check-walkthrough.mjs` for persona walkthroughs | content drift, missing diagrams/demo, readers who cannot finish a task by following links, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
 
-Lane 6 is the model-owned exception: a grounding subagent classifies each
-file's Diátaxis mode first, then a separate subagent runs each applicable
-prompt for that file — never grouped across files or prompts, per the
-dispatch measurements in `eval/REPORT.md`.
+Lane 6 is the model-owned exception, but a script owns its control flow.
+`lane6.mjs` enumerates every job, renders every prompt from
+`reference/lane6-prompts/`, validates every reply against its kind's
+schema, and reports each job that did not finish as `LANE_FAILED`. The
+orchestrator only dispatches and records. On a 20-doc repository a Sonnet
+orchestrator skipped every judgment prompt as "budget" although the prompt
+wording forbade it; now a skip can come only from the script.
+
+Each job is its own subagent: a grounding job classifies each file's
+Diátaxis mode first, then a separate job runs each applicable prompt for
+that file — never grouped across files or prompts, per the dispatch
+measurements in `eval/REPORT.md`.
 
 Content drift goes further than one subagent per file and prompt. A
 subagent asked to judge a whole doc reports one or two drifts and silently
 drops the rest, so drift runs as a claim ledger (Rounds 14-15 in
-`eval/REPORT.md`):
+`eval/REPORT.md`), which `lane6.mjs` drives:
 
-1. `doc-chunks.mjs` splits the doc at H2/H3 headings into ranges of at most
-   100 lines (one range at 150 lines or fewer; a longer section stays whole).
-2. An extract subagent per range lists every checkable claim, typed `fact`
+1. `lane6.mjs plan` calls `doc-chunks.mjs` to split the doc at H2/H3
+   headings into ranges of at most 100 lines (one range at 150 lines or
+   fewer; a longer section stays whole).
+2. An extract job per range lists every checkable claim, typed `fact`
    (one thing) or `set` (a count, an only/both/all, or a list that names its
    items — kept as one claim).
-3. Verify subagents take the claims in batches of 20 and must return one
-   verdict per claim; for a set they list the doc's members and the code's
-   full group before judging.
-4. The orchestrator checks every claim got a verdict, retries the rest, and
-   reports a coverage line per file, so "no drift" can be told apart from
-   "not checked".
+3. Once a file's extracts are recorded, `next` releases verify jobs that take
+   the claims in batches of 20 and must return one verdict per claim; for a
+   set they list the doc's members and the code's full group before judging.
+4. `lane6.mjs` checks every claim got a verdict, retries the rest, and
+   `collect` reports a coverage line per file, so "no drift" can be told
+   apart from "not checked".
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {
@@ -102,30 +111,28 @@ drops the rest, so drift runs as a claim ledger (Rounds 14-15 in
   'fontFamily': 'system-ui, sans-serif'
 }, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
 sequenceDiagram
-  participant O as Orchestrator
-  participant C as doc-chunks.mjs
+  participant L as lane6.mjs
   participant X as Extract subagents
   participant V as Verify subagents
-  O->>C: one doc
-  C-->>O: ranges split at H2/H3
+  L->>L: split one doc at H2/H3 (doc-chunks.mjs)
   par one per range
-    O->>X: range
-    X-->>O: claims typed fact or set
+    L->>X: range prompt
+    X-->>L: claims typed fact or set
   end
   par batches of 20 claims
-    O->>V: claim batch
-    V-->>O: one verdict per claim
+    L->>V: claim batch prompt
+    V-->>L: one verdict per claim
   end
   loop until every claim has a verdict
-    O->>V: claims missing a verdict
-    V-->>O: verdicts
+    L->>V: claims missing a verdict
+    V-->>L: verdicts
   end
-  O->>O: coverage line per file
+  L->>L: coverage line per file
 ```
 
-The plain-language prompt (prompt 7) uses the same chunking, for the same
-reason: a whole-document judge under-reports on long files. It runs one
-subagent per `doc-chunks.mjs` range. It needs no claim ledger, because each
+The plain-language job uses the same chunking, for the same reason: a
+whole-document judge under-reports on long files. `lane6.mjs` plans one
+job per `doc-chunks.mjs` range. It needs no claim ledger, because each
 range's reply is its findings. It takes no grounding note (Round 16 measured
 it without one) and gets the read-only rule only, plus the untrusted-data
 rule in document mode.

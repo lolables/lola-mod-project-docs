@@ -32,6 +32,41 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   and the site sidebar, `--verify` checks a cold reader's recorded hops
   against the navigation graph, and `--classify` turns each task the walk
   could not finish into `WALKTHROUGH_LOST` (`unreachable` or `absent`).
+- `scripts/lane6.mjs` — the dispatcher for `/docs-audit`'s Lane 6 prompts
+  and Lane 3 adjudication. `plan` writes a run directory (`mktemp`) and
+  prints the first batch of at most 8 jobs and the run's `eof`, a random
+  `LANE6_EOF_<16 hex>` heredoc delimiter that `next` prints again;
+  `record <run> <id>` checks one reply (stdin, through `<<'<eof>'`)
+  against its kind's schema and rejects a reply with a line equal to the `eof`; `next <run>` retries invalid or
+  missing replies (three attempts per job) and prints the next batch, or
+  `{"status": "done"}`; `collect <run>` prints `findings`, `other`, and
+  `modes`. The jobs:
+
+  | Kind | One per | Scope | Waits for |
+  |---|---|---|---|
+  | `grounding` | file | all | — |
+  | `adjudicate` | file with Lane 3 candidates | all | — |
+  | `plain-language` | chunk (`doc-chunks.mjs`) | all | — |
+  | `drift-extract` | chunk | sweep, path | — |
+  | `drift-verify` | 20 claims | sweep, path | the file's extracts |
+  | `drift-cited` | file with cited sources | document | grounding |
+  | `diagram-drift` | `.mmd` file or mermaid block | sweep, path | — |
+  | `missing-diagrams`, `cold-read`, `procedure-structure` | file | all | grounding |
+  | `completeness` | file not graded `landing` | all | grounding |
+  | `hero-demo` | root README; in a sweep also a `landing` page | sweep, path | grounding |
+
+  Sweep and path scopes audit and report each file's real path (symlinks
+  resolved, a symlink and its target planned once); document scope keeps
+  the path it was given and dedupes by real path. A Lane 3 candidate
+  whose file is not in the plan is not lost: `collect` reports it as
+  `(not adjudicated)` and adds a `LANE_FAILED` for the file.
+
+  A job that ends without a valid reply, or never runs because its
+  grounding failed, becomes one `LANE_FAILED` warning per file:
+
+  ```text
+  Lane 6: Grounding (no JSON object (Unexpected token 'n')), Cold read (grounding failed) did not run; unknown, not clean
+  ```
 - `scripts/nav-graph.mjs` — the docs mode (`--mode`: `repo`, `site:<generator>`,
   `site-unsupported:<generator>`, `site-unsupported:multiple`) from site-config file names, and the link
   graph `check-routing.mjs` reads. It reads `mkdocs.yml`, `antora.yml`, and

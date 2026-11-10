@@ -1,0 +1,7 @@
+Read {{file}}. Flag any PROCEDURAL run — a stretch that walks the reader through a sequence of commands or actions (install / setup / configuration / a command-by-command walkthrough) presented as continuous prose and/or back-to-back fenced code blocks with NO numbered list, NO bullet list, and NO sub-headings breaking it into rest points. Roughly three or more distinct commands/steps crammed together unbroken is the target — the reader has no visual anchor for where one step ends and the next begins. This applies to any document with a procedure, INCLUDING a README / landing page whose Install or Quickstart section walks through commands (this check is **not** landing-exempt — the others are). Do NOT flag: a procedure already broken into a list or sub-headings (that is the desired shape — never re-flag it); conceptual/explanatory prose or a reference table that is not a procedure (prose density there is Lane 3's `WALL_OF_TEXT` concern, not this one); a one- or two-command run (too short to need scaffolding); or style/tone/drift (other lanes). For each run, return a `NEEDS_STRUCTURE` finding (severity info) with the section heading or first line of the run, roughly how many steps are crammed together, and why the reader loses their place. Reply in under 200 words; empty list if every procedure is already broken into rest points.
+
+End your reply with one fenced json block holding only this object:
+```json
+{"findings": [{"line": 12, "run": "<heading or first line>", "steps": 4, "why": "..."}]}
+```
+Use `{"findings": []}` when there is nothing to report.

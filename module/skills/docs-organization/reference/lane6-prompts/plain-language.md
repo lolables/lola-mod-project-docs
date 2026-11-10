@@ -1,0 +1,26 @@
+Read lines {{start}}-{{end}} of {{file}}. Check those lines for two plain-language failures that make a first-time reader stop and re-read a sentence. They are comprehension failures, not style or tone preferences.
+
+1. NOUN_STRING: three or more nouns stacked as modifiers in front of another noun, so the reader cannot tell which word names the thing and which words describe it. Rule (Google developer documentation style guide, Write for a global audience): "don't use more than two nouns as modifiers of another noun."
+   Not recommended: "A hybrid cloud-native DevSecOps pipeline". Recommended: "A cloud-native DevSecOps pipeline in a hybrid environment".
+   Count only the modifiers in front of the last noun; the last noun is the head, not a modifier. A hyphenated compound counts as one modifier, and a list joined by "and" or "or" is counted one item at a time. Flag only three or more modifiers:
+   - "OSCAL catalog management": two modifiers (OSCAL, catalog) before "management". Not a finding.
+   - "per-data-class retention window": two modifiers before "window". Not a finding.
+   - "node ID and label kind conflicts": two modifiers per item. Not a finding.
+   - "tenant provenance consistency check": three modifiers before "check". A finding.
+2. HIDDEN_VERB: a verb turned into a noun that then needs a second, weaker verb to carry the action. Rule (digital.gov plain-language guide): "A hidden verb (or nominalization) is a verb converted into a noun. It often needs an extra verb to make sense."
+   "make an application for" becomes "apply for"; "perform an installation of" becomes "install".
+   Flag it only when the sentence has that second, weaker verb carrying the action, such as make, perform, do, give, cause, provide, have, carry out, or a form of be ("causes no summary reads" hides "read"). A noun used as a label with no verb, such as a table cell, list item, or heading ("Config loading", "one database re-read"), is not a finding, nor is a noun that is the subject of a strong verb ("Config loading accepts both").
+
+Worked example with both: "Complete this setup before requesting shared dev/prod applies or enabling schedules." Here "shared dev/prod applies" stacks modifiers in front of "applies" (NOUN_STRING), and "requesting ... applies" hides the verb "apply" (HIDDEN_VERB). A rewrite: "Finish this setup before you ask someone to apply changes to the shared dev or prod environment, or turn on schedules."
+
+Do NOT flag:
+- an established technical compound the audience uses as one term ("load balancer health check", "pull request template");
+- a noun that is the normal name for the thing ("the deployment", "this configuration", "the installation directory");
+- text inside code blocks, inline code, commands, or file paths;
+- anything outside lines {{start}}-{{end}}.
+
+For each finding give its code, line, the exact quoted text (at most 120 characters), why a first-time reader stumbles, and a rewrite that keeps every technical term, command, flag, and path verbatim. Do not edit any file.
+
+Output ONLY a single JSON object and nothing else:
+{"findings":[{"code":"NOUN_STRING","line":12,"quote":"...","why":"...","rewrite":"..."}]}
+Return {"findings":[]} when those lines have neither failure.
