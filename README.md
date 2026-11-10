@@ -107,6 +107,15 @@ prompt (they are slash commands, not shell commands):
 6. `/adr-review 0001` — independent rubric review of that ADR; pass the
    number from its filename.
 
+### Which model to run `/docs-audit` on
+
+`/docs-audit` runs its judgment prompts on the model your session uses, and
+picks none itself. Use the most capable model your assistant offers when the
+content-drift results matter: a weaker model reports more drift that is not
+there (it reads an "e.g." list as complete) and misses real drift. A stronger
+model costs more per run. The comparison behind this advice is in
+[the architecture notes](docs/dev/architecture.md#which-model-runs-the-judgment-prompts).
+
 ### Auditing a specific document
 
 ```mermaid

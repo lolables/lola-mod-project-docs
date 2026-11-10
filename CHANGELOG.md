@@ -74,10 +74,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `docs/`. Skills, slash commands, agent prompts, and other docs written for
   an AI assistant are skipped unless named as a path; a lola module's
   `module/` was swept before.
-- The cold-read, plain-language, drift, and adjudication prompts report
-  fewer false positives: noun strings count modifiers, not the head noun;
-  a cold read judges as the doc's audience; a prerequisite or UI step is
-  never a drift Blocker.
+- The plain-language, drift, and adjudication prompts report fewer false
+  positives: noun strings count modifiers, not the head noun; a
+  prerequisite or UI step is never a drift Blocker. A cold read judges as
+  the doc's audience and reports about a third fewer findings.
 
 - `md-files.mjs` and `md-chunks.mjs` are now `doc-files.mjs` and
   `doc-chunks.mjs`.

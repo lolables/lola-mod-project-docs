@@ -207,6 +207,62 @@ orchestrator summarised the Info rows and dropped 28 Warnings from its
 reply. A row missing from the reply is a row `/docs-update` never sees; a
 file has no length limit.
 
+### Which model runs the judgment prompts
+
+The session's model, always. `lane6.mjs` names no model and the
+orchestrator picks none: the module installs on several hosts, model names
+differ between them, and some cannot choose a model per subagent. The
+README tells the reader to pick the most capable model they have.
+
+That advice rests on one comparison (2026-11-10, complytime-labs/crosscodex
+at 156e9ca, the 12 docs both runs audited). Each run's findings were
+sampled and checked against the docs and code by an independent verifier:
+
+| | Sonnet 5.5 | Opus 5.5 |
+|---|---|---|
+| Run cost | $41 | $102 |
+| `CONTENT_DRIFT` reported | 65 | 82 |
+| Sampled drift that is real | 20 of 25 | 25 of 25 |
+| Sampled `COLD_READ` that holds up | 8 of 30 | 9 of 30 |
+| Sampled `NOUN_STRING` that is correct | 5 of 19 | 2 of 12 |
+
+- **Drift depends on the model.** The weaker model's false drift came from
+  reading a selective list as complete.
+- **Cold read and noun strings do not.** Both models flag terms the doc's
+  audience already knows, over-use Warning, and miscount noun modifiers, so
+  a stronger model does not fix those; the prompts would.
+
+The prompts were then tightened for those patterns, and the jobs behind
+the sampled Sonnet findings were re-run with Sonnet, once with the new
+prompts and once with the old ones as a control:
+
+| Same jobs | Old prompts | New prompts |
+|---|---|---|
+| Sampled cold-read noise still reported | 10 of 22 | 10 of 22 |
+| Cold-read findings, all re-run files | 81 | 54 |
+| Sampled noun-string and hidden-verb noise still reported | 10 of 19 | 2 of 19 |
+| Plain-language findings, all re-run chunks | 58 | 10 |
+| Sampled real drift still reported | 13 of 20 | 11 of 19 |
+
+Drift recall did not change: a second run of the old prompt loses as many
+real drifts, so that loss is run-to-run variance.
+
+**Known limitation: about half of cold-read findings are noise.** The
+tightened prompt cut cold-read volume by a third but not its sampled noise.
+A second round (search the doc before calling something missing; skip
+ticket references the sentence does not need) changed nothing measurable,
+and adding "report only what stops the reader" also dropped real
+self-contradictions and a command that fails, so neither shipped.
+
+**Known limitation: one run finds about two thirds of the real drift.**
+Re-running the same verify jobs with the same prompt kept 13 of 20 sampled
+real drifts, so each run misses a different third. A second verify pass per
+claim, keeping the union, would raise recall at roughly twice the drift
+cost; it is not built. Re-running `/docs-audit` after fixing a batch of
+findings is the cheap way to catch more. A hyphenated compound
+now counts as one modifier, as in the prompt's own Google example, so
+"per-data-class retention policy" is no longer a noun string.
+
 ## Persona routing
 
 Every other lane asks whether a doc is true. Routing asks whether the right
