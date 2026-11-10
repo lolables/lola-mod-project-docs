@@ -1,0 +1,21 @@
+tests/scripts/docs-organization/lane6-docs-guard.test.mjs
+  s_8cd2ee9896e93d::t_e2320a81db66c8 20
+module/commands/docs-audit.md
+  s_8cd2ee9896e93d::t_07083fdf1a8804 464-467
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8541d3a2d3bcf11dedfc51aeb4e9436d38da179e",
+  "prompts": {},
+  "sessions": {
+    "s_8cd2ee9896e93d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "454fcbba-80fb-4c82-8cfc-4d7fbec420e2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
