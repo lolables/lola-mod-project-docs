@@ -58,8 +58,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   "as of v2"). The LLM drops a candidate the reader needs, such as a version
   pin, and suppresses both in changelogs, release notes, and ADRs. The fix
   deletes the detail or points to the command that reports it.
+- **Script-driven Lane 6** (`lane6.mjs`). The script plans every judgment
+  job, renders each prompt from `reference/lane6-prompts/`, checks each
+  reply, and retries it up to three times. A job that never finishes is a
+  `LANE_FAILED` warning the script writes, so an orchestrator can no longer
+  skip prompts to save cost. Lane 3's candidate adjudication runs through it
+  too.
+- **Report file.** `/docs-audit` saves the full punch list to a `mktemp`
+  file every run. Past 50 findings it prints only the Blockers and a
+  `Full report:` line, and `/docs-update` reads that file.
 
 ### Changed
+
+- A repo sweep audits only docs written for people: the root README and
+  `docs/`. Skills, slash commands, agent prompts, and other docs written for
+  an AI assistant are skipped unless named as a path; a lola module's
+  `module/` was swept before.
+- The cold-read, plain-language, drift, and adjudication prompts report
+  fewer false positives: noun strings count modifiers, not the head noun;
+  a cold read judges as the doc's audience; a prerequisite or UI step is
+  never a drift Blocker.
 
 - `md-files.mjs` and `md-chunks.mjs` are now `doc-files.mjs` and
   `doc-chunks.mjs`.
@@ -76,6 +94,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `check-refs` no longer reports Antora `image::` targets and
   `include::partial$…` resource IDs as broken paths.
+- Script JSON over 64 KB is no longer cut short when read through a pipe.
 
 ## [0.1.0] - 2026-10-01
 
