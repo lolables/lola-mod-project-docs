@@ -36,12 +36,13 @@ if (isMain(import.meta.url)) {
   const targets = process.argv.slice(2);
   if (targets.length === 0) {
     process.stderr.write('usage: doc-files.mjs <file-or-dir>...\n');
-    process.exit(2);
-  }
-  try {
-    process.stdout.write(JSON.stringify(targets.flatMap((t) => walkDocs(t)), null, 2) + '\n');
-  } catch (e) {
-    process.stderr.write('doc-files: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
+  } else {
+    try {
+      process.stdout.write(JSON.stringify(targets.flatMap((t) => walkDocs(t)), null, 2) + '\n');
+    } catch (e) {
+      process.stderr.write('doc-files: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
+      process.exitCode = 2;
+    }
   }
 }

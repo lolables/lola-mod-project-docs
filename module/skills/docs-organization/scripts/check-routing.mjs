@@ -415,26 +415,29 @@ export async function analyzeRouting(root) {
 async function main(argv) {
   if (argv.length > 2) {
     process.stderr.write('usage: check-routing.mjs (no arguments; run it inside the repository)\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const root = repoRootOf(process.cwd());
   if (!root) {
     process.stderr.write('check-routing: not a git repository; routing reads the tracked file list\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const { configError, ...result } = await analyzeRouting(root);
   const status = result.findings.length ? 'findings' : 'ok';
   process.stdout.write(JSON.stringify({ status, ...result }, null, 2) + '\n');
   if (configError) {
     process.stderr.write(`check-routing: ${configError}\n`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
-  process.exit(result.findings.length ? 1 : 0);
+  process.exitCode = result.findings.length ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) {
   main(process.argv).catch((e) => {
     process.stderr.write(e instanceof ConfigError ? `check-routing: ${e.message}\n` : 'check-routing: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

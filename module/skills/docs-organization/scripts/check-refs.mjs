@@ -236,7 +236,8 @@ async function main(argv) {
   const targets = argv.slice(2);
   if (targets.length === 0) {
     process.stderr.write('usage: check-refs.mjs <file-or-dir>...\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const rootOfDir = new Map();
   const trackedOf = new Map();
@@ -342,14 +343,15 @@ async function main(argv) {
   if (configErrors.length) {
     for (const m of configErrors) process.stderr.write(`check-refs: ${m}\n`);
     process.stderr.write(`check-refs: Antora refs not checked (component unavailable): ${listOf(uncheckedFiles) || 'none'}\n`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
-  process.exit(findings.length ? 1 : 0);
+  process.exitCode = findings.length ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) {
   main(process.argv).catch((e) => {
     process.stderr.write(e instanceof ConfigError ? `check-refs: ${e.message}\n` : 'check-refs: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

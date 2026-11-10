@@ -68,7 +68,8 @@ if (isMain(import.meta.url)) {
   const lists = { '--extensions': extensions, '--readmes': readmeNames };
   if (args.length !== 1 || !lists[args[0]]) {
     process.stderr.write('usage: formats/index.mjs --extensions|--readmes\n');
-    process.exit(2);
+    process.exitCode = 2;
+  } else {
+    process.stdout.write(lists[args[0]]().join('\n') + '\n');
   }
-  process.stdout.write(lists[args[0]]().join('\n') + '\n');
 }

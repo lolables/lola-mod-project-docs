@@ -350,16 +350,18 @@ if (isMain(import.meta.url)) {
     const args = process.argv.slice(2);
     if (args.length !== 1 || args[0] !== '--mode') {
       process.stderr.write('usage: nav-graph.mjs --mode\n');
-      process.exit(2);
+      process.exitCode = 2;
+    } else {
+      const root = repoRootOf(process.cwd());
+      if (!root) {
+        process.stderr.write('nav-graph: not a git repository; the docs mode is read from tracked files\n');
+        process.exitCode = 2;
+      } else {
+        process.stdout.write(JSON.stringify(detectMode(gitTracked(root), root), null, 2) + '\n');
+      }
     }
-    const root = repoRootOf(process.cwd());
-    if (!root) {
-      process.stderr.write('nav-graph: not a git repository; the docs mode is read from tracked files\n');
-      process.exit(2);
-    }
-    process.stdout.write(JSON.stringify(detectMode(gitTracked(root), root), null, 2) + '\n');
   } catch (e) {
     process.stderr.write('nav-graph: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   }
 }

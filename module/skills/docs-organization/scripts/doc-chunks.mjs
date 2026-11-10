@@ -71,7 +71,8 @@ async function main(argv) {
   const args = argv.slice(2);
   if (args.length !== 1) {
     process.stderr.write('usage: doc-chunks.mjs <file>\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const file = args[0];
   const content = readFileSync(file, 'utf8');
@@ -82,6 +83,6 @@ async function main(argv) {
 if (isMain(import.meta.url)) {
   main(process.argv).catch((e) => {
     process.stderr.write('doc-chunks: internal error: ' + (e && e.message ? e.message : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

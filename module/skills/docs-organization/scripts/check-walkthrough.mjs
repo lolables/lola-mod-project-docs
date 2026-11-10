@@ -256,25 +256,28 @@ const USAGE = 'usage: check-walkthrough.mjs --plan | --verify | --classify (JSON
 async function main(args) {
   if (args.length !== 1 || !MODES.includes(args[0])) {
     process.stderr.write(USAGE);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const root = repoRootOf(process.cwd());
   if (!root) {
     process.stderr.write('check-walkthrough: not a git repository; walkthroughs read the tracked file list\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const ctx = await planWalks(root);
   if (args[0] === '--plan') {
     process.stdout.write(JSON.stringify(ctx.plan, null, 2) + '\n');
     if (ctx.plan.skipped && ctx.graph.configError) {
       process.stderr.write(`check-walkthrough: ${ctx.graph.configError}\n`);
-      process.exit(2);
+      process.exitCode = 2;
     }
     return;
   }
   if (ctx.plan.skipped) {
     process.stderr.write(`check-walkthrough: walkthroughs are skipped: ${ctx.plan.skipped}\n`);
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   let input;
   let parseError = null;
@@ -286,16 +289,17 @@ async function main(args) {
   if (args[0] === '--classify') {
     const result = parseError ? { findings: [], missed: [], rejected: [{ at: 'input', reason: `not JSON: ${parseError}` }] } : classifyLost(ctx, input);
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
-    process.exit(result.findings.length || result.rejected.length ? 1 : 0);
+    process.exitCode = result.findings.length || result.rejected.length ? 1 : 0;
+    return;
   }
   const result = parseError ? { valid: false, rejected: [{ at: 'reply', reason: `not JSON: ${parseError}` }], opened: [] } : verifyWalk(ctx, input);
   process.stdout.write(JSON.stringify(result, null, 2) + '\n');
-  process.exit(result.valid ? 0 : 1);
+  process.exitCode = result.valid ? 0 : 1;
 }
 
 if (isMain(import.meta.url)) {
   main(process.argv.slice(2)).catch((e) => {
     process.stderr.write(e instanceof ConfigError ? `check-walkthrough: ${e.message}\n` : 'check-walkthrough: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

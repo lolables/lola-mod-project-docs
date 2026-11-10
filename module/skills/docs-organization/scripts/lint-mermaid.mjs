@@ -374,7 +374,8 @@ async function main(argv) {
   const targets = args.filter((a) => a !== '--json');
   if (targets.length === 0) {
     console.error('usage: lint-mermaid.mjs [--json] <file-or-dir>...');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
 
   const results = [];
@@ -417,7 +418,7 @@ async function main(argv) {
   }
   // Any finding, warnings included, is exit 1 (SKILL.md contract). A gate
   // that should fail only on blockers reads `blockerCount` from --json.
-  process.exit(results.length > 0 ? 1 : 0);
+  process.exitCode = results.length > 0 ? 1 : 0;
 }
 
 export { formatHuman };
@@ -425,6 +426,6 @@ export { formatHuman };
 if (isMain(import.meta.url)) {
   main(process.argv).catch((e) => {
     console.error('lint-mermaid: unexpected error:', e);
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

@@ -467,7 +467,8 @@ async function main(argv) {
   const targets = argv.slice(2);
   if (targets.length === 0) {
     process.stderr.write('usage: check-prose.mjs <file-or-dir>...\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const findings = [];
   const seen = new Set();
@@ -489,12 +490,12 @@ async function main(argv) {
     findings,
   };
   process.stdout.write(JSON.stringify(payload, null, 2) + '\n');
-  process.exit(findings.length === 0 ? 0 : 1);
+  process.exitCode = findings.length === 0 ? 0 : 1;
 }
 
 if (isMain(import.meta.url)) {
   main(process.argv).catch((e) => {
     process.stderr.write('check-prose: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   });
 }
