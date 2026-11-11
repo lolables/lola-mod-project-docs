@@ -18,10 +18,12 @@ Paths starting with `scripts/` or `reference/` are relative to
    - run `task vendor`.
 2. Write `module/skills/docs-organization/scripts/formats/<name>.mjs`
    exporting `{ name, extensions, readmeNames, parse }`. `parse` returns the
-   [`DocModel`](architecture.md#document-formats) with exact 1-based
-   lines; count them with `formats/text.mjs` (`splitLines`, `countLines`,
-   `lineStarts`) so line endings are handled the same way as in every other
-   adapter.
+   [`DocModel`](architecture.md#document-formats): a format-neutral record
+   of a document's headings, paragraphs, links, and text, which every check
+   reads in place of parser tokens. The field list is the header comment of
+   `formats/index.mjs`. Every line number is 1-based and exact; count lines
+   with `formats/text.mjs` (`splitLines`, `countLines`, `lineStarts`) so line
+   endings are handled the same way as in every other adapter.
 3. Add it to `FORMATS` in
    `module/skills/docs-organization/scripts/formats/index.mjs`.
 4. Write `tests/scripts/docs-organization/__fixtures__/formats/sample.<ext>`
