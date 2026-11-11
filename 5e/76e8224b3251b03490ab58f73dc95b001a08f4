@@ -1,0 +1,19 @@
+docs/dev/maintaining.md
+  s_f79db57534706c::t_4daa6c947a5fd6 21-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "5e76e8224b3251b03490ab58f73dc95b001a08f4",
+  "prompts": {},
+  "sessions": {
+    "s_f79db57534706c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "08ec2681-701b-4e00-b41e-6ce11d6aeb56",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
