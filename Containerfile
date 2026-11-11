@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi10-minimal:10.2
+FROM registry.access.redhat.com/ubi10-minimal:10.3
 
 RUN microdnf -y install ca-certificates git tar gzip findutils shadow-utils \
     && microdnf clean all
