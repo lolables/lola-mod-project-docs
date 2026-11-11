@@ -206,7 +206,19 @@ Convention 2 in [Conventions enforced](../../README.md#conventions-enforced) —
 developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
 
-The punch list is also written to a `mktemp` report file on every run.
+The punch list is also written to a report file on every run. The report,
+the saved script JSON, the `--fetch` snapshots, and Lane 6's run directories
+all live in one session directory,
+`$XDG_CACHE_HOME/docs-audit/<project>/<timestamp>-<random>/` (default root
+`~/.cache/docs-audit/`, mode 0700), so a past run can be audited and the
+process refined. `lane6.mjs session` creates it.
+
+The layout copies `review-council`: `<project>` is a 12-hex hash of the working
+directory, `mkdtemp` makes the session so two audits in one second cannot
+collide, and each project keeps its newest 20 sessions
+(`DOCS_AUDIT_SESSION_CACHE_MAX`; the session just made is never pruned, even
+at 0). Not copied: its clone cache, forge handling, and per-phase pipeline
+state, which have no counterpart here.
 Past 50 findings the reply shows only the Blockers and a `Full report:`
 line, and `/docs-update` reads the file. The reason: once `lane6.mjs` made
 every judgment job run, a 14-doc repository produced 395 findings, and the

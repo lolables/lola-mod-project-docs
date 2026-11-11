@@ -33,7 +33,9 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   against the navigation graph, and `--classify` turns each task the walk
   could not finish into `WALKTHROUGH_LOST` (`unreachable` or `absent`).
 - `scripts/lane6.mjs` — the dispatcher for `/docs-audit`'s Lane 6 prompts
-  and Lane 3 adjudication. `plan` writes a run directory (`mktemp`) and
+  and Lane 3 adjudication. `session` prints a new audit session directory,
+  where the report and every saved JSON also go. `plan` writes a run
+  directory (`lane6-XXXXXX`) in it (`--session`; a new session when omitted) and
   prints the first batch of at most 8 jobs and the run's `eof`, a random
   `LANE6_EOF_<16 hex>` heredoc delimiter that `next` prints again;
   `record <run> <id>` checks one reply (stdin, through `<<'<eof>'`)

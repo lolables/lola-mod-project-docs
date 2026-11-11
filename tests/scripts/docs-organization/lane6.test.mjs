@@ -1,14 +1,20 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, realpathSync, readFileSync, existsSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, realpathSync, readFileSync, existsSync, symlinkSync, statSync, utimesSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { planRun, nextBatch, recordReply, collectRun, MAX_ATTEMPTS } from '../../../module/skills/docs-organization/scripts/lane6.mjs';
+import { planRun, nextBatch, recordReply, collectRun, startSession, MAX_ATTEMPTS } from '../../../module/skills/docs-organization/scripts/lane6.mjs';
 
 const dirs = [];
-after(() => { for (const d of dirs) rmSync(d, { recursive: true, force: true }); });
+// Runs land under $XDG_CACHE_HOME/docs-audit; point it at a scratch dir so no test touches the real cache.
+const cacheHome = realpathSync(mkdtempSync(join(tmpdir(), 'lane6-cache-')));
+process.env.XDG_CACHE_HOME = cacheHome;
+after(() => {
+  for (const d of dirs) rmSync(d, { recursive: true, force: true });
+  rmSync(cacheHome, { recursive: true, force: true });
+});
 function repo(files) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'lane6-repo-')));
   dirs.push(root);
@@ -53,6 +59,86 @@ test('plan: sweep creates wave-1 jobs per file; grounding first; prompt text inl
   assert.deepEqual(manifest(run).jobs.map((j) => j.kind).sort(), ['diagram-drift', 'drift-extract', 'drift-extract', 'grounding', 'grounding', 'plain-language', 'plain-language']);
   assert.match(jobs[0].prompt, /^Read-only:/);
   assert.equal(readFileSync(jobs[0].prompt_file, 'utf8'), jobs[0].prompt);
+});
+
+const sessionOf = (run) => dirname(run);
+const projectOf = (run) => dirname(sessionOf(run));
+
+test('plan: with no --session, the run lands in a new session under $XDG_CACHE_HOME/docs-audit/<project>, private to the user', async () => {
+  const { run } = await planSweep();
+  assert.equal(dirname(projectOf(run)), join(cacheHome, 'docs-audit'));
+  assert.match(basename(projectOf(run)), /^[0-9a-f]{12}$/);
+  assert.match(basename(sessionOf(run)), /^\d{8}-\d{6}-/);
+  assert.match(basename(run), /^lane6-/);
+  assert.equal(statSync(projectOf(run)).mode & 0o777, 0o700);
+});
+
+test('plan: a relative $XDG_CACHE_HOME is ignored; the run goes under $HOME/.cache', async () => {
+  const home = realpathSync(mkdtempSync(join(tmpdir(), 'lane6-home-')));
+  dirs.push(home);
+  const saved = { XDG_CACHE_HOME: process.env.XDG_CACHE_HOME, HOME: process.env.HOME };
+  process.env.XDG_CACHE_HOME = 'relative/cache';
+  process.env.HOME = home;
+  try {
+    const { run } = await planSweep();
+    assert.equal(dirname(projectOf(run)), join(home, '.cache', 'docs-audit'));
+    assert.equal(existsSync('relative/cache'), false);
+  } finally {
+    Object.assign(process.env, saved);
+  }
+});
+
+test('session: two audits started together get distinct directories', () => {
+  const a = startSession().session;
+  const b = startSession().session;
+  assert.notEqual(a, b);
+  assert.equal(dirname(a), dirname(b));
+});
+
+test('plan: --session puts the run inside the given session, beside the audit report', async () => {
+  const { session } = startSession();
+  const root = repo({ 'a.md': README });
+  const res = await planRun({ scope: 'document', files: [join(root, 'a.md')], session });
+  assert.equal(dirname(res.run), session);
+});
+
+test('plan: --session outside the audit cache is a usage error', async () => {
+  const root = repo({ 'a.md': README });
+  for (const session of [tmpdir(), join(cacheHome, 'docs-audit', 'nope'), join(cacheHome, 'docs-audit', '..')]) {
+    await assert.rejects(planRun({ scope: 'document', files: [join(root, 'a.md')], session }), /not a session directory/);
+  }
+});
+
+test('session: keeps the newest DOCS_AUDIT_SESSION_CACHE_MAX sessions and never the one just made', () => {
+  const saved = process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
+  try {
+    process.env.DOCS_AUDIT_SESSION_CACHE_MAX = '3';
+    let session;
+    for (let i = 0; i < 5; i++) {
+      ({ session } = startSession());
+      const when = new Date(Date.now() - (10 - i) * 60000);
+      utimesSync(session, when, when);
+    }
+    assert.equal(readdirSync(dirname(session)).length, 3);
+    process.env.DOCS_AUDIT_SESSION_CACHE_MAX = '0';
+    const last = startSession().session;
+    assert.deepEqual(readdirSync(dirname(last)), [basename(last)]);
+  } finally {
+    if (saved === undefined) delete process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
+    else process.env.DOCS_AUDIT_SESSION_CACHE_MAX = saved;
+  }
+});
+
+test('session: a non-numeric cap falls back to 20', () => {
+  const saved = process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
+  try {
+    process.env.DOCS_AUDIT_SESSION_CACHE_MAX = 'lots';
+    for (let i = 0; i < 22; i++) startSession();
+    assert.equal(readdirSync(dirname(startSession().session)).length, 20);
+  } finally {
+    if (saved === undefined) delete process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
+    else process.env.DOCS_AUDIT_SESSION_CACHE_MAX = saved;
+  }
 });
 
 test('plan: a batch holds at most 8 jobs', async () => {
@@ -392,6 +478,15 @@ test('CLI: a stale lock makes next exit 2', async () => {
   const r = cli(['next', run]);
   assert.equal(r.status, 2);
   assert.match(r.stderr, /another lane6 plan or next is running/);
+});
+
+test('CLI: session prints a fresh session directory; extra arguments are a usage error', () => {
+  const r = cli(['session']);
+  assert.equal(r.status, 0);
+  const { status, session } = JSON.parse(r.stdout);
+  assert.equal(status, 'session');
+  assert.ok(statSync(session).isDirectory());
+  assert.equal(cli(['session', 'extra']).status, 2);
 });
 
 test('CLI: usage errors exit 2', () => {

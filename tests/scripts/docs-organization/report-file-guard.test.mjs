@@ -11,10 +11,12 @@ const read = (p) => readFileSync(fileURLToPath(new URL(`../../../module/commands
 test('docs-audit saves the full punch list and prints the Full report line past 50 findings', () => {
   const doc = read('docs-audit.md');
   for (const s of [
-    'mktemp "${TMPDIR:-/tmp}/docs-audit-XXXXXX"',
-    "host's file-write tool, never a shell\n     heredoc",
+    'lane6.mjs\" session',
+    '`$SESSION/report.md`',
+    "host's file-write\n     tool, never a shell heredoc",
     '50 findings or fewer: print the whole punch list',
-    'Full report: `/tmp/docs-audit-Hq2xZa` — run `/docs-update /tmp/docs-audit-Hq2xZa` to act on it.',
+    'Report saved: `~/.cache/docs-audit/4f9c1a07be52/20261111-093012-Hq2xZa/report.md`',
+    'Full report: `~/.cache/docs-audit/4f9c1a07be52/20261111-093012-Hq2xZa/report.md` — run `/docs-update ~/.cache/docs-audit/4f9c1a07be52/20261111-093012-Hq2xZa/report.md` to act on it.',
   ]) assert.ok(doc.includes(s), `docs-audit.md is missing: ${s}`);
 });
 
