@@ -4,6 +4,12 @@ All notable changes to this module are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Upgrading
+
+No upgrade steps are required between releases so far; 0.1.0 is the only
+release. When a release needs one, its steps will appear under that
+release's entry below.
+
 ## [Unreleased]
 
 ### Added
