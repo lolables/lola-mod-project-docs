@@ -1,8 +1,9 @@
 # Vendored dependencies
 
-How docs-discipline ships its npm packages and GitHub Linguist's data inside
-the module. Part of the maintainer docs; see [architecture.md](architecture.md)
-for the rest of the internals.
+For maintainers of docs-discipline. How the module ships its npm packages and
+GitHub Linguist's data inside itself. Part of the maintainer docs; see
+[architecture.md](architecture.md) for the rest of the internals, or go back to
+the [README](../../README.md).
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {
@@ -59,25 +60,33 @@ language, vendor, and documentation data; that isn't an npm package but a
 build-time fetch, trimmed to what `check-staleness.mjs` needs. The four npm
 bundles and the Linguist data land in `scripts/vendor/`, which lola ships verbatim.
 
-The name is the entire constraint. lola's `ALWAYS_IGNORE` is a fixed set of
-directory names (`node_modules` among them, `vendor` not), not a rule about
-dependencies in general, so a `vendor/` directory ships verbatim at any depth.
+lola decides what to leave out of an install by directory name, not by what a
+directory contains. It skips whatever `.gitignore` lists plus a fixed set of
+names, `ALWAYS_IGNORE` (`node_modules` is in it, `vendor` is not), so a
+`vendor/` directory ships verbatim at any depth.
 The npm packages are MIT and bundle cleanly, and Linguist's data (also MIT) is
 trimmed to what `check-staleness.mjs` needs, so all of it ships pre-built,
 alongside the licence file that covers them:
 
 ```text
 scripts/vendor/merval.mjs        92K   @aj-archipelago/merval, no deps
-scripts/vendor/markdown-it.mjs  256K   markdown-it + footnote/container/admon plugins + 6 transitive deps
+scripts/vendor/markdown-it.mjs  216K   markdown-it + footnote/container/admon plugins + 6 transitive deps
 scripts/vendor/asciidoctor.mjs  864K   @asciidoctor/core, no deps
-scripts/vendor/js-yaml.mjs      96K   js-yaml, no runtime deps
+scripts/vendor/js-yaml.mjs       96K   js-yaml + 1 transitive dep (argparse, also bundled in markdown-it.mjs)
 scripts/vendor/linguist.json     20K   extensions, filenames, exclude patterns from GitHub Linguist
-scripts/vendor/LICENSES.md             license texts for the seven bundled packages, their six transitive deps, and Linguist (MIT, except argparse: Python-2.0, entities: BSD-2-Clause)
+scripts/vendor/LICENSES.md       20K   license texts for the seven bundled packages, their six transitive deps, and Linguist (MIT, except argparse: PSF-2.0, entities: BSD-2-Clause)
 ```
 
+The counts relate like this. The seven npm packages (`merval`, `markdown-it`,
+its three plugins, `@asciidoctor/core`, `js-yaml`) are bundled by esbuild into
+four `.mjs` files, because the plugins fold into `markdown-it.mjs`. Six
+transitive dependencies ride along inside those bundles. `LICENSES.md` has one
+section for each bundled package and transitive dependency, plus one for
+Linguist.
+
 `.taskfiles/vendor/package.json` keeps the seven bundled npm packages as
-`devDependencies` — they are
-build inputs, not runtime imports — alongside a pinned `esbuild`. `js-yaml` is
+`devDependencies` — they are build inputs, not runtime imports — alongside a
+pinned `esbuild`. `js-yaml` is
 both bundled and used at build time to convert Linguist's YAML sources to JSON.
 `task vendor` installs that toolchain and regenerates all six files in
 `scripts/vendor/`. CI reruns it and fails on a non-empty `git diff` of that
@@ -103,7 +112,8 @@ Dependabot's `npm` entry covers the vendor toolchain's `package.json` (the seven
 bundled packages plus esbuild), so it never opens a bump PR for the
 Linguist fetch. `task vendor`, which CI also runs, needs
 network access to `raw.githubusercontent.com`, not just the npm registry. To
-bump it, follow [Bump dependencies](maintaining.md#bump-dependencies).
+bump it, run `task deps:bump` and follow
+[Bump dependencies](maintaining.md#bump-dependencies).
 
 `LICENSES.md` is assembled by `build-vendor.sh` from the installed packages'
 own metadata and licence files, because esbuild only preserves `/*! */` legal
@@ -111,14 +121,32 @@ comments and none of the bundled packages use them. The list of packages to walk
 hardcoded in that script, so a new transitive dependency has to be added there
 by hand.
 
-Two consequences worth knowing. `MERVAL_NOT_INSTALLED` no longer exists — the
-gap it reported cannot occur. And the [install oracle](architecture.md#the-install-oracle) asserts that every file
+Two consequences worth knowing. `MERVAL_NOT_INSTALLED`, the blocker finding
+`lint-mermaid.mjs` once raised when merval was missing at runtime, no longer
+exists — the gap it reported cannot occur. And the [install oracle](architecture.md#the-install-oracle) asserts that every file
 under a source skill directory arrives in the installed copy, which is what
 would catch lola widening `ALWAYS_IGNORE` to swallow `vendor/`.
 
 The alternative was a `module/lola.yaml` `post-install` hook running `npm
-install` at the destination. It is blocked anyway: in lola v0.7.0 the hook
+install` at the destination. We rejected it for two reasons, one a bug and
+one a design choice. The bug: in lola v0.7.0 the hook
 runner passes an empty `cwd` at user scope, so the hook dies with
 `FileNotFoundError` and lola misreports it as "script is not executable".
-Hooks work at project scope. Even fixed, a hook would need network and npm at
-every install; vendoring needs neither.
+Hooks work at project scope. The design choice: even with the bug fixed, a
+hook would need network and npm at every install; vendoring needs neither.
+
+## Building from source offline
+
+Using the module needs no network. The committed `scripts/vendor/` is already
+generated, and lola ships it verbatim, so an install needs no `npm install`
+and no registry access.
+
+Regenerating it does need the network. `task vendor` fails without:
+
+- the npm registry, for `npm install` of the pinned toolchain;
+- `raw.githubusercontent.com`, for the Linguist files that
+  `build-linguist-data.mjs` fetches at the pinned tag and checks against the
+  SHA-256 values in `linguist-pin.json`.
+
+An offline builder works from the committed bundles. To change one,
+regenerate it on a connected machine and commit the result.

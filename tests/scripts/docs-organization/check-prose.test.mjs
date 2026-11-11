@@ -726,11 +726,6 @@ test('CLI: the filler fixture reports volatile findings with file paths', async 
 // unrelated edits do not break it. A new candidate fails this test: fix the
 // prose, put a literal example in inline code, or add an entry with a reason.
 const SELF_SCAN_ALLOWED = [
-  // Measured design rationale for the staleness walk, not a project inventory.
-  ['docs/dev/architecture.md', 'VOLATILE_DETAIL', '4x slower'],
-  ['docs/dev/architecture.md', 'VOLATILE_DETAIL', '35k commits'],
-  // The minimum lola release a reader must install; the README pins it on purpose.
-  ['README.md', 'VOLATILE_DETAIL', '0.7.0'],
   // Names the lola release whose hook-runner bug the rationale describes (history).
   ['docs/dev/vendoring.md', 'VOLATILE_DETAIL', 'lola v0.7.0'],
   // An ADR is a snapshot genre; its context section describes the time of the decision.

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Script-driven dispatch for /docs-audit Lane 6 and Lane 3 adjudication.
 //
-// A run directory (mktemp) holds the whole state, so the orchestrator never
-// decides what runs next; it dispatches what plan and next print and records
-// what comes back:
+// A run directory under $XDG_CACHE_HOME/docs-audit holds the whole state, so
+// the orchestrator never decides what runs next; it dispatches what plan and
+// next print and records what comes back:
 //
 //   manifest.json            files, jobs (kind, params, status, attempts), skipped,
 //                            eof (this run's reply delimiter), unmatched (prose candidates)
@@ -19,10 +19,10 @@
 //
 // Job kinds: lane6-kinds.mjs. Prompts: reference/lane6-prompts/<kind>.md.
 
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, openSync, closeSync, unlinkSync, realpathSync } from 'node:fs';
-import { randomBytes } from 'node:crypto';
-import { tmpdir } from 'node:os';
-import { join, resolve, dirname, basename } from 'node:path';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, openSync, closeSync, unlinkSync, realpathSync, readdirSync, statSync, rmSync } from 'node:fs';
+import { randomBytes, createHash } from 'node:crypto';
+import { homedir } from 'node:os';
+import { join, resolve, dirname, basename, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseDoc, readmeNames } from './formats/index.mjs';
 import { chunkDoc } from './doc-chunks.mjs';
@@ -37,6 +37,53 @@ const PROMPTS = fileURLToPath(new URL('../reference/lane6-prompts/', import.meta
 const CHUNKED = new Set(['plain-language', 'drift-extract']);
 
 export class UsageError extends Error {}
+
+// Every audit artifact (run state, report, saved JSON) lives in one session
+// directory, $XDG_CACHE_HOME/docs-audit/<project>/<timestamp>-<random>/, so a
+// run can be inspected afterwards. The layout and pruning copy review-council's
+// session cache. A relative XDG_CACHE_HOME is ignored per the XDG spec: the cwd
+// is the audited repo, which must not receive our files.
+const DEFAULT_SESSION_CAP = 20;
+
+function auditCacheDir() {
+  const xdg = process.env.XDG_CACHE_HOME;
+  const base = xdg && isAbsolute(xdg) ? xdg : join(homedir(), '.cache');
+  return join(base, 'docs-audit');
+}
+
+// Keep the newest DOCS_AUDIT_SESSION_CACHE_MAX sessions of one project (a cap
+// of 0 still keeps `keep`: the run that owns it has to finish). Without this a
+// cache nobody inspects grows by one directory per audit, forever.
+function pruneSessions(project, keep) {
+  const cap = /^\d+$/.test(process.env.DOCS_AUDIT_SESSION_CACHE_MAX ?? '') ? Number(process.env.DOCS_AUDIT_SESSION_CACHE_MAX) : DEFAULT_SESSION_CAP;
+  const sessions = readdirSync(project, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => ({ path: join(project, e.name), mtime: statSync(join(project, e.name)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
+  for (const { path } of sessions.slice(cap)) if (path !== keep) rmSync(path, { recursive: true, force: true });
+}
+
+// The project key is a hash of the cwd (the audited repo), as review-council
+// keys on $PWD: a short directory name, not an integrity check. The directory
+// is made by mkdtemp so two audits started in the same second cannot share one.
+export function startSession() {
+  const project = join(auditCacheDir(), createHash('sha256').update(process.cwd()).digest('hex').slice(0, 12));
+  mkdirSync(project, { recursive: true, mode: 0o700 });
+  const stamp = new Date().toISOString().replace(/\.\d+Z$/, '').replace(/[-:]/g, '').replace('T', '-');
+  const session = mkdtempSync(join(project, `${stamp}-`));
+  pruneSessions(project, session);
+  return { status: 'session', session };
+}
+
+// A session given on the command line must be one startSession made, so a
+// mistyped or hostile --session cannot make plan write elsewhere.
+function checkedSession(session) {
+  const cache = auditCacheDir();
+  const real = existsSync(session) ? realpathSync(session) : null;
+  const root = existsSync(cache) ? realpathSync(cache) : null;
+  if (!real || !root || !real.startsWith(root + '/') || !statSync(real).isDirectory()) throw new UsageError(`--session ${session}: not a session directory under ${cache}`);
+  return real;
+}
 
 const atomicWrite = (path, data) => {
   const tmp = `${path}.tmp-${process.pid}`;
@@ -101,11 +148,11 @@ function groundedKinds(scope, f, mode) {
   return kinds;
 }
 
-export async function planRun({ scope, repoRoot = null, citations = [], prose = [], files }) {
+export async function planRun({ scope, repoRoot = null, citations = [], prose = [], files, session = null }) {
   if (!SCOPES.includes(scope)) throw new UsageError(`--scope must be one of ${SCOPES.join(', ')}`);
   if (scope !== 'document' && !repoRoot) throw new UsageError('--repo-root is required for the sweep and path scopes');
   if (!files.length) throw new UsageError('no files to plan');
-  const run = mkdtempSync(join(tmpdir(), 'lane6-'));
+  const run = mkdtempSync(join(session ? checkedSession(session) : startSession().session, 'lane6-'));
   mkdirSync(join(run, 'prompts'));
   mkdirSync(join(run, 'results'));
   const m = { version: 1, scope, repoRoot, eof: `LANE6_EOF_${randomBytes(8).toString('hex')}`, seq: 0, files: [], jobs: [], skipped: [], other: [], unmatched: [] };
@@ -368,7 +415,8 @@ export function collectRun(run) {
 }
 
 const USAGE = `usage:
-  lane6.mjs plan --scope sweep|path|document [--repo-root <dir>] [--citations <json>]... [--prose <json>] <file>...
+  lane6.mjs plan --scope sweep|path|document [--repo-root <dir>] [--citations <json>]... [--prose <json>] [--session <dir>] <file>...
+  lane6.mjs session              (print a new session directory for this audit's artifacts)
   lane6.mjs record <run> <id>    (reply on stdin, through <<'<eof>' with the eof from plan or next)
   lane6.mjs next <run>
   lane6.mjs collect <run>`;
@@ -399,6 +447,7 @@ function parsePlanArgs(args) {
     if (a === '--scope') opts.scope = value();
     else if (a === '--repo-root') opts.repoRoot = value();
     else if (a === '--citations') opts.citations.push(readJsonFile(value(), '--citations'));
+    else if (a === '--session') opts.session = value();
     else if (a === '--prose') opts.prose = readJsonFile(value(), '--prose').findings ?? [];
     else if (a.startsWith('--')) throw new UsageError(`unknown option ${a}`);
     else opts.files.push(a);
@@ -409,7 +458,8 @@ function parsePlanArgs(args) {
 async function main(args) {
   const [cmd, ...rest] = args;
   let out;
-  if (cmd === 'plan') out = await planRun(parsePlanArgs(rest));
+  if (cmd === 'session' && rest.length === 0) out = startSession();
+  else if (cmd === 'plan') out = await planRun(parsePlanArgs(rest));
   else if (cmd === 'next' && rest.length === 1) out = await nextBatch(runDir(rest[0]));
   else if (cmd === 'collect' && rest.length === 1) out = collectRun(runDir(rest[0]));
   else if (cmd === 'record' && rest.length === 2) {

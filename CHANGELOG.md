@@ -4,6 +4,12 @@ All notable changes to this module are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Upgrading
+
+No upgrade steps are required between releases so far; 0.1.0 is the only
+release. When a release needs one, its steps will appear under that
+release's entry below.
+
 ## [Unreleased]
 
 ### Added
@@ -70,6 +76,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `/docs-audit` keeps every run artifact (report, saved script JSON, `--fetch`
+  snapshots, Lane 6 run directories) in one session directory,
+  `$XDG_CACHE_HOME/docs-audit/<project>/<timestamp>-<random>/`, instead of
+  `/tmp`, so a past run can be inspected. `lane6.mjs session` creates it and
+  `plan --session` uses it. Every audit ends by printing where its report
+  was saved. Each project keeps its newest 20 sessions
+  (`DOCS_AUDIT_SESSION_CACHE_MAX`). A relative `XDG_CACHE_HOME` is ignored.
 - A repo sweep audits only docs written for people: the root README and
   `docs/`. Skills, slash commands, agent prompts, and other docs written for
   an AI assistant are skipped unless named as a path; a lola module's

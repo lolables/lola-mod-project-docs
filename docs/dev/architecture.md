@@ -20,8 +20,9 @@ bash "$SKILL_DIR/scripts/check-structure.sh"
 cat "$SKILL_DIR/reference/mermaid-house-style.md"
 ```
 
-Every `scripts/…` and `reference/…` reference is written as `"$SKILL_DIR/…"`.
-The structural linter enforces this: any skill shipping helper files must
+Skill and command files anchor `scripts/…` and `reference/…` references with
+`"$SKILL_DIR/…"`, though some references in the `SKILL.md` files are still
+bare and nothing checks each one. The structural linter enforces this: any skill shipping helper files must
 contain a `SKILL_DIR` anchor instruction, or `task lint` fails.
 
 When `/docs-update` hits a `MISSING_ADR_INDEX` finding, it activates the `adr`
@@ -80,7 +81,7 @@ subagent asked to judge a whole doc reports one or two drifts and silently
 drops the rest, so drift runs as a claim ledger (Rounds 14-15 in
 `eval/REPORT.md`), which `lane6.mjs` drives:
 
-1. `lane6.mjs plan` calls `doc-chunks.mjs` to split the doc at H2/H3
+1. `lane6.mjs plan` calls `doc-chunks.mjs` to split the doc at H2 or H3
    headings into ranges of at most 100 lines (one range at 150 lines or
    fewer; a longer section stays whole).
 2. An extract job per range lists every checkable claim, typed `fact`
@@ -163,43 +164,61 @@ rather than a silent pass.
 A doc is judged stale by commit ancestry, not by comparing commit
 timestamps: the script records the SHA of the latest source commit, and a
 doc is stale iff its own last-commit SHA differs from that SHA and is its
-ancestor (`git merge-base --is-ancestor`). Two commits landing in the same
-second compare equal under a timestamp, and a committer date can be
-skewed relative to where a commit actually sits in history — ancestry
-answers "did this doc predate that source change?" directly from the
-graph instead. `STALE_DOC` also resolves each doc's realpath before
-reporting, collapsing a symlink and its target into one finding at the
-target's canonical path (the same dedupe Lane 3 applies below), and
-excludes ADRs (`docs/dev/adr/`, `docs/adr/`) — they're dated records, not
-descriptions that drift.
+ancestor (`git merge-base --is-ancestor`).
+
+- **Why not timestamps.** Two commits landing in the same second compare
+  equal, and a committer date can be skewed relative to where a commit
+  actually sits in history. Ancestry answers "did this doc predate that
+  source change?" directly from the graph.
+- **Symlinks.** `STALE_DOC` resolves each doc's realpath before reporting,
+  collapsing a symlink and its target into one finding at the target's
+  canonical path (the same dedupe Lane 3 applies below).
+- **ADRs.** `STALE_DOC` excludes `docs/dev/adr/` and `docs/adr/`: they are
+  dated records, not descriptions that drift.
 
 The scan walks `git log` newest-first and stops at the first commit that
 touches a source path, rather than restricting by pathspec — a pathspec glob
 forces git to evaluate it against every changed path in every commit, which
-measured 2-4x slower than the unfiltered walk. Stopping at the first match
-keeps the worst case (a repo whose only source commit is the first one) to
-about 1s per ~35k commits of history (measured on django), and far less
-whenever source was touched recently.
+is slower than the unfiltered walk. Stopping at the first match bounds the
+worst case (a repo whose only source commit is the first one) to one pass
+over the history, and it costs far less whenever source was touched recently.
 
 Lanes 3 and 4 walk the documentation tree with the shared `doc-files.mjs`
 helper, which is symlink-aware: a symlinked doc file is included, a
-symlinked directory is not descended. Lane 3 dedupes a symlink and its
-target into one document, reported at the target's path; Lane 4 checks
-links from every path a doc is reached by, symlinks included, so a
-relative link is verified from wherever a reader actually opens it. Both
-report `scanned` in their JSON, so an empty result can be told apart from a
-lane that read nothing. Lane 4 and `fetch-citations.mjs` both read the model
-`formats/index.mjs` returns; for a Markdown file that model comes from
-`formats/md-lines.mjs`, which stamps every markdown-it inline token with its
-exact source line so a link and a cited URL are reported on the line a
-reader finds them. `md-lines.mjs` is internal to the Markdown adapter —
-nothing outside `formats/` imports it.
+symlinked directory is not descended.
+
+- **Lane 3** dedupes a symlink and its target into one document, reported at
+  the target's path.
+- **Lane 4** checks links from every path a doc is reached by, symlinks
+  included, so a relative link is verified from wherever a reader actually
+  opens it.
+- **Both** report `scanned` in their JSON, so an empty result can be told
+  apart from a lane that read nothing.
+
+Lane 4 and `fetch-citations.mjs` both read the model `formats/index.mjs`
+returns. For a Markdown file that model comes from `formats/md-lines.mjs`,
+which stamps every markdown-it inline token with its exact source line so a
+link and a cited URL are reported on the line a reader finds them.
+`md-lines.mjs` is internal to the Markdown adapter: nothing outside
+`formats/` imports it.
 
 Convention 2 in [Conventions enforced](../../README.md#conventions-enforced) —
 developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
 
-The punch list is also written to a `mktemp` report file on every run.
+The punch list is also written to a report file on every run. The report,
+the saved script JSON, the `--fetch` snapshots, and Lane 6's run directories
+all live in one session directory,
+`$XDG_CACHE_HOME/docs-audit/<project>/<timestamp>-<random>/` (default root
+`~/.cache/docs-audit/`, mode 0700), so a past run can be audited and the
+process refined. `lane6.mjs session` creates it.
+
+The layout copies `review-council`: `<project>` is a 12-hex hash of the working
+directory, `mkdtemp` makes the session so two audits in one second cannot
+collide, and each project keeps its newest 20 sessions
+(`DOCS_AUDIT_SESSION_CACHE_MAX`; the session just made is never pruned, even
+at 0). Not copied: its clone cache, forge handling, and per-phase pipeline
+state, which have no counterpart here.
 Past 50 findings the reply shows only the Blockers and a `Full report:`
 line, and `/docs-update` reads the file. The reason: once `lane6.mjs` made
 every judgment job run, a 14-doc repository produced 395 findings, and the
@@ -215,7 +234,8 @@ differ between them, and some cannot choose a model per subagent. The
 README tells the reader to pick the most capable model they have.
 
 That advice rests on one comparison (2026-11-10, complytime-labs/crosscodex
-at 156e9ca, the 12 docs both runs audited). Each run's findings were
+at 156e9ca, the 12 docs both runs audited; the run data is not kept in this
+repo). Each run's findings were
 sampled and checked against the docs and code by an independent verifier:
 
 | | Sonnet 5.5 | Opus 5.5 |
@@ -259,9 +279,11 @@ Re-running the same verify jobs with the same prompt kept 13 of 20 sampled
 real drifts, so each run misses a different third. A second verify pass per
 claim, keeping the union, would raise recall at roughly twice the drift
 cost; it is not built. Re-running `/docs-audit` after fixing a batch of
-findings is the cheap way to catch more. A hyphenated compound
-now counts as one modifier, as in the prompt's own Google example, so
-"per-data-class retention policy" is no longer a noun string.
+findings is the cheap way to catch more.
+
+A hyphenated compound now counts as one modifier in
+`module/skills/docs-organization/reference/lane6-prompts/plain-language.md`,
+so "per-data-class retention policy" is no longer a noun string.
 
 ## Persona routing
 
@@ -291,7 +313,9 @@ reader can find it.
   - An `antora.yml` names the mode only when tracked files sit under
     `modules/*/pages/` beside it. A fixture or example descriptor without
     pages must not turn the repo into a site, or hide it from the
-    repo-mode checks. The other generators are matched on names alone.
+    repo-mode checks. Sphinx matches `conf.py` only when a tracked
+    `index.rst` or `index.md` sits beside it; the other generators are matched
+    on names alone.
   - A Jekyll `_config.yml` names no mode. Jekyll on GitHub Pages publishes
     the repo's Markdown with its relative links intact, so the repo-mode
     checks and walkthroughs apply as they are.
@@ -304,17 +328,19 @@ reader can find it.
   - `link-targets.mjs` and `docs-mode.mjs` are leaf modules. They exist so
     `check-refs.mjs` and the adapters share helpers without an import cycle.
 - **Walkthroughs.** Lane 6 sends one cold `Explore` subagent per
-  walkthrough persona through the docs by links only, and
-  `check-walkthrough.mjs` checks the walk: every recorded hop must be an
-  edge out of a file already opened (or a sidebar entry). A reply whose
-  hops no link supports, or whose answers sit in files it never opened, is
-  caught and re-dispatched.
-  Tasks it could not finish go to a second, unrestricted subagent that
-  locates the answer; the script then says whether a link path reaches it
-  (`missed`, not reported), none does (`unreachable`), or no doc holds it
-  (`absent`). The walker is cold because an agent that has read
-  `docs/dev/` cannot act like a newcomer. Hop lines are citations, not
-  matched: LLM line counts on wrapped links drift.
+  walkthrough persona through the docs by links only.
+  - `check-walkthrough.mjs` checks the walk: every recorded hop must be an
+    edge out of a file already opened (or a sidebar entry). A reply whose
+    hops no link supports, or whose answers sit in files it never opened, is
+    caught and re-dispatched.
+  - Tasks the walker could not finish go to a second, unrestricted subagent
+    that locates the answer. The script then says whether a link path reaches
+    it (`missed`, not reported), none does (`unreachable`), or no doc holds
+    it (`absent`).
+  - The walker is cold because an agent that has read `docs/dev/` cannot act
+    like a newcomer.
+  - Hop lines are citations, not matched: LLM line counts on wrapped links
+    drift.
 - **Candidates.** `MISPLACED_SECTION` is a script-found candidate (a long
   front-door section). The LLM decides only which reader it serves, the
   same split as `SPLIT_CANDIDATE` in Lane 3.
@@ -379,7 +405,7 @@ flowchart TD
   class Doc,DSkip,DRefs,Fetch,Update sysC
 ```
 
-`check-refs.mjs` makes the same choice per file rather than once per run. A
+`check-refs.mjs` decides each file the same way, rather than once per run. A
 tracked doc is checked against the tracked set, as before. A doc outside
 git, or an untracked doc named explicitly, is checked on disk. `REF_NOT_IN_GIT`
 exists to catch links that dangle for someone who clones, and a doc that
@@ -556,7 +582,8 @@ The full field list is the header comment of `formats/index.mjs`.
 Decisions:
 
 - **Adapters, not per-script branches.** A new format touches one file and
-  the registry, not seven scripts.
+  the registry. Every `.mjs` script that imports `formats/index.mjs`, plus
+  `check-structure.sh` and `swap-palette.sh`, needs no change.
 - **`secure` mode for AsciiDoc.** Audited docs may be untrusted. Secure mode
   never reads an `include::` target or any other file; the adapter still
   reports the include so `check-refs` can verify the target exists.
@@ -608,7 +635,7 @@ shapes (`[]`, `()`, `(())`, `{}`) plus the slash-delimited forms such as
 `[/…/]`, so it rejects valid shapes such as the cylinder
 `[(…)]` with a misleading bracket error. `lint-mermaid.mjs` recognises those
 shapes on the error line and names them in the `SYNTAX_ERROR` message. The
-fixture tests pin merval's accept/reject set, so a merval bump that widens the
+fixture tests pin merval's accept and reject set, so a merval bump that widens the
 grammar fails loudly instead of leaving the hint and the house-style table
 stale.
 
@@ -650,8 +677,8 @@ matched anything here.
 
 ## Why there is no `task install`
 
-lola owns installation. It already has scope selection, assistant targeting,
-and force prompts, and wrapping those in Task means shadowing a flag surface
+lola owns installation. It already selects the scope, targets assistants,
+and prompts you when force is needed, and wrapping those in Task means shadowing a flag surface
 that drifts the moment lola adds a flag. The README documents the `lola`
 commands directly.
 
@@ -664,7 +691,8 @@ dependencies ship vendored — see [Vendored dependencies](#vendored-dependencie
 The skill's npm packages and GitHub Linguist's data ship pre-bundled under
 `scripts/vendor/`, so an install needs no `npm install` and no network. How
 the bundles are built, pinned, licensed, and kept in sync is in
-[vendoring.md](vendoring.md).
+[vendoring.md](vendoring.md). `task vendor` needs network access, so for
+builds without it see the same file.
 
 ## Background reading
 
