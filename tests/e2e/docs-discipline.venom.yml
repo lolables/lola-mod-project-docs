@@ -30,11 +30,14 @@ testcases:
           # Persist both the workdir and the git-config-isolation vars so
           # every subsequent step that sources this env file ignores the
           # host's global/system git config. Prevents pollution from
-          # commit.gpgsign, init.defaultBranch, core.hooksPath, etc.
+          # commit.gpgsign, init.defaultBranch, core.hooksPath, etc. The
+          # unset drops a caller's GIT_DIR (`git rebase --exec` exports it),
+          # which would aim every git command at the caller's repository.
           cat > /tmp/docs-discipline-e2e.env <<ENV
           export WORKDIR="$WORKDIR"
           export GIT_CONFIG_GLOBAL=/dev/null
           export GIT_CONFIG_SYSTEM=/dev/null
+          unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
           ENV
           source /tmp/docs-discipline-e2e.env
           cd "$WORKDIR"

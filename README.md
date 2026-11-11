@@ -96,13 +96,25 @@ prompt (they are slash commands, not shell commands):
 
 1. `/docs-init` — scaffold README, `docs/`, and `.gitignore`.
 2. `/docs-audit` — find drift between code and docs (read-only).
-3. `/docs-update` — apply the audit's fixes interactively.
+3. `/docs-update` — apply the audit's fixes interactively. An audit with
+   more than 50 findings prints only its Blockers and saves the full list
+   to a file; pass that path, as its `Full report:` line shows:
+   `/docs-update /tmp/docs-audit-Hq2xZa`.
 4. `/diagram-test` — lint every mermaid diagram.
 5. `/adr-new "Use Postgres for primary storage"` — draft an ADR with an
    inline self-review. It writes an `NNNN-*.md` file under the ADR
    directory, numbered with the next free four digits.
 6. `/adr-review 0001` — independent rubric review of that ADR; pass the
    number from its filename.
+
+### Which model to run `/docs-audit` on
+
+`/docs-audit` runs its judgment prompts on the model your session uses, and
+picks none itself. Use the most capable model your assistant offers when the
+content-drift results matter: a weaker model reports more drift that is not
+there (it reads an "e.g." list as complete) and misses real drift. A stronger
+model costs more per run. The comparison behind this advice is in
+[the architecture notes](docs/dev/architecture.md#which-model-runs-the-judgment-prompts).
 
 ### Auditing a specific document
 
@@ -145,10 +157,12 @@ flowchart TD
   class DT,Unread,NF sysF
 ```
 
-`/docs-audit` with no arguments sweeps the repository's project docs. Name
-one or more files or directories to audit exactly those, including drafts
-the sweep skips (gitignored files, dot-directories like `.issue-draft/`,
-files outside any repository); `.mmd` diagram files are left to
+`/docs-audit` with no arguments sweeps the docs written for people: the
+root README and `docs/`, minus anything written for an AI assistant (skills,
+slash commands, agent prompts). Name one or more files or directories to
+audit exactly those, including what the sweep skips (gitignored files,
+dot-directories like `.issue-draft/`, files outside any repository, and
+LLM-facing docs); `.mmd` diagram files are left to
 `/diagram-test`:
 
 ```bash
@@ -257,6 +271,10 @@ repo root; both are `task`-only, so they require the full dev checkout.
 5. Every mermaid diagram begins with the house-style init header (the
    `%%{init}%%` block for one of the four palettes above) and uses palette
    classes with WCAG-verified contrast.
+6. Every reader has a door. The README links each reader's entry point that
+   exists (`docs/usage/`, `docs/dev/`, `SECURITY.md`, `LICENSE`, …), every
+   page under `docs/` is reachable from the README and links back, and the
+   README carries a `Status` line.
 
 ## Supported formats
 

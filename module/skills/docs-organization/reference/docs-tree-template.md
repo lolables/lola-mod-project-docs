@@ -20,13 +20,29 @@ docs/
 
 ## File contents on init
 
+### docs/usage/README.md
+
+Created when the first operator page moves out of the README (by
+`/docs-update` or `/docs-init`), not on a greenfield init.
+
+````markdown
+# Usage
+
+For operators: anyone who uses this project repeatedly, calls its API, or
+drives its CLI from a script or an agent. New here? Start at the
+[README](../../README.md).
+
+- (one line per how-to or reference page, for example
+  `[Configuration](configuration.md)`)
+````
+
 ### docs/dev/README.md
 
 ````markdown
 # Developer documentation
 
-This is the maintainer-facing documentation. End users should start at the
-top-level README.md.
+For maintainers and contributors: how it works, how to build and test it,
+and why it is built this way. Users start at the [README](../../README.md).
 
 - [Architecture](architecture.md)
 - [Contributing](contributing.md)
@@ -38,6 +54,9 @@ top-level README.md.
 
 ````markdown
 # Architecture
+
+For maintainers: how the system fits together. Back to the
+[developer docs](README.md).
 
 > Fill in: what does this system do, what are its major pieces, and how do
 > they fit together?
@@ -93,6 +112,9 @@ Larger diagrams should live in their own `.mmd` files under
 
 ````markdown
 # Contributing
+
+For contributors: set up, test, and submit a change. Back to the
+[developer docs](README.md).
 
 ## Dev setup
 

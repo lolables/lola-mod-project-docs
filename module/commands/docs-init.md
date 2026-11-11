@@ -37,11 +37,16 @@ Skip the `adr` activation otherwise.
    - Does a README exist (any name `node "$SKILL_DIR/scripts/formats/index.mjs" --readmes` prints — `README.md`, `README.adoc`, …)? Is it non-empty?
    - Does `docs/` exist? Is `docs/dev/` populated?
    - Does `.gitignore` contain `docs/superpowers/`?
+   - Which docs mode is it? Run `node "$SKILL_DIR/scripts/nav-graph.mjs" --mode`.
+     Any mode other than `repo` means a site generator publishes the docs:
+     follow the **site path** below instead of steps 3 and 4.
 3. **Greenfield path** (no README, no docs/):
    - Read `$SKILL_DIR/reference/readme-template.md`.
      Write `README.md` using that template, filling project name from the
      repo's directory name and asking the user one question for the
-     one-sentence description. Templates are Markdown; an existing README
+     one-sentence description. Omit each "Where to go next" door line whose
+     target the project does not have; keep `docs/dev/`, which this step
+     creates. Templates are Markdown; an existing README
      in another format (for example `README.adoc`) counts as the README,
      so never add a `README.md` beside it.
    - Read `$SKILL_DIR/reference/docs-tree-template.md`.
@@ -55,6 +60,8 @@ Skip the `adr` activation otherwise.
      ```markdown
      # Diagrams
 
+     For maintainers. Back to the [developer docs](../README.md).
+
      `.mmd` files referenced from `docs/dev/*.md`. See the
      docs-organization skill's mermaid house-style reference for when to
      add a diagram and how to style it.
@@ -66,12 +73,28 @@ Skip the `adr` activation otherwise.
 4. **Existing-project path** (README exists, docs/ may or may not):
    - Read the current README. If it contains substantial usage detail
      (heuristic: more than 200 lines, or sections labeled "Configuration",
-     "Advanced usage", "API reference"), ask the user: "Your README is
-     dense. Keep it self-sufficient (no migration), or split detailed
-     sections into docs/usage/ now?" Wait for the answer before proceeding.
+     "Advanced usage", "API reference"), run
+     `node "$SKILL_DIR/scripts/personas.mjs"` and list each level-2 section
+     with the persona it serves and that persona's destination (`holds`),
+     for example `Upgrading from 1.x → Operator → CHANGELOG.md`. Then ask:
+     "Your README is dense. Keep it self-sufficient (no migration), or move
+     these sections to their destinations now?" Wait for the answer before
+     proceeding. Moved sections leave a door line in the README.
+     When a destination directory's index is missing, create it from
+     `$SKILL_DIR/reference/docs-tree-template.md`, link the new page from
+     it, and open the new page per `$SKILL_DIR/reference/placement-rules.md`
+     (who it is for, plus a link back).
    - If `docs/dev/` is missing, create it from the template.
    - Never overwrite an existing file with non-empty content. If a file
      exists but is empty, the template content is acceptable.
+
+   **Site path** (the docs mode is not `repo`): scaffold nothing into the
+   generator's layout. A site has its own page tree and navigation, and a
+   `docs/dev/` beside it would sit outside the published site. Offer only
+   the placement rules, with the site variant (step 5). A README is still
+   required: step 5's check-structure reports `MISSING_README` without one,
+   so if none exists, tell the user to write one or run only the README
+   bullet of the greenfield path.
 5. **Always:**
    - Append `docs/superpowers/` to `.gitignore` if not present (preserve
      existing entries).
@@ -84,9 +107,19 @@ Skip the `adr` activation otherwise.
    - Run `bash "$SKILL_DIR/scripts/check-structure.sh"`
      to verify the structural invariants now hold. Surface any remaining
      findings.
+   - Offer the placement rules: "Append the placement rules to AGENTS.md,
+     so agents put each new fact behind the right door?" Skip the offer
+     when `AGENTS.md` already has a `## Where docs go` heading. On yes,
+     append to `AGENTS.md`, creating it when absent:
+     - a `## Where docs go` heading;
+     - the `## Rules` table from `$SKILL_DIR/reference/placement-rules.md`;
+     - its "Linking a new page in a repo" text, or in the site path its
+       "Linking a new page on a documentation site" text.
+
+     On no, write nothing.
 6. **Show what was created, then ask before committing:**
    - List every file created or modified (new files created, existing
-     files appended to — e.g. `.gitignore`).
+     files appended to — e.g. `AGENTS.md`, `.gitignore`).
    - Stage those files by name (never `git add .`/`-A`) and show the user
      `git diff --staged`.
    - Ask: "Commit this scaffolding?" On yes, commit with a conventional
@@ -100,7 +133,9 @@ Skip the `adr` activation otherwise.
   writing. The skill assumes git is in use.
 - If the user declines a destructive prompt (e.g., refuses the README
   split), apply only the non-destructive changes (.gitignore, missing
-  docs/dev/ files).
+  docs/dev/ files; in the site path, `.gitignore` only).
+- If `nav-graph.mjs --mode` exits 2, surface its error and stop before
+  writing anything.
 - If the user declines the commit prompt in step 6, leave the scaffolding
   staged and uncommitted; do not retry the prompt or commit on a later
   invocation without being asked again.

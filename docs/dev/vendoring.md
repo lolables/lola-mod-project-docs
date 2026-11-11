@@ -23,7 +23,7 @@ for the rest of the internals.
 }, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
 flowchart LR
   subgraph npmpath["npm packages"]
-    Bot["Dependabot bump"] --> Pkg["package.json pins merval, markdown-it, asciidoctor"]
+    Bot["Dependabot bump"] --> Pkg["package.json pins merval, markdown-it, asciidoctor, js-yaml"]
     Pkg --> Esb["esbuild bundles"]
   end
   subgraph lingpath["GitHub Linguist data"]
@@ -51,11 +51,12 @@ flowchart LR
 The skill shells out to several npm packages: `@aj-archipelago/merval` for
 mermaid validation; `markdown-it` plus its `markdown-it-footnote`,
 `markdown-it-container`, and `markdown-it-admon` plugins for the Markdown
-adapter; and `@asciidoctor/core` for the AsciiDoc adapter. None would survive
+adapter; `@asciidoctor/core` for the AsciiDoc adapter; and `js-yaml` to read
+site-generator configs as data. None would survive
 an install as npm packages — lola strips any directory named `node_modules`
 from the copy it ships. The staleness lane also needs GitHub Linguist's
 language, vendor, and documentation data; that isn't an npm package but a
-build-time fetch, trimmed to what `check-staleness.mjs` needs. The three npm
+build-time fetch, trimmed to what `check-staleness.mjs` needs. The four npm
 bundles and the Linguist data land in `scripts/vendor/`, which lola ships verbatim.
 
 The name is the entire constraint. lola's `ALWAYS_IGNORE` is a fixed set of
@@ -69,15 +70,16 @@ alongside the licence file that covers them:
 scripts/vendor/merval.mjs        92K   @aj-archipelago/merval, no deps
 scripts/vendor/markdown-it.mjs  256K   markdown-it + footnote/container/admon plugins + 6 transitive deps
 scripts/vendor/asciidoctor.mjs  864K   @asciidoctor/core, no deps
+scripts/vendor/js-yaml.mjs      96K   js-yaml, no runtime deps
 scripts/vendor/linguist.json     20K   extensions, filenames, exclude patterns from GitHub Linguist
-scripts/vendor/LICENSES.md             license texts for the six bundled packages, their six transitive deps, and Linguist (MIT, except argparse: Python-2.0, entities: BSD-2-Clause)
+scripts/vendor/LICENSES.md             license texts for the seven bundled packages, their six transitive deps, and Linguist (MIT, except argparse: Python-2.0, entities: BSD-2-Clause)
 ```
 
-`.taskfiles/vendor/package.json` keeps the six bundled npm packages as
+`.taskfiles/vendor/package.json` keeps the seven bundled npm packages as
 `devDependencies` — they are
-build inputs, not runtime imports — alongside a pinned `esbuild` and `js-yaml`
-(used only to convert Linguist's YAML sources to JSON at build time).
-`task vendor` installs that toolchain and regenerates all five files in
+build inputs, not runtime imports — alongside a pinned `esbuild`. `js-yaml` is
+both bundled and used at build time to convert Linguist's YAML sources to JSON.
+`task vendor` installs that toolchain and regenerates all six files in
 `scripts/vendor/`. CI reruns it and fails on a non-empty `git diff` of that
 directory, so a committed bundle
 can never drift from the version `package.json` pins. A Dependabot bump
@@ -97,8 +99,8 @@ toolchain again means rerunning `task vendor` and committing the result.
 GitHub Linguist's data is pinned separately: `.taskfiles/vendor/linguist-pin.json`
 records the fetched tag and a SHA-256 per file, and
 `.taskfiles/scripts/build-linguist-data.mjs` rejects any fetch that does not match.
-Dependabot's `npm` entry covers the vendor toolchain's `package.json` (the six
-bundled packages plus esbuild and js-yaml), so it never opens a bump PR for the
+Dependabot's `npm` entry covers the vendor toolchain's `package.json` (the seven
+bundled packages plus esbuild), so it never opens a bump PR for the
 Linguist fetch. `task vendor`, which CI also runs, needs
 network access to `raw.githubusercontent.com`, not just the npm registry. To
 bump it, follow [Bump dependencies](maintaining.md#bump-dependencies).

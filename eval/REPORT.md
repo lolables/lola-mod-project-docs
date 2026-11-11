@@ -1046,3 +1046,61 @@ prompt goes into `/docs-audit` as Lane 6 prompt 7 in its own commit,
 copied verbatim with `<file>`/`<start>`/`<end>` in place of the braces. As
 in the first measurement, the expected failure mode is lower recall (a run
 that skips part of a chunk), not false positives.
+
+## Round 17 — persona walkthroughs (isolated runs)
+
+Origin: routing's deterministic checks (`MISSING_DOOR`, `ORPHAN_PAGE`)
+prove a link exists, not that a reader can finish a task by following
+links. This round measures the walkthrough step of Lane 6 before it ships.
+
+Prompts: `prompts/walkthrough.txt` (one cold walker per persona, Read tool
+only) and `prompts/locate.txt` (one search-enabled call per stuck task),
+copied from `/docs-audit` with `string.Template` placeholders. Runner:
+`run_walkthrough.py`, under `isolated_config()`, `--model sonnet`, each call
+capped by `--max-budget-usd`. `check-walkthrough.mjs` plans, verifies, and
+classifies, as in the command.
+
+Fixtures, each with one answer that exists but no link reaches and one
+answer no doc holds:
+
+- `fixtures/walkthrough-repo`: plain repo docs. Dev's "run the tests" sits
+  in `docs/dev/testing.md`, linked from nowhere; nothing says what to do
+  before upgrading.
+- `fixtures/walkthrough-mkdocs`: a MkDocs site. Operator's upgrade steps
+  sit in `docs/upgrading.md`, in no `nav` entry and linked from nowhere;
+  nothing explains the architecture.
+
+Each fixture also names a fabricated hop (a link that does not exist),
+spliced into a real walker reply; `--verify` must reject it. K=3 (one run,
+then two more).
+
+| Case | Expected | Hits |
+| --- | --- | --- |
+| repo `dev#2` | `unreachable` at `docs/dev/testing.md` | 3/3 |
+| repo `operator#2` | `absent` | 3/3 |
+| mkdocs `operator#2` | `unreachable` at `docs/upgrading.md` | 3/3 |
+| mkdocs `dev#3` | `absent` | 3/3 |
+
+- Spurious `WALKTHROUGH_LOST` per run: 0 in all six fixture runs.
+- Failed walks or locates: 0. Every run used six calls (four walkers, two
+  locates), so no walker reply was ever rejected and re-dispatched.
+- Fabricated hop rejected: 6/6.
+- Cost: $7.67 for all three runs, about $1.28 per fixture run.
+
+Limits: both fixtures are small (seven and six doc files) with one planted
+gap per kind, so this shows the mechanism works, not how it scales. A
+large docs tree will cost more per walker, and whether walkers still record
+honest hops over long walks is unmeasured. Hop verification would catch a
+dishonest one; it would surface as `LANE_FAILED`, not a false finding.
+
+Decision: wired (`/docs-audit` Lane 6, persona walkthroughs). Results:
+`results/r17-walkthrough.json` (run 1) and
+`results/r17-walkthrough-k2.json` (runs 2 and 3).
+
+A headless `/docs-audit` smoke on the crosscodex routing fixture (not
+committed) ran the step end to end: the orchestrator piped walker replies
+through `--verify` and `--classify` and reported `WALKTHROUGH_LOST` rows and
+`missed:` lines. Two deviations by the Sonnet orchestrator, neither from
+the scripts: it paraphrased the script's messages instead of copying them,
+and it skipped Lane 6's per-file prompts on placeholder docs to save cost,
+recording that as `LANE_FAILED` rather than a pass.

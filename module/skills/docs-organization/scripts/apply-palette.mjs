@@ -202,7 +202,7 @@ async function swap([paletteFile, file, block]) {
       : swapDiagram(palette, content, file));
   } catch (e) {
     console.error(e.message);
-    process.exit(2);
+    process.exitCode = 2;
   }
 }
 
@@ -211,7 +211,8 @@ async function main() {
   if (args[0] === '--swap') {
     if (args.length < 3 || args.length > 4) {
       console.error('usage: apply-palette.mjs --swap <palette.json> <file.mmd|doc> [block]');
-      process.exit(2);
+      process.exitCode = 2;
+      return;
     }
     await swap(args.slice(1));
     return;
@@ -219,7 +220,8 @@ async function main() {
   const [paletteFile, bodyFile] = args;
   if (!paletteFile || !bodyFile) {
     console.error('usage: apply-palette.mjs <palette.json> <body.mmd>');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const palette = JSON.parse(readFileSync(paletteFile, 'utf8'));
   const body = readFileSync(bodyFile, 'utf8');
@@ -229,6 +231,6 @@ async function main() {
 if (isMain(import.meta.url)) {
   main().catch((e) => {
     console.error(e && e.message ? e.message : e);
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

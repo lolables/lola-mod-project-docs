@@ -44,6 +44,13 @@
 //     An untracked doc found by *walking a directory* inside a repo is skipped:
 //     a gitignored working doc (e.g. under docs/superpowers/) reached that way
 //     is not a project deliverable and is out of audit scope.
+//   - In a repo whose docs mode is `site:antora` (docs-mode.mjs), an xref in a
+//     file under the component's `modules/` is an Antora page ID, resolved by
+//     antora.mjs. So is an image target (family defaults to `image$`) and an
+//     include target that names a family (`partial$x.adoc`); a plain include
+//     stays a path relative to the including file. An xref to another component or version, or one inside a
+//     partial, is skipped: this repo cannot hold its target, so it is not
+//     broken.
 //   - This does NOT demand every reference be committed — some are legitimately
 //     private/external. It surfaces dangling references for the author to
 //     resolve in /docs-update (link, commit, or mark external). Never auto-fixes.
@@ -59,37 +66,27 @@
 // `scanned` counts doc *paths* checked — a symlink and its target count
 // separately. `file` is relative to the doc's repo root, or absolute for a
 // doc outside any repo.
-// Exit 0 = no findings, 1 = findings, 2 = internal error. Uses execFileSync
+// Exit 0 = no findings, 1 = findings, 2 = internal error or a malformed
+// antora.yml. In the latter case every file is still checked and counted in
+// `scanned`, except the refs that need the component (xrefs, images, resource-ID
+// includes in AsciiDoc under its `modules/`); stderr names the config error and,
+// per file, how many such refs went unchecked. An antora.yml with
+// modules/*/pages/ beside it that site:antora does not cover (several
+// components, a deeper one, one next to mkdocs.yml) gets the same unchecked
+// treatment under "unsupported Antora layout", without changing the exit code.
+// Uses execFileSync
 // (no shell) with fixed git arguments.
 
 import { readFileSync, existsSync, lstatSync, realpathSync, statSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
-import { basename, dirname, join, resolve, relative } from 'node:path';
+import { basename, dirname, join, posix, resolve, relative } from 'node:path';
 import { parseDoc } from './formats/index.mjs';
 import { proseBlocks, lineAt } from './check-prose.mjs';
 import { walkDocs } from './doc-files.mjs';
 import { isMain } from './is-main.mjs';
-
-function git(args, cwd) {
-  return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-}
-
-function isExternal(t) {
-  return /^[a-z]+:\/\//i.test(t) || t.startsWith('mailto:') || t.startsWith('#') || t.startsWith('tel:')
-    || /^data:/i.test(t);
-}
-
-// Targets can arrive percent-encoded (markdown-it encodes every href) — a literal
-// space written inside `<...>`, or a non-ASCII byte written bare, comes out
-// as `%20` / `%C3%A9` — so the target must be decoded before it can match a
-// tracked filesystem path, and the decoded form is what findings report
-// (closer to what the author actually wrote than the re-encoded href). A
-// malformed escape (not a valid UTF-8 percent sequence) falls back to the
-// raw string rather than throwing.
-function decodeTarget(t) {
-  try { return decodeURIComponent(t); }
-  catch { return t; }
-}
+import { ConfigError } from './site-yaml.mjs';
+import { isExternal, decodeTarget, trackedDirsOf } from './link-targets.mjs';
+import { detectMode, hasPages, inDotDir, gitTracked, repoRootOf } from './docs-mode.mjs';
+import { loadComponent, resolveXref, resolveLink, antoraRefPolicy } from './antora.mjs';
 
 // Link-like references and unlinked "§" citations from a parsed doc.
 // Reference-style links report the line they are *used* on (where the reader
@@ -134,22 +131,20 @@ function extract(model) {
   return { links, sections, pointers };
 }
 
+// A target worth resolving: not empty, external, or an anchor in the same document.
+const checkable = (target) => Boolean(target) && !isExternal(target) && target.replace(/#.*$/, '') !== '';
 const DESCRIBE = { image: 'image', include: 'include of', link: 'link to', xref: 'link to' };
 
-// Every ancestor directory of a tracked file — git tracks files, not dirs, so a
-// link to a real directory (`module/agents/`) would otherwise look untracked.
-function trackedDirsOf(tracked) {
-  const dirs = new Set();
-  for (const f of tracked) {
-    let d = dirname(f);
-    while (d && d !== '.') { dirs.add(d); d = dirname(d); }
-  }
-  return dirs;
-}
-
 // `tracked` is the repo's tracked-path set (git mode), or null (on-disk mode,
-// where `root` is unused).
-export async function analyzeFile(file, root, tracked) {
+// where `root` is unused). `antora` is the repo's Antora component
+// (antora.mjs) in a site:antora repo, else null; xrefs, images, and
+// resource-ID includes in AsciiDoc files under its `modules/` then resolve by
+// Antora rules (Antora never processes Markdown, so other formats keep path
+// resolution; a `link:` macro maps through resolveLink), and a reference to what this repo does
+// not hold is skipped, never broken. `unchecked` is an array when the file's
+// component failed to load: AsciiDoc refs that need it are skipped and pushed
+// to `unchecked`, and every other check still runs.
+export async function analyzeFile(file, root, tracked, antora = null, unchecked = null) {
   const content = readFileSync(file, 'utf8');
   const model = await parseDoc(file, content);
   const findings = [];
@@ -157,33 +152,62 @@ export async function analyzeFile(file, root, tracked) {
   const trackedDirs = tracked ? trackedDirsOf(tracked) : null;
   const { links, sections, pointers } = extract(model);
   for (const ref of links) {
-    const target = ref.target;
-    if (!target || isExternal(target)) continue;
-    const stripped = target.replace(/[#].*$/, '');
-    if (!stripped) continue; // pure anchor
-    const cleaned = decodeTarget(stripped);
-    const abs = resolve(dirname(file), cleaned);
-    let where = abs;
-    if (tracked) {
-      where = relative(root, abs);
-      if (where.startsWith('..')) continue;
-      // A tracked file, or a directory that contains tracked files, is followable.
-      if (tracked.has(where) || trackedDirs.has(where)) continue;
-    } else if (existsSync(abs)) continue;
+    let where; // repo-relative path when `tracked`, else absolute
+    let abs;
+    let what;
+    let missing; // why the target is reported
+    let unpublished = false; // the file may exist, but Antora never publishes it
+    const rel = tracked ? relative(root, file) : '';
+    // `unchecked` is only set for files already known to sit under modules/, hence the empty prefix.
+    const policy = unchecked ? antoraRefPolicy(file, ref, '') : antora && tracked ? antoraRefPolicy(rel, ref, `${antora.prefix}modules/`) : 'path';
+    if (unchecked && policy !== 'path') {
+      if (checkable(ref.target)) unchecked.push(ref);
+      continue;
+    }
+    if (policy !== 'path') {
+      const r = policy === 'link' ? resolveLink(ref.target, rel, antora) : resolveXref(ref.target, rel, antora, ref.kind === 'image' ? 'image' : 'page');
+      if (r === null || (r.unresolvable && !r.invalid)) continue; // external, an anchor, or outside this repo: never broken
+      if (r.invalid) {
+        findings.push({ code: 'REF_BROKEN', severity: 'warning', line: ref.line, message: `${DESCRIBE[ref.kind]} \`${ref.target}\` — ${r.unresolvable}; fix the reference` });
+        continue;
+      }
+      where = r.path;
+      abs = join(root, where);
+      unpublished = Boolean(r.unpublished);
+      what = ref.kind === 'xref' || unpublished
+        ? `link to Antora xref \`${ref.target}\` (\`${where}\`)`
+        : `${DESCRIBE[ref.kind]} \`${ref.target}\` (Antora resource \`${where}\`)`;
+      if (unpublished) missing = `not published: ${r.unpublished}; link a published page or rename the target`;
+      else if (tracked.has(where)) continue;
+      else if (ref.kind === 'xref') missing = 'no such page in the repo; fix the page ID or create the page';
+      else if (ref.kind === 'link') missing = 'no such source file in the repo; fix the link or add the file';
+      else missing = 'no such file in the repo; fix the resource ID or add the file';
+    } else {
+      const target = ref.target;
+      if (!checkable(target)) continue;
+      const stripped = target.replace(/#.*$/, '');
+      const cleaned = decodeTarget(stripped);
+      abs = resolve(dirname(file), cleaned);
+      where = abs;
+      if (tracked) {
+        where = relative(root, abs);
+        if (where.startsWith('..')) continue;
+        // A tracked file, or a directory that contains tracked files, is followable.
+        if (tracked.has(where) || trackedDirs.has(where)) continue;
+      } else if (existsSync(abs)) continue;
+      what = `${DESCRIBE[ref.kind]} \`${cleaned}\``;
+      missing = `no such file ${tracked ? 'in the repo' : 'on disk'}; fix the path or link the real target`;
+    }
     const key = 'L' + where + '@' + ref.line;
     if (seen.has(key)) continue;
     seen.add(key);
-    const what = `${DESCRIBE[ref.kind]} \`${cleaned}\``;
-    if (tracked && existsSync(abs)) {
+    if (tracked && !unpublished && existsSync(abs)) {
       findings.push({
         code: 'REF_NOT_IN_GIT', severity: 'warning', line: ref.line,
         message: `${what} — exists but is NOT git-tracked (gitignored/unstaged); commit it, or make it an explicit external link if intentionally private`,
       });
     } else {
-      findings.push({
-        code: 'REF_BROKEN', severity: 'warning', line: ref.line,
-        message: `${what} — no such file ${tracked ? 'in the repo' : 'on disk'}; fix the path or link the real target`,
-      });
+      findings.push({ code: 'REF_BROKEN', severity: 'warning', line: ref.line, message: `${what} — ${missing}` });
     }
   }
   for (const s of sections) {
@@ -208,30 +232,12 @@ export async function analyzeFile(file, root, tracked) {
   return findings;
 }
 
-// The git work tree containing `dir`, or null when git itself says `dir` is
-// not inside a repository — docs there are checked on disk. Any other git
-// failure (corrupt config, a safe.directory refusal, git not installed) is
-// not "outside git" and propagates so the caller exits 2 with git's message.
-function repoRootOf(dir) {
-  try {
-    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
-      cwd: dir,
-      env: { ...process.env, LC_ALL: 'C' },
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }).trim();
-  } catch (e) {
-    if (typeof e.status === 'number' && /not a git repository/.test(e.stderr || '')) return null;
-    if (typeof e.status === 'number') throw new Error(`git rev-parse --show-toplevel: ${(e.stderr || '').trim()}`);
-    throw e;
-  }
-}
-
 async function main(argv) {
   const targets = argv.slice(2);
   if (targets.length === 0) {
     process.stderr.write('usage: check-refs.mjs <file-or-dir>...\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const rootOfDir = new Map();
   const trackedOf = new Map();
@@ -243,9 +249,42 @@ async function main(argv) {
     // (core.quotePath default) — NUL-delimited output is unquoted, matching
     // what decodeTarget() produces from a percent-encoded link target.
     if (root && !trackedOf.has(root)) {
-      trackedOf.set(root, new Set(git(['ls-files', '-z'], root).split('\0').filter(Boolean)));
+      trackedOf.set(root, gitTracked(root));
     }
     return root;
+  };
+
+  // The Antora component per repo root, read once; null outside site:antora.
+  // A malformed antora.yml must not stop the run: it is recorded in
+  // `configErrors` (reported on stderr, exit 2) and `brokenModules` holds the
+  // `modules/` prefix whose AsciiDoc pages are checked without the component.
+  const componentOf = new Map();
+  const configErrors = [];
+  const brokenModules = new Map();
+  const unsupportedModules = new Map(); // root -> `modules/` prefixes of components Antora resolution does not cover
+  const antoraOf = (root, tracked) => {
+    if (!componentOf.has(root)) {
+      const { mode, configs } = detectMode(tracked, root);
+      let component = null;
+      if (mode === 'site:antora') {
+        const loaded = loadComponent(root, tracked, configs[0].path, true);
+        component = loaded.component ?? null;
+        if (loaded.configError !== undefined) {
+          configErrors.push(loaded.configError);
+          const dir = dirname(configs[0].path);
+          brokenModules.set(root, `${dir === '.' ? '' : `${dir}/`}modules/`);
+        }
+      }
+      componentOf.set(root, component);
+      // Real components (antora.yml beside modules/*/pages/) that the site
+      // layer above did not pick up: their refs cannot be resolved, so they
+      // are listed rather than reported broken.
+      const active = mode === 'site:antora' ? configs[0].path : null;
+      unsupportedModules.set(root, [...tracked]
+        .filter((p) => posix.basename(p) === 'antora.yml' && p !== active && !inDotDir(p) && existsSync(join(root, p)) && hasPages(posix.dirname(p), tracked))
+        .map((p) => `${posix.dirname(p) === '.' ? '' : `${posix.dirname(p)}/`}modules/`));
+    }
+    return componentOf.get(root);
   };
 
   // Collect every doc to check first, then process non-symlink paths before
@@ -266,7 +305,6 @@ async function main(argv) {
       else if (!root || explicitFile) docs.push({ f, phys, root, tracked: null });
     }
   }
-  const scanned = docs.length;
   const ordered = [
     ...docs.filter((d) => !lstatSync(d.f).isSymbolicLink()),
     ...docs.filter((d) => lstatSync(d.f).isSymbolicLink()),
@@ -275,12 +313,21 @@ async function main(argv) {
 
   const findings = [];
   const seenReal = new Set();
+  const uncheckedFiles = []; // [file, count of refs that needed the failed component]
+  const unsupportedFiles = []; // same, for pages of a component in an unsupported layout
   for (const { f, phys, root, tracked } of ordered) {
     const real = realpathSync(f);
     const firstVisit = !seenReal.has(real);
     seenReal.add(real);
     const canonical = lstatSync(f).isSymbolicLink() ? shown(root, real) : null;
-    for (const x of await analyzeFile(tracked ? phys : f, root, tracked)) {
+    const component = tracked ? antoraOf(root, tracked) : null;
+    const rel = tracked ? relative(root, phys) : null;
+    const isBroken = tracked && rel.startsWith(brokenModules.get(root) ?? '\0');
+    const isUnsupported = tracked && unsupportedModules.get(root).some((prefix) => rel.startsWith(prefix));
+    const unchecked = isBroken || isUnsupported ? [] : null;
+    const found = await analyzeFile(tracked ? phys : f, root, tracked, component, unchecked);
+    if (unchecked?.length) (isBroken ? uncheckedFiles : unsupportedFiles).push([rel, unchecked.length]);
+    for (const x of found) {
       if (CONTENT_ONLY.has(x.code) && !firstVisit) continue; // same text, already reported
       if (canonical && !CONTENT_ONLY.has(x.code)) {
         x.message += ` (this path is a symlink to \`${canonical}\`; the link must work from both locations)`;
@@ -288,13 +335,23 @@ async function main(argv) {
       findings.push({ ...x, file: shown(root, root ? phys : f) });
     }
   }
-  process.stdout.write(JSON.stringify({ status: findings.length ? 'findings' : 'ok', scanned, findings }, null, 2) + '\n');
-  process.exit(findings.length ? 1 : 0);
+  process.stdout.write(JSON.stringify({ status: findings.length ? 'findings' : 'ok', scanned: docs.length, findings }, null, 2) + '\n');
+  const listOf = (files) => files.map(([file, n]) => `${file} (${n} ref${n === 1 ? '' : 's'})`).join(', ');
+  if (unsupportedFiles.length) {
+    process.stderr.write(`check-refs: Antora refs not checked (unsupported Antora layout): ${listOf(unsupportedFiles)}\n`);
+  }
+  if (configErrors.length) {
+    for (const m of configErrors) process.stderr.write(`check-refs: ${m}\n`);
+    process.stderr.write(`check-refs: Antora refs not checked (component unavailable): ${listOf(uncheckedFiles) || 'none'}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  process.exitCode = findings.length ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) {
   main(process.argv).catch((e) => {
-    process.stderr.write('check-refs: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.stderr.write(e instanceof ConfigError ? `check-refs: ${e.message}\n` : 'check-refs: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
+    process.exitCode = 2;
   });
 }

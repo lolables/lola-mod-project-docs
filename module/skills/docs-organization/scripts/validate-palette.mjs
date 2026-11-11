@@ -80,7 +80,8 @@ function main() {
   const file = process.argv[2];
   if (!file) {
     console.error('usage: validate-palette.mjs <palette.json>');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const palette = JSON.parse(readFileSync(file, 'utf8'));
   console.log(`\n=== ${palette.name} ===`);
@@ -89,7 +90,7 @@ function main() {
   for (const r of results) console.log(r.line);
   const fails = results.filter(r => !r.pass);
   console.log(`\n${results.length - fails.length}/${results.length} checks passed`);
-  if (fails.length) process.exit(1);
+  if (fails.length) process.exitCode = 1;
 }
 
 if (isMain(import.meta.url)) main();

@@ -1,11 +1,12 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync, realpathSync, cpSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analyzeFile } from '../../../module/skills/docs-organization/scripts/check-refs.mjs';
+import { readAntora } from '../../../module/skills/docs-organization/scripts/antora.mjs';
 
 // Every temp dir any test in this file creates is tracked here and removed
 // once, after the whole file runs (matches check-staleness.test.mjs).
@@ -29,6 +30,9 @@ const GENV = {
   GIT_COMMITTER_NAME: 'check-refs-test',
   GIT_COMMITTER_EMAIL: 'check-refs-test@invalid',
 };
+// A caller such as `git rebase --exec` exports these; inherited, they aim
+// every fixture command at the caller's repository instead of the temp one.
+for (const k of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_COMMON_DIR']) delete GENV[k];
 const git = (root, ...args) => execFileSync('git', args, { cwd: root, env: GENV, encoding: 'utf8' });
 const codes = (f) => f.map((x) => x.code);
 
@@ -664,4 +668,337 @@ test('AsciiDoc: links, includes, and xrefs resolve; anchors, unresolved attribut
 test('AsciiDoc: an include of an absolute path outside the repo is neither read nor flagged', async () => {
   const { root, trackedSet } = makeRepo({ 'README.adoc': 'include::/etc/passwd[]\n' }, ['README.adoc']);
   assert.deepEqual(await analyzeFile(join(root, 'README.adoc'), root, trackedSet), []);
+});
+
+const ANTORA = {
+  'docs/antora.yml': 'name: guide\nnav:\n- modules/ROOT/nav.adoc\n',
+  'docs/modules/ROOT/nav.adoc': '* xref:index.adoc[]\n',
+  'docs/modules/ROOT/pages/index.adoc': '= Home\n\nxref:usage:config.adoc[Config] xref:sub/deep.adoc[Deep] xref:other::x.adoc[Other] xref:missing.adoc[Gone]\n',
+  'docs/modules/ROOT/pages/sub/deep.adoc': '= Deep\n',
+  'docs/modules/usage/pages/config.adoc': '= Config\n',
+};
+
+test('Antora xrefs resolve by Antora rules; another component is never broken', async () => {
+  const { root, trackedSet } = makeRepo(ANTORA, Object.keys(ANTORA));
+  const component = readAntora('docs/antora.yml', ANTORA['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/index.adoc'), root, trackedSet, component);
+  assert.deepEqual(codes(findings), ['REF_BROKEN']);
+  assert.match(findings[0].message, /`missing\.adoc`.*docs\/modules\/ROOT\/pages\/missing\.adoc/);
+});
+
+test('Antora: xref:section-id[] is an in-document anchor, while a missing .adoc page is still broken', async () => {
+  const files = { ...ANTORA, 'docs/modules/ROOT/pages/index.adoc': '= Home\n\n[[install-steps]]\n== Steps\n\nxref:install-steps[Steps] xref:install.adoc[Gone]\n' };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/index.adoc'), root, trackedSet, component);
+  assert.deepEqual(codes(findings), ['REF_BROKEN']);
+  assert.match(findings[0].message, /`install\.adoc`/);
+});
+
+test('Antora: xref:page#fragment[] without .adoc names the page, so it is broken only when the page is missing', async () => {
+  const page = 'docs/modules/ROOT/pages/index.adoc';
+  const run = async (files) => {
+    const { root, trackedSet } = makeRepo(files, Object.keys(files));
+    const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+    return analyzeFile(join(root, page), root, trackedSet, component);
+  };
+  const withLink = { ...ANTORA, [page]: '= Home\n\nxref:install#prereqs[Prereqs]\n' };
+  assert.deepEqual(codes(await run({ ...withLink, 'docs/modules/ROOT/pages/install.adoc': '= Install\n' })), []);
+  const findings = await run(withLink);
+  assert.deepEqual(codes(findings), ['REF_BROKEN']);
+  assert.match(findings[0].message, /pages\/install\.adoc/);
+});
+
+test('Antora: an author-error xref is REF_BROKEN with the reason; another component or a partial context is never reported', async () => {
+  const page = 'docs/modules/ROOT/pages/index.adoc';
+  const partial = 'docs/modules/ROOT/partials/p.adoc';
+  const run = async (file, body) => {
+    const files = { ...ANTORA, [file]: body };
+    const { root, trackedSet } = makeRepo(files, Object.keys(files));
+    const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+    return analyzeFile(join(root, file), root, trackedSet, component);
+  };
+  const cases = [['xref:../b.adoc[]', /leaves the pages directory/], ['xref:typo$b.adoc[]', /unknown resource family typo\$/], ['xref:a:b:c:d.adoc[]', /not an Antora resource ID/]];
+  for (const [xref, reason] of cases) {
+    const findings = await run(page, `= Home\n\n${xref}\n`);
+    assert.deepEqual(codes(findings), ['REF_BROKEN'], xref);
+    assert.match(findings[0].message, reason, xref);
+  }
+  assert.deepEqual(codes(await run(page, '= Home\n\nxref:other-comp::x.adoc[]\n')), []);
+  assert.deepEqual(codes(await run(partial, 'xref:index.adoc[]\n')), []);
+});
+
+test('without the component, the same page reports the Antora xrefs as broken paths (phase-1 behavior)', async () => {
+  const { root, trackedSet } = makeRepo(ANTORA, Object.keys(ANTORA));
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/index.adoc'), root, trackedSet);
+  assert.ok(codes(findings).filter((c) => c === 'REF_BROKEN').length >= 3);
+});
+
+test('CLI: an Antora repo gets Antora resolution automatically; a malformed antora.yml exits 2', () => {
+  const { root } = makeRepo(ANTORA, Object.keys(ANTORA));
+  const run = spawnSync(process.execPath, [SCRIPT, 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  const out = JSON.parse(run.stdout);
+  assert.deepEqual(out.findings.map((f) => `${f.code} ${f.file}`), ['REF_BROKEN docs/modules/ROOT/pages/index.adoc']);
+  const bad = makeRepo({ ...ANTORA, 'docs/antora.yml': 'name: [\n' }, Object.keys(ANTORA));
+  const failed = spawnSync(process.execPath, [SCRIPT, 'docs'], { cwd: bad.root, encoding: 'utf8', env: GENV });
+  assert.equal(failed.status, 2);
+  assert.match(failed.stderr, /docs\/antora\.yml/);
+  assert.doesNotMatch(failed.stderr, /internal error/);
+});
+
+test('CLI: a malformed antora.yml still lets non-Antora files be checked, then exits 2 naming the config and the skipped pages', () => {
+  const files = { ...ANTORA, 'docs/antora.yml': 'nav:\n- modules/ROOT/nav.adoc\n', 'README.md': '[gone](docs/nope.md)\n' };
+  const { root } = makeRepo(files, Object.keys(files));
+  const run = spawnSync(process.execPath, [SCRIPT, 'README.md', 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  assert.equal(run.status, 2, run.stderr);
+  assert.deepEqual(JSON.parse(run.stdout).findings.map((f) => `${f.code} ${f.file}`), ['REF_BROKEN README.md']);
+  assert.match(run.stderr, /docs\/antora\.yml: name must be a non-empty string/);
+  assert.match(run.stderr, /docs\/modules\/ROOT\/pages\/index\.adoc/);
+  assert.doesNotMatch(run.stderr, /internal error/);
+});
+
+test('CLI: with a malformed antora.yml, scanned counts every AsciiDoc page; stderr counts the refs left unchecked per file', () => {
+  const files = { ...ANTORA, 'docs/antora.yml': 'nav:\n- modules/ROOT/nav.adoc\n', 'README.md': 'Fine.\n' };
+  const { root } = makeRepo(files, Object.keys(files));
+  const run = spawnSync(process.execPath, [SCRIPT, 'README.md', 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  assert.equal(run.status, 2, run.stderr);
+  assert.equal(JSON.parse(run.stdout).scanned, 5); // README.md and the four modules/ pages
+  assert.match(run.stderr, /docs\/modules\/ROOT\/pages\/index\.adoc \(4 refs\)/);
+  assert.doesNotMatch(run.stderr, /deep\.adoc/); // no component refs in it, nothing left unchecked
+});
+
+test('CLI: with a malformed antora.yml, a modules/ page still gets link, § and pointer checks; only its component refs are skipped', () => {
+  const files = {
+    ...ANTORA,
+    'docs/antora.yml': 'nav:\n- modules/ROOT/nav.adoc\n',
+    'docs/modules/ROOT/pages/p.adoc': '= P\n\ninclude::gone.adoc[]\n\nSee § 3.2 of the spec.\n\nxref:nowhere.adoc[x]\n',
+  };
+  const { root } = makeRepo(files, Object.keys(files));
+  const run = spawnSync(process.execPath, [SCRIPT, 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  assert.equal(run.status, 2, run.stderr);
+  const mine = JSON.parse(run.stdout).findings.filter((f) => f.file.endsWith('pages/p.adoc'));
+  assert.deepEqual(mine.map((f) => [f.code, f.line]), [['REF_BROKEN', 3], ['UNLINKED_REF', 5]]);
+  assert.match(run.stderr, /pages\/p\.adoc \(1 ref\)/);
+});
+
+test('CLI: with a malformed antora.yml, external images and in-document anchors are not counted as unchecked', () => {
+  const files = {
+    ...ANTORA,
+    'docs/antora.yml': 'nav:\n- modules/ROOT/nav.adoc\n',
+    'docs/modules/ROOT/pages/p.adoc': '= P\n\n[[section]]\n== Section\n\nimage::https://x/y.png[]\n\nSee <<section>>.\n\nxref:usage:config.adoc[Config]\n',
+  };
+  const { root } = makeRepo(files, Object.keys(files));
+  const run = spawnSync(process.execPath, [SCRIPT, 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  assert.equal(run.status, 2, run.stderr);
+  assert.match(run.stderr, /pages\/p\.adoc \(1 ref\)/);
+});
+
+test('CLI: a malformed antora.yml skips only the AsciiDoc pages under modules/; Markdown there is still checked', () => {
+  const files = { ...ANTORA, 'docs/antora.yml': 'nav:\n- modules/ROOT/nav.adoc\n', 'docs/modules/ROOT/README.md': '[gone](nope.md)\n' };
+  const { root } = makeRepo(files, Object.keys(files));
+  const run = spawnSync(process.execPath, [SCRIPT, 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  assert.equal(run.status, 2, run.stderr);
+  assert.deepEqual(JSON.parse(run.stdout).findings.map((f) => `${f.code} ${f.file}`), ['REF_BROKEN docs/modules/ROOT/README.md']);
+  assert.match(run.stderr, /docs\/modules\/ROOT\/pages\/index\.adoc/);
+  assert.doesNotMatch(run.stderr, /not checked[^\n]*README\.md/);
+});
+
+test('CLI: with a malformed antora.yml, link: macros in a modules/ page are deferred as unchecked, not resolved against the .adoc source', () => {
+  const files = {
+    ...ANTORA,
+    'docs/antora.yml': 'nav:\n- modules/ROOT/nav.adoc\n',
+    'docs/modules/ROOT/pages/p.adoc': '= P\n\nlink:b.html[b]\n\nlink:https://x.org/y.html[ext]\n\nlink:#top[anchor]\n',
+  };
+  const { root } = makeRepo(files, Object.keys(files));
+  const run = spawnSync(process.execPath, [SCRIPT, 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  assert.equal(run.status, 2, run.stderr);
+  assert.deepEqual(JSON.parse(run.stdout).findings, []);
+  assert.match(run.stderr, /pages\/p\.adoc \(1 ref\)/);
+});
+
+const UNSUPPORTED_PAGE = '= Y\n\nxref:ROOT:y.adoc[]\n\nxref:z.adoc[]\n\nimage::image$a.png[]\n\ninclude::partial$p.adoc[]\n\nSee § 3.2 of the spec.\n';
+const unsupportedRun = (files) => {
+  const { root } = makeRepo(files, Object.keys(files));
+  return spawnSync(process.execPath, [SCRIPT, '.'], { cwd: root, encoding: 'utf8', env: GENV });
+};
+const unsupportedCases = {
+  'two components': {
+    'docs/a/antora.yml': 'name: a\nversion: ~\n', 'docs/a/modules/ROOT/pages/x.adoc': UNSUPPORTED_PAGE,
+    'docs/b/antora.yml': 'name: b\nversion: ~\n', 'docs/b/modules/ROOT/pages/w.adoc': '= W\n',
+  },
+  'a component deeper than depth 1': { 'docs/guide/antora.yml': 'name: g\nversion: ~\n', 'docs/guide/modules/ROOT/pages/x.adoc': UNSUPPORTED_PAGE },
+  'antora.yml beside mkdocs.yml': { 'antora.yml': 'name: g\nversion: ~\n', 'mkdocs.yml': 'site_name: s\n', 'modules/ROOT/pages/x.adoc': UNSUPPORTED_PAGE },
+};
+for (const [name, files] of Object.entries(unsupportedCases)) {
+  test(`CLI: ${name} (unsupported Antora layout) skips component refs, lists them on stderr, and keeps path checks`, () => {
+    const run = unsupportedRun(files);
+    const findings = JSON.parse(run.stdout).findings;
+    assert.deepEqual(findings.map((f) => f.code), ['UNLINKED_REF'], run.stdout);
+    assert.equal(run.status, 1, run.stderr);
+    assert.match(run.stderr, /check-refs: Antora refs not checked \(unsupported Antora layout\): [^\n]*modules\/ROOT\/pages\/x\.adoc \(4 refs\)/);
+  });
+}
+
+test('CLI: an unsupported Antora layout defers a link: macro in a modules/ page to unchecked', () => {
+  const files = { ...unsupportedCases['two components'], 'docs/a/modules/ROOT/pages/x.adoc': '= Y\n\nlink:b.html[b]\n' };
+  const run = unsupportedRun(files);
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(JSON.parse(run.stdout).findings, []);
+  assert.match(run.stderr, /unsupported Antora layout\): docs\/a\/modules\/ROOT\/pages\/x\.adoc \(1 ref\)/);
+});
+
+test('CLI: an unsupported Antora layout with no findings still exits 0', () => {
+  const files = { ...unsupportedCases['two components'], 'docs/a/modules/ROOT/pages/x.adoc': '= Y\n\nxref:ROOT:y.adoc[]\n' };
+  const run = unsupportedRun(files);
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stderr, /unsupported Antora layout\): docs\/a\/modules\/ROOT\/pages\/x\.adoc \(1 ref\)/);
+});
+
+test('CLI: a stray antora.yml with no modules/ pages leaves .adoc xrefs on path resolution, nothing reported unchecked', () => {
+  const files = { 'tests/antora.yml': 'name: t\nversion: ~\n', 'docs/x.adoc': '= X\n\nxref:ROOT:y.adoc[]\n' };
+  const run = unsupportedRun(files);
+  assert.deepEqual(JSON.parse(run.stdout).findings.map((f) => f.code), ['REF_BROKEN']);
+  assert.doesNotMatch(run.stderr, /not checked/);
+});
+
+test('CLI: files outside an unsupported descriptor\'s modules/ keep path resolution', () => {
+  const files = { ...unsupportedCases['two components'], 'docs/other.adoc': '= O\n\nxref:ROOT:y.adoc[]\n' };
+  const run = unsupportedRun(files);
+  assert.ok(JSON.parse(run.stdout).findings.some((f) => f.code === 'REF_BROKEN' && f.file === 'docs/other.adoc'));
+  assert.doesNotMatch(run.stderr, /other\.adoc/);
+});
+
+test('CLI: a tracked antora.yml deleted from the work tree falls back to path resolution, no crash', () => {
+  const { root } = makeRepo(ANTORA, Object.keys(ANTORA));
+  rmSync(join(root, 'docs/antora.yml'));
+  const run = spawnSync(process.execPath, [SCRIPT, 'docs'], { cwd: root, encoding: 'utf8', env: GENV });
+  assert.equal(run.status, 1, run.stderr); // findings (xrefs now read as paths), not a crash (2)
+  assert.doesNotMatch(run.stderr, /internal error/);
+  assert.ok(JSON.parse(run.stdout).findings.every((f) => f.file !== 'docs/antora.yml'));
+});
+
+test('Antora xrefs with escaping coordinates are REF_BROKEN, never REF_NOT_IN_GIT, and are never probed on disk', async () => {
+  const files = { ...ANTORA, 'docs/modules/ROOT/pages/esc.adoc': '= Esc\n\nxref:../../../../etc:passwd[a] xref:..:x.adoc[b] xref:a/b:x.adoc[c]\n' };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/esc.adoc'), root, trackedSet, component);
+  assert.deepEqual(codes(findings), ['REF_BROKEN', 'REF_BROKEN', 'REF_BROKEN']);
+  assert.ok(findings.every((f) => /invalid module or component name/.test(f.message)));
+});
+
+test('in an Antora repo, a file outside modules/ resolves xrefs as paths, as before', async () => {
+  const files = { ...ANTORA, 'README.adoc': 'xref:docs/antora.yml[ok] xref:docs/nope.adoc[gone]\n' };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'README.adoc'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => f.code), ['REF_BROKEN']);
+  assert.match(findings[0].message, /docs\/nope\.adoc/);
+});
+
+test('Antora images and resource-ID includes resolve by Antora rules; plain includes stay paths', async () => {
+  const files = {
+    ...ANTORA,
+    'docs/modules/ROOT/images/arch.png': 'png',
+    'docs/modules/usage/images/shot.png': 'png',
+    'docs/modules/ROOT/partials/note.adoc': 'Note.\n',
+    'docs/modules/ROOT/pages/snippets/local.adoc': 'Local.\n',
+    'docs/modules/ROOT/pages/media.adoc': [
+      '= Media', '',
+      'image::arch.png[]', 'image::usage:shot.png[]', 'image::https://example.org/x.png[]', 'image::gone.png[]',
+      'include::partial$note.adoc[]', 'include::partial$missing.adoc[]', 'include::snippets/local.adoc[]', '',
+    ].join('\n'),
+  };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/media.adoc'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 6], ['REF_BROKEN', 8]]);
+  assert.match(findings[0].message, /docs\/modules\/ROOT\/images\/gone\.png/);
+  assert.match(findings[1].message, /docs\/modules\/ROOT\/partials\/missing\.adoc/);
+});
+
+test('Antora: an absolute image target (UI bundle or site root) is not checked; a ../ target still is', async () => {
+  const files = { ...ANTORA, 'docs/modules/ROOT/pages/abs.adoc': '= Abs\n\nimage::/assets/logo.png[]\n\nimage::../x.png[]\n' };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/abs.adoc'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 5]]);
+  assert.match(findings[0].message, /\.\.\/x\.png/);
+});
+
+test('Antora: link: targets are published-URL paths; .html maps to the sibling page, _attachments/ to the module attachments', async () => {
+  const files = {
+    ...ANTORA,
+    'docs/modules/ROOT/pages/install.adoc': '= Install\n',
+    'docs/modules/ROOT/attachments/x.pdf': 'pdf',
+    'docs/modules/ROOT/pages/links.adoc': [
+      '= Links', '',
+      'link:install.html[ok]', 'link:../_attachments/x.pdf[ok]', 'link:gone.html[gone]', 'link:../_attachments/gone.pdf[gone]',
+      'link:../other.html[outside the module]', 'link:file.zip[unmapped]', '',
+    ].join('\n\n'),
+  };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/links.adoc'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 9], ['REF_BROKEN', 11]]);
+  assert.match(findings[0].message, /pages\/gone\.adoc/);
+  assert.match(findings[1].message, /attachments\/gone\.pdf/);
+});
+
+test('Antora: a Markdown file under modules/ keeps plain path resolution for its links', async () => {
+  const files = { ...ANTORA, 'docs/modules/ROOT/pages/notes.md': '# Notes\n\n[gone](gone.html) and [ok](other.md)\n', 'docs/modules/ROOT/pages/other.md': '# Other\n' };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/notes.md'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 3]]);
+  assert.match(findings[0].message, /gone\.html/);
+});
+
+test('in a partial, images and family includes resolve against the partial; a page xref is not reported', async () => {
+  const files = {
+    ...ANTORA,
+    'docs/modules/ROOT/partials/p.adoc': 'image::missing.png[]\n\ninclude::partial$gone.adoc[]\n\nxref:nowhere.adoc[x]\n',
+  };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/partials/p.adoc'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 1], ['REF_BROKEN', 3]]);
+  assert.match(findings[0].message, /docs\/modules\/ROOT\/images\/missing\.png/);
+  assert.match(findings[1].message, /docs\/modules\/ROOT\/partials\/gone\.adoc/);
+});
+
+test('in an Antora repo, a file outside modules/ keeps path behavior for images and includes', async () => {
+  const files = { ...ANTORA, 'README.adoc': 'image::nope.png[]\n\ninclude::partial$x.adoc[]\n' };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'README.adoc'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 1], ['REF_BROKEN', 3]]);
+  assert.match(findings[0].message, /nope\.png/);
+});
+
+test('Antora: an xref to a tracked page under a _ path is REF_BROKEN (unpublished); a normal xref is clean', async () => {
+  const files = {
+    ...ANTORA,
+    'docs/modules/ROOT/pages/_drafts/plan.adoc': '= Plan\n',
+    'docs/modules/ROOT/pages/_partial.adoc': '= P\n',
+    'docs/modules/ROOT/pages/hidden.adoc': '= H\n\nxref:_drafts/plan.adoc[a] xref:_partial.adoc[b] xref:sub/deep.adoc[ok]\n',
+  };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/pages/hidden.adoc'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => [f.code, f.line]), [['REF_BROKEN', 3], ['REF_BROKEN', 3]]);
+  assert.match(findings[0].message, /not published/);
+});
+
+test('Antora resolution applies to AsciiDoc only: Markdown under modules/ resolves images as relative paths', async () => {
+  const files = {
+    ...ANTORA,
+    'docs/modules/ROOT/README.md': '![ok](diagram.png) ![bad](shot.png)\n',
+    'docs/modules/ROOT/diagram.png': 'png',
+    'docs/modules/ROOT/images/shot.png': 'png',
+  };
+  const { root, trackedSet } = makeRepo(files, Object.keys(files));
+  const component = readAntora('docs/antora.yml', files['docs/antora.yml'], trackedSet);
+  const findings = await analyzeFile(join(root, 'docs/modules/ROOT/README.md'), root, trackedSet, component);
+  assert.deepEqual(findings.map((f) => f.code), ['REF_BROKEN']);
+  assert.match(findings[0].message, /shot\.png/);
 });

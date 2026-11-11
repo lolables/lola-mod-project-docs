@@ -326,7 +326,7 @@ export function snapshotContent(url, result, fetchedAt) {
 function usage() {
   process.stderr.write('usage: fetch-citations.mjs --root <dir> --out <empty-dir> <doc>...\n'
     + '       fetch-citations.mjs --root <dir> --offline <doc>...\n');
-  process.exit(2);
+  process.exitCode = 2;
 }
 
 // Run `worker` over `items` with at most `n` in flight.
@@ -431,11 +431,14 @@ export async function run(argv, transport = {}) {
 
 if (isMain(import.meta.url)) {
   run(process.argv).then((result) => {
-    if (!result) usage();
+    if (!result) {
+      usage();
+      return;
+    }
     process.stdout.write(JSON.stringify(result, null, 2) + '\n');
-    process.exit(result.findings.length ? 1 : 0);
+    process.exitCode = result.findings.length ? 1 : 0;
   }).catch((e) => {
     process.stderr.write('fetch-citations: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

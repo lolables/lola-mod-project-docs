@@ -181,7 +181,7 @@ function isAdr(path) {
 function emit(findings) {
   const status = findings.length ? 'findings' : 'ok';
   process.stdout.write(JSON.stringify({ status, findings }, null, 2) + '\n');
-  process.exit(findings.length ? 1 : 0);
+  process.exitCode = findings.length ? 1 : 0;
 }
 
 async function main() {
@@ -189,7 +189,8 @@ async function main() {
   try { root = git(['rev-parse', '--show-toplevel'], process.cwd()).trim(); }
   catch {
     process.stdout.write(JSON.stringify({ status: 'error', message: 'not a git repo' }) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
+    return;
   }
   const latestSource = hasCommits(root) ? await latestSourceCommit(root) : null;
   if (latestSource === null) {
@@ -245,6 +246,6 @@ async function main() {
 if (isMain(import.meta.url)) {
   main().catch((e) => {
     process.stderr.write('check-staleness: internal error: ' + (e && e.stack ? e.stack : e) + '\n');
-    process.exit(2);
+    process.exitCode = 2;
   });
 }

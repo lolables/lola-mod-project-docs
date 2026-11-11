@@ -39,15 +39,13 @@ commands:
 
 ## Scope of audit
 
-The skill audits **project-centric documentation only** — content that
-describes the project itself. When enumerating documentation files (in
-`/docs-audit` and any command that re-runs its lanes), include:
+The skill audits **project-centric documentation written for people** —
+content that describes the project to a reader. When enumerating
+documentation files (in `/docs-audit` and any command that re-runs its
+lanes), include:
 
 - The README at the repository root (any registered README name).
 - Every doc file under `docs/` (see "Supported formats").
-- For lola module repositories: every doc file under `module/` that ships as
-  part of the module (`module/skills/*/SKILL.md`, `module/commands/*.md`,
-  `module/skills/*/reference/*.md`).
 
 **Exclude unconditionally:**
 
@@ -62,9 +60,12 @@ describes the project itself. When enumerating documentation files (in
   `GEMINI.md`, `.cursorrules`. These describe agent behavior; they drift
   with prompt-engineering iteration rather than with code, so auditing
   them for code drift produces noise.
+- Docs written for an LLM, wherever they live (skills, commands, agent
+  prompts; e.g. a lola module's `module/`). Judge from context:
+  frontmatter, text addressed to an assistant, where the files ship.
 
 **Explicit paths override these rules:** `/docs-audit <path>...` audits
-exactly what the user names.
+exactly what the user names (`/docs-audit module/` included).
 
 **Symlinks:** a doc tree can be a directory of symlinks into a canonical copy.
 Content judgments (Lanes 3 and 6) run once per real file and report the
@@ -209,7 +210,11 @@ An unaudited file is "unknown", never "clean".
 - `reference/rule-sources.md` — the published rule (or house convention)
   behind each writing-quality finding code; `/docs-audit` cites it.
 - `reference/readme-template.md` — minimum acceptable README structure.
-- `reference/docs-tree-template.md` — `docs/dev/` scaffold.
+- `reference/docs-tree-template.md` — `docs/dev/` and `docs/usage/` scaffold.
+- `reference/personas.md` — the eight fixed readers and the door each needs
+  from the front door; `check-routing.mjs` checks them.
+- `reference/placement-rules.md` — where a new fact goes; `/docs-init`
+  offers it for `AGENTS.md`.
 
 ## Cross-skill
 

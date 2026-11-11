@@ -2,6 +2,10 @@
 
 > One-sentence description of what this is and who it's for.
 
+**Status:** <alpha, beta, stable, or unmaintained>; <who maintains it and
+how often it ships, for example "maintained by the platform team, monthly
+releases">.
+
 ## What this is
 
 Two or three sentences. What problem does this solve? What kind of user is
@@ -30,9 +34,13 @@ Expected output:
 
 ## Where to go next
 
-- For deeper usage: `docs/usage/` (if the project has grown into that).
-- For maintainer/architecture context: `docs/dev/`.
-- For decisions made along the way: `docs/dev/adr/` (or `docs/adr/`).
+- **Using it:** [docs/usage/](docs/usage/) — how-tos and configuration.
+- **Upgrading:** [CHANGELOG.md](CHANGELOG.md) — what changed, and what to
+  do before you upgrade.
+- **Contributing:** [docs/dev/](docs/dev/) — architecture, build, and tests.
+- **Security:** [SECURITY.md](SECURITY.md) — how to report a vulnerability.
+- **License:** [LICENSE](LICENSE)
+- **Getting help:** [SUPPORT.md](SUPPORT.md)
 
 ---
 

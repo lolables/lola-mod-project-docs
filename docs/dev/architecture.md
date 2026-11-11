@@ -55,34 +55,43 @@ would be faster.
 
 | Lane | Script | Finds |
 | --- | --- | --- |
-| 1 structural | `check-structure.sh` | missing or empty README, ungitignored `docs/superpowers/` (working specs and plans that planning skills such as superpowers write), drafts there tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`) |
+| 1 structural and routing | `check-structure.sh`, `check-routing.mjs` | missing or empty README, ungitignored `docs/superpowers/` (working specs and plans that planning skills such as superpowers write), drafts there tracked in git, an ADR directory with no `index.md`, a forked copy in a symlinked doc tree (`FORKED_COPY`); readers who cannot find their door (see "Persona routing") |
 | 2 staleness | `check-staleness.mjs` | docs older than the code they describe; reports `STALENESS_NOT_ASSESSED` when no commit ever touched a file Linguist classifies as source |
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections, double-negative and slash-alternative candidates |
-| 4 reference integrity | `check-refs.mjs` | broken links and file references |
+| 4 reference integrity | `check-refs.mjs` | broken links and file references; Antora xrefs, images, and includes by resource ID |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | — (subagent-driven); `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode | content drift, missing diagrams/demo, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
+| 6 LLM | `lane6.mjs` (dispatch), `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode; `check-walkthrough.mjs` for persona walkthroughs | content drift, missing diagrams/demo, readers who cannot finish a task by following links, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
 
-Lane 6 is the model-owned exception: a grounding subagent classifies each
-file's Diátaxis mode first, then a separate subagent runs each applicable
-prompt for that file — never grouped across files or prompts, per the
-dispatch measurements in `eval/REPORT.md`.
+Lane 6 is the model-owned exception, but a script owns its control flow.
+`lane6.mjs` enumerates every job, renders every prompt from
+`reference/lane6-prompts/`, validates every reply against its kind's
+schema, and reports each job that did not finish as `LANE_FAILED`. The
+orchestrator only dispatches and records. On a 20-doc repository a Sonnet
+orchestrator skipped every judgment prompt as "budget" although the prompt
+wording forbade it; now a skip can come only from the script.
+
+Each job is its own subagent: a grounding job classifies each file's
+Diátaxis mode first, then a separate job runs each applicable prompt for
+that file — never grouped across files or prompts, per the dispatch
+measurements in `eval/REPORT.md`.
 
 Content drift goes further than one subagent per file and prompt. A
 subagent asked to judge a whole doc reports one or two drifts and silently
 drops the rest, so drift runs as a claim ledger (Rounds 14-15 in
-`eval/REPORT.md`):
+`eval/REPORT.md`), which `lane6.mjs` drives:
 
-1. `doc-chunks.mjs` splits the doc at H2/H3 headings into ranges of at most
-   100 lines (one range at 150 lines or fewer; a longer section stays whole).
-2. An extract subagent per range lists every checkable claim, typed `fact`
+1. `lane6.mjs plan` calls `doc-chunks.mjs` to split the doc at H2/H3
+   headings into ranges of at most 100 lines (one range at 150 lines or
+   fewer; a longer section stays whole).
+2. An extract job per range lists every checkable claim, typed `fact`
    (one thing) or `set` (a count, an only/both/all, or a list that names its
    items — kept as one claim).
-3. Verify subagents take the claims in batches of 20 and must return one
-   verdict per claim; for a set they list the doc's members and the code's
-   full group before judging.
-4. The orchestrator checks every claim got a verdict, retries the rest, and
-   reports a coverage line per file, so "no drift" can be told apart from
-   "not checked".
+3. Once a file's extracts are recorded, `next` releases verify jobs that take
+   the claims in batches of 20 and must return one verdict per claim; for a
+   set they list the doc's members and the code's full group before judging.
+4. `lane6.mjs` checks every claim got a verdict, retries the rest, and
+   `collect` reports a coverage line per file, so "no drift" can be told
+   apart from "not checked".
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {
@@ -102,30 +111,28 @@ drops the rest, so drift runs as a claim ledger (Rounds 14-15 in
   'fontFamily': 'system-ui, sans-serif'
 }, 'themeCSS': '.node .nodeLabel{color:#ffffff!important;fill:#ffffff!important;}'}}%%
 sequenceDiagram
-  participant O as Orchestrator
-  participant C as doc-chunks.mjs
+  participant L as lane6.mjs
   participant X as Extract subagents
   participant V as Verify subagents
-  O->>C: one doc
-  C-->>O: ranges split at H2/H3
+  L->>L: split one doc at H2/H3 (doc-chunks.mjs)
   par one per range
-    O->>X: range
-    X-->>O: claims typed fact or set
+    L->>X: range prompt
+    X-->>L: claims typed fact or set
   end
   par batches of 20 claims
-    O->>V: claim batch
-    V-->>O: one verdict per claim
+    L->>V: claim batch prompt
+    V-->>L: one verdict per claim
   end
   loop until every claim has a verdict
-    O->>V: claims missing a verdict
-    V-->>O: verdicts
+    L->>V: claims missing a verdict
+    V-->>L: verdicts
   end
-  O->>O: coverage line per file
+  L->>L: coverage line per file
 ```
 
-The plain-language prompt (prompt 7) uses the same chunking, for the same
-reason: a whole-document judge under-reports on long files. It runs one
-subagent per `doc-chunks.mjs` range. It needs no claim ledger, because each
+The plain-language job uses the same chunking, for the same reason: a
+whole-document judge under-reports on long files. `lane6.mjs` plans one
+job per `doc-chunks.mjs` range. It needs no claim ledger, because each
 range's reply is its findings. It takes no grounding note (Round 16 measured
 it without one) and gets the read-only rule only, plus the untrusted-data
 rule in document mode.
@@ -191,6 +198,133 @@ nothing outside `formats/` imports it.
 Convention 2 in [Conventions enforced](../../README.md#conventions-enforced) —
 developer documentation under `docs/dev/` — is
 model-owned, not script-owned. Lane 1 does not check for it.
+
+The punch list is also written to a `mktemp` report file on every run.
+Past 50 findings the reply shows only the Blockers and a `Full report:`
+line, and `/docs-update` reads the file. The reason: once `lane6.mjs` made
+every judgment job run, a 14-doc repository produced 395 findings, and the
+orchestrator summarised the Info rows and dropped 28 Warnings from its
+reply. A row missing from the reply is a row `/docs-update` never sees; a
+file has no length limit.
+
+### Which model runs the judgment prompts
+
+The session's model, always. `lane6.mjs` names no model and the
+orchestrator picks none: the module installs on several hosts, model names
+differ between them, and some cannot choose a model per subagent. The
+README tells the reader to pick the most capable model they have.
+
+That advice rests on one comparison (2026-11-10, complytime-labs/crosscodex
+at 156e9ca, the 12 docs both runs audited). Each run's findings were
+sampled and checked against the docs and code by an independent verifier:
+
+| | Sonnet 5.5 | Opus 5.5 |
+|---|---|---|
+| Run cost | $41 | $102 |
+| `CONTENT_DRIFT` reported | 65 | 82 |
+| Sampled drift that is real | 20 of 25 | 25 of 25 |
+| Sampled `COLD_READ` that holds up | 8 of 30 | 9 of 30 |
+| Sampled `NOUN_STRING` that is correct | 5 of 19 | 2 of 12 |
+
+- **Drift depends on the model.** The weaker model's false drift came from
+  reading a selective list as complete.
+- **Cold read and noun strings do not.** Both models flag terms the doc's
+  audience already knows, over-use Warning, and miscount noun modifiers, so
+  a stronger model does not fix those; the prompts would.
+
+The prompts were then tightened for those patterns, and the jobs behind
+the sampled Sonnet findings were re-run with Sonnet, once with the new
+prompts and once with the old ones as a control:
+
+| Same jobs | Old prompts | New prompts |
+|---|---|---|
+| Sampled cold-read noise still reported | 10 of 22 | 10 of 22 |
+| Cold-read findings, all re-run files | 81 | 54 |
+| Sampled noun-string and hidden-verb noise still reported | 10 of 19 | 2 of 19 |
+| Plain-language findings, all re-run chunks | 58 | 10 |
+| Sampled real drift still reported | 13 of 20 | 11 of 19 |
+
+Drift recall did not change: a second run of the old prompt loses as many
+real drifts, so that loss is run-to-run variance.
+
+**Known limitation: about half of cold-read findings are noise.** The
+tightened prompt cut cold-read volume by a third but not its sampled noise.
+A second round (search the doc before calling something missing; skip
+ticket references the sentence does not need) changed nothing measurable,
+and adding "report only what stops the reader" also dropped real
+self-contradictions and a command that fails, so neither shipped.
+
+**Known limitation: one run finds about two thirds of the real drift.**
+Re-running the same verify jobs with the same prompt kept 13 of 20 sampled
+real drifts, so each run misses a different third. A second verify pass per
+claim, keeping the union, would raise recall at roughly twice the drift
+cost; it is not built. Re-running `/docs-audit` after fixing a batch of
+findings is the cheap way to catch more. A hyphenated compound
+now counts as one modifier, as in the prompt's own Google example, so
+"per-data-class retention policy" is no longer a noun string.
+
+## Persona routing
+
+Every other lane asks whether a doc is true. Routing asks whether the right
+reader can find it.
+
+- **Registry.** `scripts/personas.mjs` fixes eight readers as data: their
+  question, their entry points, and what content belongs to them.
+  `reference/personas.md` and `reference/placement-rules.md` are its
+  human tables, and `personas.test.mjs` keeps all three equal. The set is
+  not project-configurable; a real project that does not fit is the
+  trigger to revisit that.
+- **Graph seam.** `scripts/nav-graph.mjs` is the only code that reads links
+  for routing. It returns pages, link edges, and front doors through the
+  format registry, so Markdown and AsciiDoc behave the same. It resolves
+  links ignoring `?query` and `#fragment`, and leaves out tracked symlinks
+  that resolve outside the repo. Checks consume the graph and never parse
+  navigation themselves, so a site generator's navigation can be a new
+  adapter without touching a check.
+- **Docs mode.** The same script names the docs mode from site-config file
+  names. `/docs-audit` reads it before any lane. `check-routing.mjs` runs
+  page-reachability codes only when the graph's adapter reads that mode;
+  otherwise it lists them in `skipped` with the reason, along with the
+  `FRONT_DOOR_BLOCKED` pass for linking the published site. The audit never
+  executes a site config: Docusaurus keeps its navigation in JavaScript, so
+  it stays unsupported.
+  - An `antora.yml` names the mode only when tracked files sit under
+    `modules/*/pages/` beside it. A fixture or example descriptor without
+    pages must not turn the repo into a site, or hide it from the
+    repo-mode checks. The other generators are matched on names alone.
+  - A Jekyll `_config.yml` names no mode. Jekyll on GitHub Pages publishes
+    the repo's Markdown with its relative links intact, so the repo-mode
+    checks and walkthroughs apply as they are.
+  - MkDocs and Antora are routed through `mkdocs.mjs` and `antora.mjs`,
+    pure adapters over configs that `site-yaml.mjs` loads. Tags load inert,
+    nothing is run, and a malformed config exits 2 with a message that
+    names the file.
+  - An `INHERIT` or `exclude_docs` in `mkdocs.yml` is skipped with a
+    reason, because the sidebar cannot be known from one file.
+  - `link-targets.mjs` and `docs-mode.mjs` are leaf modules. They exist so
+    `check-refs.mjs` and the adapters share helpers without an import cycle.
+- **Walkthroughs.** Lane 6 sends one cold `Explore` subagent per
+  walkthrough persona through the docs by links only, and
+  `check-walkthrough.mjs` checks the walk: every recorded hop must be an
+  edge out of a file already opened (or a sidebar entry). A reply whose
+  hops no link supports, or whose answers sit in files it never opened, is
+  caught and re-dispatched.
+  Tasks it could not finish go to a second, unrestricted subagent that
+  locates the answer; the script then says whether a link path reaches it
+  (`missed`, not reported), none does (`unreachable`), or no doc holds it
+  (`absent`). The walker is cold because an agent that has read
+  `docs/dev/` cannot act like a newcomer. Hop lines are citations, not
+  matched: LLM line counts on wrapped links drift.
+- **Candidates.** `MISPLACED_SECTION` is a script-found candidate (a long
+  front-door section). The LLM decides only which reader it serves, the
+  same split as `SPLIT_CANDIDATE` in Lane 3.
+- **Thresholds.** `THRESHOLDS` in `check-routing.mjs` (the front-door lead,
+  quick-start length, section length, and the `SITE_CANDIDATE` counts) are
+  house conventions from the design, not tuned against eval runs.
+
+The test fixtures in `tests/scripts/docs-organization/routing-fixtures.mjs`
+build the template-shaped repo from the shipped templates. A template edit
+that breaks a reader's path fails `check-routing.test.mjs`.
 
 ## Path mode and document mode
 
