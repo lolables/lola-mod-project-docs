@@ -1,0 +1,38 @@
+module/skills/docs-organization/scripts/lane6.mjs
+  s_2de6e912cfe856::t_1a9b460ca88d14 117-119
+  s_2de6e912cfe856::t_8f1c969c133ea4 41-49
+  s_2de6e912cfe856::t_dc6d2624190ca2 4-6,24-25
+module/skills/docs-organization/reference/scripts.md
+  s_2de6e912cfe856::t_84f1cbf9e6c084 36
+tests/scripts/docs-organization/lane6.test.mjs
+  s_2de6e912cfe856::t_22a8f7063c4b9f 64-85
+  s_2de6e912cfe856::t_215a33d5d610da 3,5
+  s_2de6e912cfe856::t_a1afc616a4dabb 11-17
+module/commands/docs-audit.md
+  s_2de6e912cfe856::t_dc6d2624190ca2 18-19,297,422-423,427,451,454,594,603
+  s_2de6e912cfe856::t_1f19aa729814ce 29-40
+docs/dev/architecture.md
+  s_2de6e912cfe856::t_84f1cbf9e6c084 209-213
+README.md
+  s_2de6e912cfe856::t_84f1cbf9e6c084 72-74
+CHANGELOG.md
+  s_2de6e912cfe856::t_c903de8bd90c8a 79-82
+tests/scripts/docs-organization/report-file-guard.test.mjs
+  s_2de6e912cfe856::t_79e9148cf8cc60 14-15,18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9e97ca2969a5afd00690a309509fffd2a52aa7f0",
+  "prompts": {},
+  "sessions": {
+    "s_2de6e912cfe856": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6266ce6d-a5e1-4fa5-8001-7ae02217b792",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
