@@ -1,0 +1,65 @@
+tests/scripts/docs-organization/format-asciidoc.test.mjs
+  s_e76207f749036f::t_91913d1d9061ea 728-778
+tests/scripts/docs-organization/format-conformance.test.mjs
+  s_e76207f749036f::t_5e2b652c635775 31,64-71
+tests/scripts/docs-organization/__fixtures__/formats/sample.md
+  s_e76207f749036f::t_23ee9ce85413f3 32-47
+module/skills/docs-organization/reference/rule-sources.md
+  s_7704b4b5a46183::t_eef4b751e1c757 35,40,49-74
+tests/scripts/docs-organization/__fixtures__/formats/sample.adoc
+  s_e76207f749036f::t_23ee9ce85413f3 32-47
+module/skills/docs-organization/scripts/formats/asciidoc.mjs
+  s_e76207f749036f::t_91913d1d9061ea 74-76,263-291,433,673-679,681-682,684,713-718,826,833,841-845,865-875,877,904
+  s_e76207f749036f::t_aac4136564fe9b 680,683
+module/commands/docs-update.md
+  s_7704b4b5a46183::t_5ed6a1ed1a61fe 347-380
+module/skills/docs-organization/scripts/formats/markdown.mjs
+  s_e76207f749036f::t_8c0a235458685d 78-79,83-85,280-281,286
+  s_e76207f749036f::t_46c74a4147b2ee 21-23,39-41,80,82,88,90-91,137-138,145,160,204-207,223-226,228-246,277-279,282-285,287-291
+module/skills/docs-organization/scripts/formats/index.mjs
+  s_e76207f749036f::t_5e2b652c635775 31-34,37-39
+  s_e76207f749036f::t_1c0b7f30146fb9 35-36
+docs/dev/architecture.md
+  s_e76207f749036f::t_5e2b652c635775 547,582-588
+  s_e76207f749036f::t_eed4a465462384 589
+module/skills/docs-organization/scripts/check-prose.mjs
+  s_e76207f749036f::t_1a4dd510366b0f 405-475,506-508,511,517-521,529-531,537-541
+  s_e76207f749036f::t_2c08188209b427 15,53-54,60-61
+tests/scripts/docs-organization/check-routing.test.mjs
+  s_e76207f749036f::t_4b49bfcc0ede52 27,96,470,688-710
+tests/scripts/docs-organization/check-prose.test.mjs
+  s_e76207f749036f::t_970e8da87f9744 3,775-851
+tests/scripts/docs-organization/format-markdown.test.mjs
+  s_e76207f749036f::t_8135e1e2a7c5be 337-346
+  s_e76207f749036f::t_46c74a4147b2ee 269-321
+  s_e76207f749036f::t_16f5c1b53a9378 322-336
+module/skills/docs-organization/scripts/check-routing.mjs
+  s_e76207f749036f::t_4b49bfcc0ede52 6,9,69,122,126-130,139-140,143-147,156-157,160-164
+  s_e76207f749036f::t_37e6c6369ef379 11
+module/commands/docs-audit.md
+  s_7704b4b5a46183::t_6d79c09212c123 967
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7c9dc438d21072ff70029388bfdba273fc84a82e",
+  "prompts": {},
+  "sessions": {
+    "s_7704b4b5a46183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a5ee75eaa5deb7d26",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    },
+    "s_e76207f749036f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3e79af24-2064-4fe6-b5e3-900f4c0de1db",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
