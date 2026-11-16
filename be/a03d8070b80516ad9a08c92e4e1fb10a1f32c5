@@ -1,0 +1,23 @@
+module/commands/docs-audit.md
+  s_7704b4b5a46183::t_6d79c09212c123 967
+module/commands/docs-update.md
+  s_7704b4b5a46183::t_5ed6a1ed1a61fe 347-380
+module/skills/docs-organization/reference/rule-sources.md
+  s_7704b4b5a46183::t_eef4b751e1c757 35,40,49-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "bea03d8070b80516ad9a08c92e4e1fb10a1f32c5",
+  "prompts": {},
+  "sessions": {
+    "s_7704b4b5a46183": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "agent-a5ee75eaa5deb7d26",
+        "model": "unknown"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
