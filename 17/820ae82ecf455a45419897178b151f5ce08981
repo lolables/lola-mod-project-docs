@@ -1,0 +1,21 @@
+tests/scripts/docs-organization/format-markdown.test.mjs
+  s_e76207f749036f::t_8135e1e2a7c5be 337-346
+module/skills/docs-organization/scripts/formats/markdown.mjs
+  s_e76207f749036f::t_8c0a235458685d 78-79,83-85,280-281,286
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "17820ae82ecf455a45419897178b151f5ce08981",
+  "prompts": {},
+  "sessions": {
+    "s_e76207f749036f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3e79af24-2064-4fe6-b5e3-900f4c0de1db",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
