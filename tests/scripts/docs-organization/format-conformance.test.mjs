@@ -28,6 +28,7 @@ function project(m) {
     // reads must be identical across formats.
     proseWords: m.texts.filter((t) => t.prose).flatMap((t) => t.text.match(/\p{L}+/gu) ?? []),
     diagrams: m.diagrams.map(({ startLine, source, swappable }) => ({ startLine, source, swappable })),
+    regions: m.regions.map(({ kind, startLine, endLine }) => ({ kind, startLine, endLine })),
     diagnostics: m.diagnostics,
   };
 }
@@ -60,6 +61,14 @@ test('the reference projection is what the sample says it is', async () => {
     'Alert', 'body', 'text',
   ]);
   assert.deepEqual(p.diagrams, [{ startLine: 22, source: 'flowchart LR\n  A --> B', swappable: true }]);
+  assert.deepEqual(p.regions, [
+    { kind: 'diagram', startLine: 21, endLine: 24 },
+    { kind: 'hidden', startLine: 33, endLine: 33 },
+    { kind: 'collapsed', startLine: 35, endLine: 41 },
+    { kind: 'code', startLine: 38, endLine: 40 },
+    { kind: 'code', startLine: 43, endLine: 45 },
+    { kind: 'hidden', startLine: 47, endLine: 47 },
+  ]);
 });
 
 for (const format of FORMATS.slice(1)) {

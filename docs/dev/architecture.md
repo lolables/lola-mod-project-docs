@@ -544,7 +544,7 @@ adapter turns one format into the model:
 
 | Adapter | Parser | Notes |
 | --- | --- | --- |
-| `formats/markdown.mjs` | markdown-it + footnote, container (`:::`), admon (`!!!`) plugins | front matter blanked before parsing; GFM alerts detected on the blockquote; inline lines from `formats/md-lines.mjs` |
+| `formats/markdown.mjs` | markdown-it + footnote, container (`:::`), admon (`!!!`) plugins | front matter blanked before parsing; raw HTML parsed (`html: true`); GFM alerts detected on the blockquote; inline lines from `formats/md-lines.mjs` |
 | `formats/asciidoc.mjs` | Asciidoctor.js 4 in `secure` mode | block lines from the public API; inline references from regexes over raw source lines (no inline AST, and text getters return HTML) |
 
 Both adapters count lines through `formats/text.mjs` (`splitLines`,
@@ -578,6 +578,14 @@ parses to (abridged):
 ```
 
 The full field list is the header comment of `formats/index.mjs`.
+
+`regions` marks the lines a reader does not read as prose: hidden lines
+(comments, front matter, link reference definitions), collapsed blocks,
+block images, diagrams, and code. The size checks price lines through it
+(`spanCost` in `check-prose.mjs`), so a footer of link definitions or a
+collapsed sample output does not push a section over its threshold. A
+Markdown line `[guide]: docs/guide.md` parses to
+`{ "kind": "hidden", "startLine": 9, "endLine": 9 }` when it is line 9.
 
 Decisions:
 

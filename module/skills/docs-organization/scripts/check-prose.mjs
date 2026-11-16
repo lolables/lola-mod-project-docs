@@ -12,7 +12,7 @@
 // Findings (all severity info — nudges, never blockers):
 //   WALL_OF_TEXT       a top-level or callout paragraph over the density threshold
 //   DENSE_BULLET       a flat list item (no sub-list) whose body is over threshold
-//   SPLIT_CANDIDATE    the whole file, or one H2 section, over the size threshold
+//   SPLIT_CANDIDATE    the whole file, or one H2 section, over the size threshold in reading lines
 //   DOUBLE_NEGATIVE    a negator and a negative-meaning word in one clause (candidate)
 //   SLASH_ALTERNATIVE  word/word in running prose (candidate)
 //   VOLATILE_DETAIL    a digit count, metric, popularity figure, or version (candidate)
@@ -50,11 +50,15 @@ import { PERSONAS } from './personas.mjs';
 // count sentences here — that fuzzy "is the rhythm choppy / is this a
 // dense-prose genre" judgment is deferred to the LLM lane, which only ever
 // adjudicates the candidates this pass surfaces.
+// imageLines and collapseMinLines price the regions spanCost reads; see
+// reference/rule-sources.md.
 export const THRESHOLDS = {
   paragraphWords: 120,
   bulletWords: 90,
   fileLines: 600,
   sectionLines: 250,
+  imageLines: 10,
+  collapseMinLines: 5,
 };
 
 // Where SPLIT_CANDIDATE sends each kind of content: the holds of every
@@ -398,6 +402,77 @@ export function sectionSpan(headings, i, lines) {
   return lines + 1 - headings[i].line;
 }
 
+// What a reader pays per line, under two measures (defined in
+// reference/rule-sources.md): `visible` is the height on first render,
+// `reading` is what must be read. Built once per model from its regions as
+// prefix sums, so any range costs O(1). Precedence when regions nest:
+// hidden, then collapsed (its first line stands for the block), then image,
+// diagram, and code. `rank` keeps the winning kind per line.
+const RANK = { code: 1, diagram: 1, image: 1, collapsed: 2, hidden: 3 };
+const prefixCache = new WeakMap();
+
+function prefixCosts(model) {
+  const cached = prefixCache.get(model);
+  if (cached) return cached;
+  const n = model.lines;
+  const rank = new Uint8Array(n + 1);
+  const visible = new Array(n + 1).fill(1);
+  const reading = new Array(n + 1).fill(1);
+  visible[0] = reading[0] = 0;
+  for (const r of model.regions) {
+    const k = RANK[r.kind];
+    for (let l = r.startLine; l <= Math.min(r.endLine, n); l++) {
+      if (k <= rank[l]) continue;
+      rank[l] = k;
+      const first = l === r.startLine;
+      if (r.kind === 'hidden') visible[l] = reading[l] = 0;
+      else if (r.kind === 'collapsed') visible[l] = reading[l] = first ? 1 : 0;
+      else if (r.kind === 'image') { visible[l] = first ? THRESHOLDS.imageLines : 0; reading[l] = 0; }
+      else if (r.kind === 'diagram') reading[l] = 0;
+    }
+  }
+  for (let l = 1; l <= n; l++) {
+    visible[l] += visible[l - 1];
+    reading[l] += reading[l - 1];
+  }
+  const costs = { rank, visible, reading };
+  prefixCache.set(model, costs);
+  return costs;
+}
+
+// Cost of lines fromLine..toLine (1-based, inclusive) under `measure`.
+export function spanCost(model, fromLine, toLine, measure) {
+  const sums = prefixCosts(model)[measure];
+  const to = Math.min(toLine, model.lines);
+  return to < fromLine ? 0 : sums[to] - sums[fromLine - 1];
+}
+
+// The collapse remedy for a size finding over `limit`: every open code
+// block of collapseMinLines or more inside the range, and what folding each
+// to its one summary line saves. null when there is none. The checker cannot
+// tell a command from sample output, so the caveat is always attached.
+export function collapseAdvice(model, from, to, measure, cost, limit) {
+  const { rank } = prefixCosts(model);
+  const blocks = model.regions.filter((r) => r.kind === 'code'
+    && r.startLine >= from && r.endLine <= to
+    && rank[r.startLine] === RANK.code
+    && r.endLine - r.startLine + 1 >= THRESHOLDS.collapseMinLines);
+  if (blocks.length === 0) return null;
+  const saved = blocks.reduce((sum, r) => sum + spanCost(model, r.startLine, r.endLine, measure) - 1, 0);
+  const where = `${blocks.length === 1 ? 'line' : 'lines'} ${blocks.map((r) => r.startLine).join(', ')}`;
+  const caveat = 'keep commands the reader runs open';
+  return cost - saved <= limit
+    ? { suffices: true, text: `collapsing the code at ${where} brings it to ${cost - saved}; ${caveat}` }
+    : { suffices: false, text: `collapsing the code at ${where} saves ${saved}; ${caveat}` };
+}
+
+// A size finding's message: the collapse leads when it alone clears the
+// threshold; otherwise the structural fix leads and the collapse follows.
+export function withAdvice(head, fix, advice) {
+  if (!advice) return `${head}; ${fix}`;
+  return advice.suffices ? `${head}; ${advice.text}` : `${head}; ${fix}; ${advice.text}`;
+}
+
 export function analyzeProse(model, file = '') {
   const findings = [];
   for (const p of model.paragraphs) {
@@ -428,16 +503,22 @@ export function analyzeProse(model, file = '') {
     }
   }
 
-  // Size heuristics. Whole file first, then any oversized level-2 section.
-  const totalLines = model.lines;
+  // Size heuristics, in reading lines. Whole file first, then any oversized
+  // level-2 section.
+  const totalLines = spanCost(model, 1, model.lines, 'reading');
   const ledger = LEDGER_RE.test(basename(file));
   const destinations = splitDestinations(file);
+  const skillNote = 'A SKILL.md moves detail into reference/ instead';
   if (!ledger && totalLines > THRESHOLDS.fileLines) {
     findings.push({
       code: 'SPLIT_CANDIDATE',
       severity: 'info',
       line: 1,
-      message: `file is ${totalLines} lines (> ${THRESHOLDS.fileLines}); split it by reader (reference/personas.md): ${destinations}. A SKILL.md moves detail into reference/ instead`,
+      message: withAdvice(
+        `file is ${totalLines} reading lines (> ${THRESHOLDS.fileLines})`,
+        `split it by reader (reference/personas.md): ${destinations}. ${skillNote}`,
+        collapseAdvice(model, 1, model.lines, 'reading', totalLines, THRESHOLDS.fileLines),
+      ),
     });
   }
 
@@ -445,13 +526,19 @@ export function analyzeProse(model, file = '') {
   const { headings } = model;
   for (let i = 0; i < headings.length && !ledger; i++) {
     if (headings[i].level !== 2) continue;
-    const span = sectionSpan(headings, i, totalLines);
+    const from = headings[i].line;
+    const to = from + sectionSpan(headings, i, model.lines) - 1;
+    const span = spanCost(model, from, to, 'reading');
     if (span > THRESHOLDS.sectionLines) {
       findings.push({
         code: 'SPLIT_CANDIDATE',
         severity: 'info',
         line: headings[i].line,
-        message: `section "${headings[i].title}" spans ~${span} lines (> ${THRESHOLDS.sectionLines}); move it to its reader's door (reference/personas.md): ${destinations}. A SKILL.md moves detail into reference/ instead`,
+        message: withAdvice(
+          `section "${headings[i].title}" spans ${span} reading lines (> ${THRESHOLDS.sectionLines})`,
+          `move it to its reader's door (reference/personas.md): ${destinations}. ${skillNote}`,
+          collapseAdvice(model, from, to, 'reading', span, THRESHOLDS.sectionLines),
+        ),
       });
     }
   }

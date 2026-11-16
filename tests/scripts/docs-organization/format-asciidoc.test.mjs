@@ -725,3 +725,54 @@ test('texts: prose excludes quotations nested in lists and lists nested in quota
   assert.ok(quotedList.listItems.some((i) => i.text.includes('quoted item')));
   assert.equal(proseWith(quotedList, 'quoted').length, 0);
 });
+
+test('regions: hidden, collapsed, image, diagram, and code', async () => {
+  const m = await parse([
+    '= T',                // 1
+    ':toc:',              // 2  attribute entry + line comment: hidden 2-3
+    '// a comment',       // 3
+    '',                   // 4
+    '////',               // 5  comment block: hidden 5-7
+    'block comment',      // 6
+    '////',               // 7
+    '',                   // 8
+    'image::s.png[shot]', // 9  block image
+    '',                   // 10
+    '.Out',               // 11 collapsed 11-18 (title and attribute lines included)
+    '[%collapsible]',     // 12
+    '====',               // 13
+    '[source,mermaid]',   // 14
+    '----',               // 15 diagram 15-17
+    'graph TD',           // 16
+    '----',               // 17
+    '====',               // 18
+    '',                   // 19
+    '....',               // 20 literal: code 20-22
+    'literal',            // 21
+    '....',               // 22
+    '',                   // 23
+    '----',               // 24 listing: code 24-26
+    ':not-an-entry: x',   // 25 inside a listing: content, not hidden
+    '----',               // 26
+    '',
+  ].join('\n'));
+  assert.deepEqual(m.regions, [
+    { kind: 'hidden', startLine: 2, endLine: 3 },
+    { kind: 'hidden', startLine: 5, endLine: 7 },
+    { kind: 'image', startLine: 9, endLine: 9 },
+    { kind: 'collapsed', startLine: 11, endLine: 18 },
+    { kind: 'diagram', startLine: 15, endLine: 17 },
+    { kind: 'code', startLine: 20, endLine: 22 },
+    { kind: 'code', startLine: 24, endLine: 26 },
+  ]);
+});
+
+test('regions: an inline image and a plain example block stay ordinary', async () => {
+  const m = await parse('Text with image:b.svg[badge] inline.\n\n====\nBody.\n====\n');
+  assert.deepEqual(m.regions, []);
+});
+
+test('regions: an unclosed listing runs to the end of the file', async () => {
+  const m = await parse('Intro.\n\n----\ncode\nmore\n');
+  assert.deepEqual(m.regions, [{ kind: 'code', startLine: 3, endLine: 5 }]);
+});

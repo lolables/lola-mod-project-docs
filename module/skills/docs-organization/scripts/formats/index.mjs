@@ -28,6 +28,15 @@
 //                means the block's delimiters sit at column 0 with no
 //                enclosing prefix (no `>`, no list or admonition indent), so
 //                the body can be spliced verbatim.
+//   regions      [{kind, startLine, endLine}]  1-based, inclusive; sorted by
+//                startLine, an enclosing region before those inside it.
+//                kind: hidden (never renders: a comment, front matter, an
+//                attribute entry, a link reference definition) | collapsed
+//                (`<details>`, `[%collapsible]`; starts at `<details>` or
+//                the block title) | image (a block image, not an inline one) |
+//                diagram (mermaid) | code (any other verbatim block). A
+//                line in no region is ordinary. check-prose.mjs `spanCost`
+//                prices them for the size checks.
 //   diagnostics  [{line, message}]         parser warnings
 //
 // Every line is 1-based. Checks read only the model, so a new format is one
