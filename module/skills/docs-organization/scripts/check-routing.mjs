@@ -3,12 +3,12 @@
 // readers from personas.mjs and, for repo-wide checks, the graph from
 // nav-graph.mjs; never parses links or navigation itself.
 //
-//   FRONT_DOOR_BLOCKED  more than THRESHOLDS.frontDoorLead lines between a
+//   FRONT_DOOR_BLOCKED  more than THRESHOLDS.frontDoorLead visible lines between a
 //                       front door's title and its first getting-started
 //                       heading, or no such heading
-//   LONG_QUICKSTART     a getting-started section over THRESHOLDS.quickstartLines
+//   LONG_QUICKSTART     a getting-started section over THRESHOLDS.quickstartLines reading lines
 //   MISPLACED_SECTION   a front-door H2 section, other than a getting-started
-//                       one, over THRESHOLDS.sectionLines. A candidate:
+//                       one, over THRESHOLDS.sectionLines reading lines. A candidate:
 //                       /docs-audit's LLM step assigns its reader from the
 //                       registry and keeps it only when that reader is not
 //                       the new user
@@ -66,7 +66,7 @@
 import { posix } from 'node:path';
 import { PERSONAS, describeEntry } from './personas.mjs';
 import { formatFor } from './formats/index.mjs';
-import { sectionSpan } from './check-prose.mjs';
+import { sectionSpan, spanCost, collapseAdvice, withAdvice } from './check-prose.mjs';
 import { buildGraph, loadOutsideEdges, reachable, indexPage, pageTargets, present } from './nav-graph.mjs';
 import { repoRootOf } from './docs-mode.mjs';
 import { isMain } from './is-main.mjs';
@@ -119,11 +119,15 @@ export function frontDoorFindings(file, model) {
     });
   } else {
     const first = starts[0].h;
-    const lead = first.line - leadStart - 1;
+    const lead = spanCost(model, leadStart + 1, first.line - 1, 'visible');
     if (lead > THRESHOLDS.frontDoorLead) {
       findings.push({
         code: 'FRONT_DOOR_BLOCKED', severity: 'warning', file, line: first.line,
-        message: `"${first.title}" starts ${lead} lines after the title (> ${THRESHOLDS.frontDoorLead}); move what stands before it to its reader's door`,
+        message: withAdvice(
+          `"${first.title}" starts ${lead} visible lines after the title (> ${THRESHOLDS.frontDoorLead})`,
+          "move what stands before it to its reader's door",
+          collapseAdvice(model, leadStart + 1, first.line - 1, 'visible', lead, THRESHOLDS.frontDoorLead),
+        ),
       });
     }
   }
@@ -132,10 +136,15 @@ export function frontDoorFindings(file, model) {
   for (const { h, span } of starts) {
     if (h.line < coveredUntil) continue; // nested in a getting-started section already measured
     coveredUntil = h.line + span;
-    if (span > THRESHOLDS.quickstartLines) {
+    const cost = spanCost(model, h.line, h.line + span - 1, 'reading');
+    if (cost > THRESHOLDS.quickstartLines) {
       findings.push({
         code: 'LONG_QUICKSTART', severity: 'warning', file, line: h.line,
-        message: `"${h.title}" spans ${span} lines (> ${THRESHOLDS.quickstartLines}); keep the shortest path to a working result here and move the full setup to \`docs/usage/getting-started${formatFor(file).extensions[0]}\``,
+        message: withAdvice(
+          `"${h.title}" spans ${cost} reading lines (> ${THRESHOLDS.quickstartLines})`,
+          `keep the shortest path to a working result here and move the full setup to \`docs/usage/getting-started${formatFor(file).extensions[0]}\``,
+          collapseAdvice(model, h.line, h.line + span - 1, 'reading', cost, THRESHOLDS.quickstartLines),
+        ),
       });
     }
   }
@@ -144,10 +153,15 @@ export function frontDoorFindings(file, model) {
     const h = headings[i];
     if (h.level !== 2 || isGettingStarted(h.title)) continue;
     const span = sectionSpan(headings, i, lines);
-    if (span <= THRESHOLDS.sectionLines) continue;
+    const cost = spanCost(model, h.line, h.line + span - 1, 'reading');
+    if (cost <= THRESHOLDS.sectionLines) continue;
     findings.push({
       code: 'MISPLACED_SECTION', severity: 'warning', file, line: h.line,
-      message: `section "${h.title}" spans ${span} lines (> ${THRESHOLDS.sectionLines}) in the front door; candidate: assign its reader from reference/personas.md, keep it only when that reader is not the new user, and name the destination`,
+      message: withAdvice(
+        `section "${h.title}" spans ${cost} reading lines (> ${THRESHOLDS.sectionLines}) in the front door`,
+        'candidate: assign its reader from reference/personas.md, keep it only when that reader is not the new user, and name the destination',
+        collapseAdvice(model, h.line, h.line + span - 1, 'reading', cost, THRESHOLDS.sectionLines),
+      ),
     });
   }
   return findings;

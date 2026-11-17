@@ -24,7 +24,7 @@ test(`FRONT_DOOR_BLOCKED: ${THRESHOLDS.frontDoorLead} lines before Install pass,
   assert.equal(hit[0].line, THRESHOLDS.frontDoorLead + 3);
   assert.equal(hit[0].file, 'README.md');
   assert.equal(hit[0].severity, 'warning');
-  assert.match(hit[0].message, /"Install" starts 41 lines after the title/);
+  assert.match(hit[0].message, /"Install" starts 41 visible lines after the title/);
 });
 
 test('FRONT_DOOR_BLOCKED fires at the title when no getting-started heading exists', async () => {
@@ -93,7 +93,7 @@ test(`MISPLACED_SECTION: a ${THRESHOLDS.sectionLines}-line H2 passes, one more f
   const hit = only(await door(sec(THRESHOLDS.sectionLines - 2)), 'MISPLACED_SECTION');
   assert.equal(hit.length, 1);
   assert.equal(hit[0].line, 7);
-  assert.match(hit[0].message, /section "Reference" spans 31 lines/);
+  assert.match(hit[0].message, /section "Reference" spans 31 reading lines/);
   assert.match(hit[0].message, /candidate/);
 });
 
@@ -467,7 +467,7 @@ test('FRONT_DOOR_BLOCKED: with no H1, every line before the heading counts', asy
   const hit = only(await door(at(THRESHOLDS.frontDoorLead + 1)), 'FRONT_DOOR_BLOCKED');
   assert.equal(hit.length, 1);
   assert.equal(hit[0].line, THRESHOLDS.frontDoorLead + 2);
-  assert.match(hit[0].message, /starts 41 lines after the title/);
+  assert.match(hit[0].message, /starts 41 visible lines after the title/);
 });
 
 test('crosscodex-shaped repo: every routing problem is named', async () => {
@@ -684,4 +684,27 @@ test('a malformed antora-playbook.yml still checks that the README links the hom
   const missing = await door(`${body}No docs link.\n`);
   assert.equal(missing.length, 1, 'README links neither the home page nor any URL');
   assert.match(missing[0].message, /does not link its home page `docs\/modules\/ROOT\/pages\/index\.adoc`.*site URL is unknown/);
+});
+
+test('FRONT_DOOR_BLOCKED: a hero image above Install counts as its rendered height', async () => {
+  // Lead: blank, image, blank, n filler, blank = n + 3 lines, image priced at imageLines.
+  const n = THRESHOLDS.frontDoorLead - 12;
+  const hit = only(await door(`# P\n\n![hero](hero.png)\n\n${lines(n)}\n\n## Install\n\nrun it\n`), 'FRONT_DOOR_BLOCKED');
+  assert.equal(hit.length, 1);
+  assert.match(hit[0].message, /starts 41 visible lines after the title/);
+});
+
+test('FRONT_DOOR_BLOCKED: hidden lines above Install cost nothing', async () => {
+  const notes = Array.from({ length: 60 }, (_, i) => `<!-- note ${i} -->`).join('\n');
+  assert.deepEqual(only(await door(`# P\n\n${notes}\n\n## Install\n\nrun it\n`), 'FRONT_DOOR_BLOCKED'), []);
+});
+
+test('LONG_QUICKSTART: collapsed sample output does not count; open output gets collapse advice', async () => {
+  const out = '```text\n' + lines(70, 'output') + '\n```';
+  const open = `# P\n\n## Quickstart\n\nrun it\n\n${out}\n`;
+  const collapsed = `# P\n\n## Quickstart\n\nrun it\n\n<details>\n<summary>Sample output (70 lines)</summary>\n\n${out}\n\n</details>\n`;
+  assert.deepEqual(only(await door(collapsed), 'LONG_QUICKSTART'), []);
+  const hit = only(await door(open), 'LONG_QUICKSTART');
+  assert.equal(hit.length, 1);
+  assert.match(hit[0].message, /spans 76 reading lines \(> 60\); collapsing the code at line 7 brings it to 5; keep commands the reader runs open$/);
 });

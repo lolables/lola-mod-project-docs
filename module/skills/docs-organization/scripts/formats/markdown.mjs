@@ -18,6 +18,9 @@
 //     front-matter block it isn't.
 //   - GFM alerts: a blockquote whose first line is `[!NOTE]` (or TIP,
 //     IMPORTANT, WARNING, CAUTION) is a callout, not a quotation.
+//   - Raw HTML is parsed (`html: true`), as GitHub renders it: a comment or
+//     `<details>` block is an html_block, never prose. See `regions` in
+//     formats/index.mjs for how each block kind is reported.
 //
 // listItems[].text holds all of an item's own prose except nested lists, so
 // an item's later paragraphs are ALSO reported in `paragraphs` with context
@@ -33,7 +36,9 @@ import MarkdownIt, { footnote, container, admon } from '../vendor/markdown-it.mj
 import { stampInlineLines } from './md-lines.mjs';
 import { countLines, lineStarts, splitLines } from './text.mjs';
 
-const md = new MarkdownIt({ linkify: true })
+// html: GitHub renders raw HTML, so `<details>` and `<!-- -->` must be
+// html_block tokens (regions), not paragraphs of prose.
+const md = new MarkdownIt({ html: true, linkify: true })
   .use(footnote)
   .use(admon)
   .use(container, 'callout', { validate: () => true });
@@ -70,17 +75,20 @@ const FRONT_MATTER_KEY_RE = /^[A-Za-z0-9_.-]+\s*[:=]/;
 const ALERT_RE = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*(?:\n|$)/i;
 const FENCE_CLOSE_RE = /^ {0,3}(`+|~+)[ \t]*$/;
 const FENCE_AT_COLUMN_0_RE = /^(`{3,}|~{3,})/;
+const COMMENT_ONLY_RE = /^<!--(?:(?!-->)[\s\S])*-->$/;
+const REF_DEF_RE = /^ {0,3}\[[^\]]+\]:/;
+const DETAILS_TAG_RE = /<(\/?)details(?=[\s>])/gi;
 
-// Blank out front matter, keeping its line breaks so line numbers hold. A
-// block whose first non-blank inner line doesn't look like a key is left
-// untouched — it is a thematic break (`---`) and a later, unrelated
-// thematic break, not front matter.
+// Blank out front matter, keeping its line breaks so line numbers hold, and
+// report how many lines it spans. A block whose first non-blank inner line
+// doesn't look like a key is left untouched — it is a thematic break (`---`)
+// and a later, unrelated thematic break, not front matter.
 function stripFrontMatter(content) {
   const m = content.match(FRONT_MATTER_RE);
-  if (!m) return content;
+  if (!m) return { text: content, lines: 0 };
   const firstLine = m[2].split(/\r\n?|\n/).find((l) => l.trim() !== '');
-  if (firstLine !== undefined && !FRONT_MATTER_KEY_RE.test(firstLine)) return content;
-  return m[0].replace(/[^\r\n]/g, '') + content.slice(m[0].length);
+  if (firstLine !== undefined && !FRONT_MATTER_KEY_RE.test(firstLine)) return { text: content, lines: 0 };
+  return { text: m[0].replace(/[^\r\n]/g, '') + content.slice(m[0].length), lines: countLines(m[0]) };
 }
 
 // A mermaid fence as a DocModel diagram. markdown-it's map for a closed fence
@@ -126,14 +134,15 @@ export default {
     // it sitting before the fence marker on line 1.
     const body = content.startsWith('\uFEFF') ? content.slice(1) : content;
     const env = {};
-    md.parse(stripFrontMatter(body), env);
+    const frontMatter = stripFrontMatter(body);
+    md.parse(frontMatter.text, env);
     const tokens = env.sourceTokens;
     const starts = lineStarts(content);
     const lines = splitLines(content);
     if (lines[0]) lines[0] = lines[0].replace(/^\uFEFF/, '');
     const model = {
       lines: countLines(content),
-      headings: [], paragraphs: [], listItems: [], links: [], texts: [], diagrams: [], diagnostics: [],
+      headings: [], paragraphs: [], listItems: [], links: [], texts: [], diagrams: [], regions: [], diagnostics: [],
     };
 
     const itemStack = [];
@@ -148,6 +157,7 @@ export default {
     // Set when that paragraph's marker is stripped; consumed by its inline
     // token so the marker's own text fragment is not reported as prose.
     let alertMarkerText = false;
+    const detailsOpen = []; // start lines of open <details> tags, outermost first
 
     for (let ti = 0; ti < tokens.length; ti++) {
       const tok = tokens[ti];
@@ -191,6 +201,10 @@ export default {
           rowLine = tok.map[0];
           break;
         case 'paragraph_open': {
+          // A paragraph whose only content is one image renders as a block
+          // image; badges and linked images (a link_open child) do not count.
+          const parts = tokens[ti + 1].children.filter((c) => c.type !== 'softbreak' && !(c.type === 'text' && c.content.trim() === ''));
+          if (parts.length === 1 && parts[0].type === 'image') model.regions.push({ kind: 'image', startLine: tok.map[0] + 1, endLine: tok.map[1] });
           // A list item's first paragraph is the item's own text (listItems),
           // not a separate paragraph; later ones are paragraphs in the item.
           if (ti > 0 && tokens[ti - 1].type === 'list_item_open') break;
@@ -206,9 +220,30 @@ export default {
           model.paragraphs.push({ line: tok.map[0] + 1, text, context });
           break;
         }
-        case 'fence':
-          if (tok.info.trim().split(/\s+/)[0] === 'mermaid') model.diagrams.push(diagramOf(tok, content, starts, lines));
+        case 'fence': {
+          const mermaid = tok.info.trim().split(/\s+/)[0] === 'mermaid';
+          if (mermaid) model.diagrams.push(diagramOf(tok, content, starts, lines));
+          model.regions.push({ kind: mermaid ? 'diagram' : 'code', startLine: tok.map[0] + 1, endLine: tok.map[1] });
           break;
+        }
+        case 'code_block':
+          model.regions.push({ kind: 'code', startLine: tok.map[0] + 1, endLine: tok.map[1] });
+          break;
+        case 'html_block': {
+          if (COMMENT_ONLY_RE.test(tok.content.trim())) {
+            model.regions.push({ kind: 'hidden', startLine: tok.map[0] + 1, endLine: tok.map[1] });
+            break;
+          }
+          // <details> … </details> usually spans several html_blocks (the
+          // Markdown inside sits between them). Only the outermost pair is
+          // a region; an unclosed one is none (hosts render it differently).
+          for (const tag of tok.content.matchAll(DETAILS_TAG_RE)) {
+            if (tag[1] !== '/') { detailsOpen.push(tok.map[0] + 1); continue; }
+            const start = detailsOpen.pop();
+            if (start !== undefined && detailsOpen.length === 0) model.regions.push({ kind: 'collapsed', startLine: start, endLine: tok.map[1] });
+          }
+          break;
+        }
         case 'inline': {
           if (itemStack.length > 0) itemStack[itemStack.length - 1].text += ' ' + tok.content;
           const base = tok.map ? tok.map[0] : rowLine;
@@ -239,6 +274,21 @@ export default {
           break;
       }
     }
+    // Front matter never renders. A link reference definition is consumed by
+    // the block parser and leaves no token, so it is a non-blank line that no
+    // token's map covers. One nested in a list or quote is covered by its
+    // container and stays ordinary. A `:::` container's closing marker is
+    // also uncovered, hence the REF_DEF_RE shape test.
+    if (frontMatter.lines > 0) model.regions.push({ kind: 'hidden', startLine: 1, endLine: frontMatter.lines });
+    const covered = new Uint8Array(lines.length);
+    for (const t of tokens) if (t.map) covered.fill(1, t.map[0], t.map[1]);
+    for (let i = frontMatter.lines; i < lines.length; i++) {
+      if (covered[i] || lines[i].trim() === '' || !REF_DEF_RE.test(lines[i])) continue;
+      const last = model.regions[model.regions.length - 1];
+      if (last && last.kind === 'hidden' && last.endLine === i) last.endLine = i + 1;
+      else model.regions.push({ kind: 'hidden', startLine: i + 1, endLine: i + 1 });
+    }
+    model.regions.sort((a, b) => a.startLine - b.startLine || b.endLine - a.endLine);
     model.listItems.sort((a, b) => a.line - b.line);
     return model;
   },

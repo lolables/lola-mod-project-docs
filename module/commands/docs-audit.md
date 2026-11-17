@@ -964,7 +964,7 @@ Mode: repo sweep; docs: repo
 | `MISSING_DIAGRAM` | `docs/dev/architecture.md` | 30 | "Data flow" — `flowchart`; three services fan out to one queue, non-obvious from the prose |
 | `WALL_OF_TEXT` | `README.md` | 42 | ~180 words unbroken; split at a topic seam |
 | `DENSE_BULLET` | `docs/dev/architecture.md` | 88 | flat bullet ~150 words; break into sub-bullets |
-| `SPLIT_CANDIDATE` | `README.md` | 1 | file is 820 lines (> 600); split it by reader: how-tos → `docs/usage/`, internals → `docs/dev/` |
+| `SPLIT_CANDIDATE` | `README.md` | 1 | file is 820 reading lines (> 600); split it by reader: how-tos → `docs/usage/`, internals → `docs/dev/` |
 | `UNLINKED_REF` | `docs/dev/architecture.md` | 202 | `§10.9` citation, no link; link the section (keep the citation) |
 | `UNLINKED_POINTER` | `README.md` | 58 | "contact the maintainers" — no link; add the contact route (issue tracker, `SUPPORT.md`) |
 | `COLD_READ` | `README.md` | 12 | "run `sync`" — first-time reader must authenticate first, never stated |

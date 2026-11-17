@@ -344,6 +344,40 @@ present, skip the `adr` activation.
        symlink to the twin, like its siblings, or (b) add a short note at the
        top of the copy saying why it differs from its twin. Never drop content
        the user has not chosen to drop.
+     - For a size finding (`SPLIT_CANDIDATE`, `LONG_QUICKSTART`,
+       `MISPLACED_SECTION`, `FRONT_DOOR_BLOCKED`) whose message says
+       `collapsing the code at line … brings it to …`: offer the collapse
+       first; it moves nothing between files. Wrap each named block in a
+       collapsible block whose summary names the content, never
+       `Click to expand`. Never collapse a command the reader must run:
+       skip that block, and fall back to the structural fix below when
+       the rest does not clear the threshold. In Markdown, leave a blank
+       line after `</summary>`, or GitHub shows the Markdown inside raw:
+
+       ````markdown
+       <details>
+       <summary>Full <code>config.yaml</code> (80 lines)</summary>
+
+       ```yaml
+       server:
+         port: 8080
+       ```
+
+       </details>
+       ````
+
+       In AsciiDoc, the title is the summary:
+
+       ```asciidoc
+       .Full config.yaml (80 lines)
+       [%collapsible]
+       ====
+       ----
+       server:
+         port: 8080
+       ----
+       ====
+       ```
      - For `SPLIT_CANDIDATE`: the fix is **structural, and needs explicit
        consent** — it moves content between files. Propose extracting the
        oversized file (or the named H2 section) to its reader's destination

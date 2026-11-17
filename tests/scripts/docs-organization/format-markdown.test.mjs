@@ -266,3 +266,81 @@ test('texts: prose excludes quotations nested in lists and lists nested in quota
   const quotedList = await parse('> - quoted item\n');
   assert.equal(fragments(quotedList, 'quoted').length, 0);
 });
+
+test('regions: hidden, collapsed, image, diagram, and code', async () => {
+  const m = await parse([
+    '---',                        // 1  front matter: hidden 1-3
+    'title: x',                   // 2
+    '---',                        // 3
+    '# T',                        // 4
+    '',                           // 5
+    '<!-- note',                  // 6  comment across a blank line: hidden 6-9
+    '',                           // 7
+    '## Old',                     // 8
+    '-->',                        // 9
+    '',                           // 10
+    '![shot](s.png)',             // 11 standalone image
+    '',                           // 12
+    '<details>',                  // 13 collapsed 13-19
+    '<summary>Out</summary>',     // 14
+    '',                           // 15
+    '```mermaid',                 // 16 diagram 16-18, inside the collapsed block
+    'graph TD',                   // 17
+    '```',                        // 18
+    '</details>',                 // 19
+    '',                           // 20
+    '    indented code',          // 21 code 21
+    '',                           // 22
+    '[r]: https://example.com/r', // 23 link reference definitions: hidden 23-24
+    '[s]: https://example.com/s', // 24
+    '',
+  ].join('\n'));
+  assert.deepEqual(m.regions, [
+    { kind: 'hidden', startLine: 1, endLine: 3 },
+    { kind: 'hidden', startLine: 6, endLine: 9 },
+    { kind: 'image', startLine: 11, endLine: 11 },
+    { kind: 'collapsed', startLine: 13, endLine: 19 },
+    { kind: 'diagram', startLine: 16, endLine: 18 },
+    { kind: 'code', startLine: 21, endLine: 21 },
+    { kind: 'hidden', startLine: 23, endLine: 24 },
+  ]);
+  assert.deepEqual(m.headings.map((h) => h.title), ['T'], 'a commented-out heading is not a heading');
+});
+
+test('regions: inline and linked images, footnotes, fenced look-alikes, and unclosed <details> stay ordinary', async () => {
+  const m = await parse([
+    'Text with ![badge](b.svg) inline.',      // 1  inline image: ordinary
+    '',
+    '[![ci](ci.svg)](https://ci.example)',    // 3  linked image: ordinary
+    '',
+    'Note[^1].',                              // 5
+    '',
+    '[^1]: a footnote, rendered at the foot', // 7  renders: ordinary
+    '',
+    '```text',                                // 9  code 9-11
+    '[r]: https://example.com/r',             // 10 inside code: not hidden
+    '```',                                    // 11
+    '',
+    '<details>',                              // 13 never closed: not collapsed
+    '<summary>Open</summary>',
+    '',
+    'tail',
+    '',
+  ].join('\n'));
+  assert.deepEqual(m.regions, [{ kind: 'code', startLine: 9, endLine: 11 }]);
+});
+
+test('regions: nested <details> report only the outermost block', async () => {
+  const m = await parse('<details>\n<summary>A</summary>\n\n<details>\n<summary>B</summary>\n\nx\n\n</details>\n\n</details>\n');
+  assert.deepEqual(m.regions, [{ kind: 'collapsed', startLine: 1, endLine: 11 }]);
+});
+
+test('regions: a ::: container closing marker is not hidden', async () => {
+  const m = await parse('::: warning\nhi\n:::\n');
+  assert.deepEqual(m.regions, []);
+});
+
+test('regions: a comment followed by visible HTML and another comment is not hidden', async () => {
+  const m = await parse('<!-- a --> visible <b>x</b> <!-- c -->\n');
+  assert.deepEqual(m.regions, []);
+});

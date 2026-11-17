@@ -29,3 +29,19 @@ Closing paragraph citing §7 without any link.
 
 TIP: Alert body text.
 
+
+// hidden note
+
+.Sample output
+[%collapsible]
+====
+----
+ok
+----
+====
+
+----
+run --all
+----
+
+:url-ref: https://example.com/ref

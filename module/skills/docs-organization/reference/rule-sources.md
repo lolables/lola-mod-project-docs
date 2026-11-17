@@ -32,12 +32,12 @@ and `LANE_FAILED`.
 
 | Code | Authority | Rule | Source |
 | --- | --- | --- | --- |
-| `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE` | house convention | A paragraph of 120+ words, a flat bullet of 90+ words, a file over 600 lines, or a level-2 section over 250 lines. Set when the lane was first written; not derived from an external standard or tuned against test runs. | `THRESHOLDS` in `scripts/check-prose.mjs` |
+| `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE` | house convention | A paragraph of 120+ words, a flat bullet of 90+ words, a file over 600 reading lines, or a level-2 section over 250 reading lines. Set when the lane was first written; not derived from an external standard or tuned against test runs. | `THRESHOLDS` in `scripts/check-prose.mjs` |
 | `VOLATILE_DETAIL` | house convention — the `count`, `popularity`, and `version` kinds | A digit count of things that grow with the project (tests, files, rules, dependencies, contributors), a popularity figure (stars, downloads, "used by" a number of teams), or a full software version (`markdown-it 14.1.0`) that duplicates a manifest. Each one must be refreshed on every change, and the reader rarely needs it to act. | `VOLATILE_NOUNS` and `VERSION_AT_RE` in `scripts/check-prose.mjs` |
 | `COLD_READ` | house convention — every category except an undefined term or acronym | A missing or out-of-order step, a dangling cross-reference, prose contradicting its own example, two names for one thing, an unstated prerequisite, an example that would not work as written, or an unresolvable spec reference. | `reference/lane6-prompts/cold-read.md`; `reference/diataxis-grounding.md` |
 | `MISSING_DIAGRAM` | house convention (encouragement) | A section whose relationships a reader must draw in their head to follow. | The missing-diagram prompt in `/docs-audit` |
 | `MISSING_DEMO` | house convention (encouragement) | A user-facing tool's README with no demo of the tool running. | The hero-demo prompt in `/docs-audit` |
-| `FRONT_DOOR_BLOCKED`, `LONG_QUICKSTART`, `MISPLACED_SECTION` | house convention | A front door whose first getting-started heading sits more than 40 lines below the title, a getting-started section over 60 lines, or a front-door level-2 section over 30 lines that serves a reader other than the new user. Set by the persona-routing design; not tuned against test runs. | `THRESHOLDS` in `scripts/check-routing.mjs`; `reference/personas.md` |
+| `FRONT_DOOR_BLOCKED`, `LONG_QUICKSTART`, `MISPLACED_SECTION` | house convention | A front door whose first getting-started heading sits more than 40 visible lines below the title, a getting-started section over 60 reading lines, or a front-door level-2 section over 30 reading lines that serves a reader other than the new user. Set by the persona-routing design; not tuned against test runs. | `THRESHOLDS` in `scripts/check-routing.mjs`; `reference/personas.md` |
 | `MISSING_DOOR`, `ORPHAN_PAGE`, `NO_WAY_BACK` | house convention | Each reader's entry point that exists is linked from the front door; every page under `docs/` is reachable by links from the README and links back toward it. | `reference/personas.md` |
 | `WALKTHROUGH_LOST` | house convention | A reader who starts at their entry point can finish their task by following links, or a site's sidebar, without searching. | `reference/personas.md` |
 | `MISSING_GATE_FILE`, `MISSING_STATUS` | house convention | A repo has a `LICENSE`, a `SECURITY` file, a `SUPPORT` file or issue templates, and a README `Status` line, because gatekeepers decide on those alone. | `reference/personas.md` |
@@ -45,6 +45,32 @@ and `LANE_FAILED`.
 
 Google's Lists page covers list choice and parallel structure, not item
 length, so it is not cited for the length thresholds.
+
+### Visible lines and reading lines
+
+The size checks count what a reader sees, not raw source lines. Each
+parser marks every line's kind, and `spanCost` in `scripts/check-prose.mjs`
+prices it:
+
+| Line | Visible lines | Reading lines |
+| --- | --- | --- |
+| Comment, front matter, attribute entry, link reference definition | 0 | 0 |
+| Collapsed block (`<details>`, `[%collapsible]`), whatever it holds | 1 | 1 |
+| Block image | 10 (`imageLines`) | 0 |
+| Mermaid diagram | its source lines | 0 |
+| Open code block | its source lines | its source lines |
+| Anything else, blank lines included | 1 | 1 |
+
+`FRONT_DOOR_BLOCKED` counts visible lines: how far a new user scrolls
+before the first command. The other size checks count reading lines. A size
+finding names each open code block of 5 or more lines (`collapseMinLines`)
+and says what collapsing it would leave:
+
+> section "Usage" spans 72 reading lines (> 30); collapsing the code at
+> lines 41, 58 brings it to 24; keep commands the reader runs open
+
+`imageLines` and `collapseMinLines` are house conventions, set with this
+rule and not tuned against test runs.
 
 ## Why these sources
 

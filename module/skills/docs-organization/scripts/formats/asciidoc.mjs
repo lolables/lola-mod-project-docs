@@ -71,6 +71,9 @@ const ATTR_ENTRY_RE = /^:(!?[\p{Alphabetic}\p{N}_][^:]*):(?:[ \t]+(.*))?$/u;
 // aside), so a close is matched against the same character repeated the
 // same number of times as the open.
 const DELIM_BLOCK_RE = /^(-{4,}|\.{4,}|\+{4,}|\/{4,})[ \t]*$/;
+// An open (`--`), listing, literal, or example block delimiter: the block
+// kinds a region can start at.
+const REGION_DELIM_RE = /^(?:--|-{4,}|\.{4,}|={4,})$/;
 const COMMENT_BLOCK_RE = /^\/{4,}[ \t]*$/;
 const CODE_SPAN_RE = /`[^`\n]*`|\+[^+\n]*\+/g;
 const URL_MARK_RE = /[*_#]/;
@@ -257,6 +260,35 @@ function excludedLines(lines, doc) {
   return excluded;
 }
 
+// The DocModel's `hidden` regions: runs of lines a reader never sees. That
+// is every line excludedLines drops (comment blocks, conditional directives
+// and their false branches) plus `//` line comments and attribute entries —
+// except inside a listing, literal, passthrough, or comment block, where
+// they are content.
+function hiddenRegions(lines, excluded) {
+  const regions = [];
+  let delim = null;
+  for (let i = 0; i < lines.length; i++) {
+    const l = i + 1;
+    let hidden = excluded.has(l);
+    if (!hidden) {
+      const m = lines[i].match(DELIM_BLOCK_RE);
+      if (delim) {
+        if (m && m[1] === delim) delim = null;
+      } else if (m) {
+        delim = m[1];
+      } else {
+        hidden = LINE_COMMENT_RE.test(lines[i]) || ATTR_ENTRY_RE.test(lines[i]);
+      }
+    }
+    if (!hidden) continue;
+    const last = regions[regions.length - 1];
+    if (last && last.endLine === l - 1) last.endLine = l;
+    else regions.push({ kind: 'hidden', startLine: l, endLine: l });
+  }
+  return regions;
+}
+
 // `<<id>>` is an in-document anchor; `<<file#id>>` and `<<file.adoc>>` point at
 // another document, and Asciidoctor adds `.adoc` when the path has no extension.
 function xrefTarget(raw) {
@@ -398,7 +430,7 @@ export default {
     const excluded = excludedLines(lines, doc);
     const model = {
       lines: countLines(content),
-      headings: [], paragraphs: [], listItems: [], links: [], texts: [], diagrams: [], diagnostics: [],
+      headings: [], paragraphs: [], listItems: [], links: [], texts: [], diagrams: [], regions: hiddenRegions(lines, excluded), diagnostics: [],
     };
     let block = 0;
     // `prose` marks running prose (see the DocModel contract in index.mjs):
@@ -638,6 +670,18 @@ export default {
       }
       return null;
     };
+    // Last line of a block whose reported line is `open`: for a delimited
+    // block, the next kept line repeating its delimiter exactly, or the
+    // file's end (Asciidoctor runs an unclosed block to EOF); otherwise the
+    // block's own source lines.
+    const blockEnd = (b, open) => {
+      const delimiter = (lines[open - 1] ?? '').trimEnd();
+      if (!REGION_DELIM_RE.test(delimiter)) return open + Math.max(b.getSourceLines().length, 1) - 1;
+      for (let l = open + 1; l <= model.lines; l++) {
+        if (!excluded.has(l) && lines[l - 1].trimEnd() === delimiter) return l;
+      }
+      return model.lines;
+    };
     // getTitle() returns Asciidoctor's HTML-rendered title, not scannable
     // raw text, so a titled block's declaring line is found and scanned on
     // its own — it is never reported as one of the block's own paragraphs.
@@ -666,7 +710,12 @@ export default {
           }
           case 'paragraph': {
             const src = b.getSourceLines();
-            if (isMermaid(b)) { scanTitle(b, line); model.diagrams.push(diagramOf(b, content, starts, lines, excluded)); break; }
+            if (isMermaid(b)) {
+              scanTitle(b, line);
+              model.diagrams.push(diagramOf(b, content, starts, lines, excluded));
+              model.regions.push({ kind: 'diagram', startLine: line, endLine: blockEnd(b, line) });
+              break;
+            }
             const aligned = alignLines(line, src);
             const filtered = filterAlignedSrc(src, aligned);
             scanTitle(b, filtered.lines[0] ?? aligned.lines[0]);
@@ -774,12 +823,14 @@ export default {
             scanTitle(b, trueLine);
             const src = lines[trueLine - 1] ?? '';
             scan([trueLine], [src]);
+            model.regions.push({ kind: 'image', startLine: trueLine, endLine: trueLine });
             break;
           }
           case 'listing':
           case 'literal':
             scanTitle(b, line);
             if (isMermaid(b)) model.diagrams.push(diagramOf(b, content, starts, lines, excluded));
+            model.regions.push({ kind: isMermaid(b) ? 'diagram' : 'code', startLine: line, endLine: blockEnd(b, line) });
             break;
           case 'open':
             // An open block (`--`) holds its content as a nested child, not
@@ -787,7 +838,11 @@ export default {
             // same as a listing/literal — its child must not also be walked
             // and read as a stray paragraph.
             scanTitle(b, line);
-            if (isMermaid(b)) { model.diagrams.push(diagramOf(b, content, starts, lines, excluded)); break; }
+            if (isMermaid(b)) {
+              model.diagrams.push(diagramOf(b, content, starts, lines, excluded));
+              model.regions.push({ kind: 'diagram', startLine: line, endLine: blockEnd(b, line) });
+              break;
+            }
             if (b.getBlocks) walk(b, ctx);
             break;
           case 'quote':
@@ -807,8 +862,19 @@ export default {
             scan(filtered.lines, filtered.text);
             break;
           }
+          case 'example':
+            // A collapsible example renders as its title alone until opened. The
+            // region takes the `.Title` and `[…]` lines above the delimiter: the
+            // title is the summary, as Markdown's <summary> line is.
+            if (b.hasOption('collapsible')) {
+              let start = line;
+              while (start > 1 && (TITLE_LINE_RE.test(lines[start - 2]) || ATTRIBUTE_LINE_RE.test(lines[start - 2].trimEnd()))) start--;
+              model.regions.push({ kind: 'collapsed', startLine: start, endLine: blockEnd(b, line) });
+            }
+            if (b.getBlocks) walk(b, ctx);
+            break;
           default:
-            // example, sidebar, preamble, …: containers whose children keep
+            // sidebar, preamble, …: containers whose children keep
             // the enclosing context. pass, stem, comment: no prose.
             if (b.getBlocks) walk(b, ctx);
             break;
@@ -835,6 +901,7 @@ export default {
     model.listItems.sort((a, b) => a.line - b.line);
     model.links.sort((a, b) => a.line - b.line || a.block - b.block);
     model.diagrams.sort((a, b) => a.startLine - b.startLine);
+    model.regions.sort((a, b) => a.startLine - b.startLine || b.endLine - a.endLine);
     return model;
   },
 };

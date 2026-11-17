@@ -29,3 +29,19 @@ Closing paragraph citing §7 without any link.
 
 > [!TIP]
 > Alert body text.
+
+<!-- hidden note -->
+
+<details>
+<summary>Sample output</summary>
+
+```text
+ok
+```
+</details>
+
+```
+run --all
+```
+
+[ref]: https://example.com/ref

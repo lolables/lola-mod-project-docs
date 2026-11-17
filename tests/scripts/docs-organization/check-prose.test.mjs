@@ -1,6 +1,6 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeProse, THRESHOLDS, VOLATILE_NOUNS, LABEL_WORDS, SOFTWARE_LABELS, TIME_PHRASES } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
+import { analyzeProse, spanCost, THRESHOLDS, VOLATILE_NOUNS, LABEL_WORDS, SOFTWARE_LABELS, TIME_PHRASES } from '../../../module/skills/docs-organization/scripts/check-prose.mjs';
 import { parseDoc } from '../../../module/skills/docs-organization/scripts/formats/index.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync, realpathSync, cpSync, rmSync, readFileSync } from 'node:fs';
@@ -771,4 +771,81 @@ test('SPLIT_CANDIDATE names the persona destinations from the registry', async (
     assert.ok(sc.message.includes(dest), `missing ${dest}: ${sc.message}`);
   }
   assert.match(sc.message, /SKILL\.md/);
+});
+
+test('spanCost prices each region kind under both measures', async () => {
+  const m = await parseDoc('doc.md', [
+    '# T',                      // 1
+    '',                         // 2
+    '<!-- note -->',            // 3  hidden
+    '',                         // 4
+    '![shot](s.png)',           // 5  image
+    '',                         // 6
+    '```mermaid',               // 7  diagram 7-9
+    'graph TD',                 // 8
+    '```',                      // 9
+    '',                         // 10
+    '```sh',                    // 11 code 11-13
+    'run',                      // 12
+    '```',                      // 13
+    '',                         // 14
+    '<details>',                // 15 collapsed 15-21, code 18-20 inside
+    '<summary>Out</summary>',   // 16
+    '',                         // 17
+    '```text',                  // 18
+    'x',                        // 19
+    '```',                      // 20
+    '</details>',               // 21
+    '',                         // 22
+    '[r]: https://example.com', // 23 hidden
+    '',
+  ].join('\n'));
+  const both = (from, to) => [spanCost(m, from, to, 'visible'), spanCost(m, from, to, 'reading')];
+  assert.deepEqual(both(3, 3), [0, 0]);
+  assert.deepEqual(both(5, 5), [THRESHOLDS.imageLines, 0]);
+  assert.deepEqual(both(7, 9), [3, 0]);
+  assert.deepEqual(both(11, 13), [3, 3]);
+  assert.deepEqual(both(15, 21), [1, 1], 'code inside a collapsed block costs nothing beyond its summary');
+  assert.deepEqual(both(23, 23), [0, 0]);
+  assert.deepEqual(both(1, m.lines), [7 + THRESHOLDS.imageLines + 3 + 3 + 1, 7 + 3 + 1]);
+  assert.equal(spanCost(m, 5, 4, 'reading'), 0, 'an empty range costs nothing');
+});
+
+const items = (n) => Array.from({ length: n }, (_, i) => `- item ${i}`).join('\n');
+const fence = (n) => '```text\n' + Array.from({ length: n - 2 }, (_, i) => `out ${i}`).join('\n') + '\n```';
+const splits = async (src) => (await analyze(src)).filter((f) => f.code === 'SPLIT_CANDIDATE');
+
+// Section "Big" starts at line 3: heading, blank, body, blank.
+test('SPLIT_CANDIDATE: footer link definitions do not count toward the last section', async () => {
+  const refs = Array.from({ length: 20 }, (_, i) => `[r${i}]: https://example.com/${i}`).join('\n');
+  const body = items(THRESHOLDS.sectionLines - 3);
+  assert.deepEqual(await splits(`# T\n\n## Big\n\n${body}\n\n${refs}\n`), []);
+  const asProse = Array.from({ length: 20 }, (_, i) => `- ref ${i}`).join('\n');
+  assert.equal((await splits(`# T\n\n## Big\n\n${body}\n\n${asProse}\n`)).length, 1);
+});
+
+test('SPLIT_CANDIDATE: collapsing leads when it alone clears the threshold', async () => {
+  const [hit] = await splits(`# T\n\n## Big\n\n${items(200)}\n\n${fence(80)}\n`);
+  assert.match(hit.message, /spans 283 reading lines \(> 250\); collapsing the code at line 206 brings it to 204; keep commands the reader runs open$/);
+  assert.doesNotMatch(hit.message, /move it to its reader's door/);
+});
+
+test('SPLIT_CANDIDATE: the split leads when collapsing is not enough', async () => {
+  const [hit] = await splits(`# T\n\n## Big\n\n${items(260)}\n\n${fence(10)}\n`);
+  assert.match(hit.message, /move it to its reader's door .*; collapsing the code at line 266 saves 9; keep commands the reader runs open$/);
+});
+
+test('SPLIT_CANDIDATE: short, collapsed, or absent code adds no collapse advice', async () => {
+  const short = fence(THRESHOLDS.collapseMinLines - 1);
+  const collapsed = `<details>\n<summary>Out</summary>\n\n${fence(40)}\n\n</details>`;
+  for (const tail of ['', short, collapsed]) {
+    const [hit] = await splits(`# T\n\n## Big\n\n${items(300)}\n\n${tail}\n`);
+    assert.match(hit.message, /spans \d+ reading lines/, tail);
+    assert.doesNotMatch(hit.message, /collapsing/, tail);
+  }
+});
+
+test('SPLIT_CANDIDATE: the file total counts reading lines', async () => {
+  const [hit] = (await splits('# Title\n\n' + Array(THRESHOLDS.fileLines + 5).fill('filler line').join('\n') + '\n')).filter((f) => f.line === 1);
+  assert.match(hit.message, /^file is 607 reading lines \(> 600\); split it by reader/);
 });
