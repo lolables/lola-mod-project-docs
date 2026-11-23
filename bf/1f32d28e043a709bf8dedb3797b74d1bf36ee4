@@ -1,0 +1,23 @@
+tests/scripts/docs-organization/lane6.test.mjs
+  s_bd9b99e8344fed::t_7300e7525128e6 245
+  s_bd9b99e8344fed::t_56d7aa7ae2bdac 215-225
+  s_bd9b99e8344fed::t_fdcce88f9f88e5 193-194
+module/skills/docs-organization/scripts/lane6.mjs
+  s_bd9b99e8344fed::t_a1f31b85138ccf 144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "bf1f32d28e043a709bf8dedb3797b74d1bf36ee4",
+  "prompts": {},
+  "sessions": {
+    "s_bd9b99e8344fed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4aa468c-1771-466f-8444-8435dce19ddb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
