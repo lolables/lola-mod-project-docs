@@ -1,0 +1,22 @@
+module/skills/docs-organization/SKILL.md
+  s_bd9b99e8344fed::t_76d79093ce7b1c 163-165,169-171,187,189
+  s_bd9b99e8344fed::t_6ea95f16b2b15f 179,186
+module/commands/docs-update.md
+  s_bd9b99e8344fed::t_3fac09d1adaaea 80-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "746f6a5e17c04f3a1f87284d4eaa7925f58b5e1a",
+  "prompts": {},
+  "sessions": {
+    "s_bd9b99e8344fed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4aa468c-1771-466f-8444-8435dce19ddb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
