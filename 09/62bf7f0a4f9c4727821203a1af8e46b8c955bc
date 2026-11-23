@@ -1,0 +1,19 @@
+module/skills/docs-organization/reference/lane6-prompts/audience-fit.md
+  s_bd9b99e8344fed::t_501ded4cfa3a7f 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "0962bf7f0a4f9c4727821203a1af8e46b8c955bc",
+  "prompts": {},
+  "sessions": {
+    "s_bd9b99e8344fed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4aa468c-1771-466f-8444-8435dce19ddb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
