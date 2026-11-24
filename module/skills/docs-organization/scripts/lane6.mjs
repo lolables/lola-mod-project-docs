@@ -30,6 +30,8 @@ import { KINDS, ADJUDICATED, extractJson, unjudged } from './lane6-kinds.mjs';
 import { isMain } from './is-main.mjs';
 
 export const BATCH_SIZE = 8;
+// A transient empty reply (~1 run in 5) reads as a spurious all-clear, so a
+// job gets one try plus two retries before it becomes LANE_FAILED.
 export const MAX_ATTEMPTS = 3;
 export const VERIFY_BATCH = 20;
 export const SCOPES = ['sweep', 'path', 'document'];

@@ -29,6 +29,9 @@ automatically; direct `mmdc` users pass `--cssFile`.
 
 Skip the diagram for: a single linear sequence (use a numbered list), a
 fixed list (use a table), an isolated concept (use prose).
+Also skip meta-loops whose value is conceptual rather than informational.
+`/docs-update` offers to scaffold a starter mermaid block only for findings
+that clear the bar in `lane6-prompts/missing-diagrams.md`.
 
 ## Init header (Solar — the default)
 

@@ -7,6 +7,10 @@
 - **Use `$SKILL_DIR` for every `scripts/...` / `reference/...` path** in
   skill and command files. Never hardcode `.claude/skills/...` or search
   candidate paths.
+- **`SKILL.md` holds only what a command needs while it runs** —
+  `$SKILL_DIR`, invariants, scope, pointers. Design rationale goes in
+  `reference/`. Document a new lane or finding code in `docs-audit.md`,
+  `rule-sources.md`, and its reference doc, never in `SKILL.md`.
 - **Unit tests go in `tests/scripts/<skill>/`, never under `module/`** —
   everything in `module/` ships to users.
 - **Do not wrap `lola`** in Taskfile tasks; the README documents raw `lola`
