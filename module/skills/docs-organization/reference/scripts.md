@@ -53,7 +53,7 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   | `drift-verify` | 20 claims | sweep, path | the file's extracts |
   | `drift-cited` | file with cited sources | document | grounding |
   | `diagram-drift` | `.mmd` file or mermaid block | sweep, path | — |
-  | `missing-diagrams`, `cold-read`, `procedure-structure` | file | all | grounding |
+  | `missing-diagrams`, `cold-read`, `procedure-structure`, `audience-fit` | file | all | grounding |
   | `completeness` | file not graded `landing` | all | grounding |
   | `hero-demo` | root README; in a sweep also a `landing` page | sweep, path | grounding |
 

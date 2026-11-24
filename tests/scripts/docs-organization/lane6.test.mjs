@@ -190,7 +190,8 @@ test('gating: grounded kinds appear only after grounding; README gets hero-demo;
   assert.deepEqual(await drain(run, jobs, replyFor), { status: 'done' });
   const m = manifest(run);
   const of = (suffix) => m.jobs.filter((j) => j.file.endsWith(suffix)).map((j) => j.kind).sort();
-  assert.deepEqual(of('README.md'), ['cold-read', 'diagram-drift', 'drift-extract', 'grounding', 'hero-demo', 'missing-diagrams', 'plain-language', 'procedure-structure']);
+  assert.deepEqual(of('README.md'), ['audience-fit', 'cold-read', 'diagram-drift', 'drift-extract', 'grounding', 'hero-demo', 'missing-diagrams', 'plain-language', 'procedure-structure']);
+  assert.ok(of('guide.md').includes('audience-fit'));
   assert.ok(of('guide.md').includes('completeness'));
   assert.ok(!of('guide.md').includes('hero-demo'));
   const out = collectRun(run);
@@ -211,6 +212,17 @@ test('grounded prompt carries the grounding note', async () => {
   assert.match(cold.prompt, /audience: operators/);
 });
 
+for (const scope of ['path', 'document']) {
+  test(`${scope} scope plans audience-fit once grounding succeeds`, async () => {
+    const root = repo({ 'a.md': GUIDE });
+    const res = await planRun({ scope, ...(scope === 'path' ? { repoRoot: root } : {}), files: [join(root, 'a.md')] });
+    dirs.push(res.run);
+    assert.ok(!kinds(res.jobs).includes('audience-fit'));
+    assert.deepEqual(await drain(res.run, res.jobs, replyFor), { status: 'done' });
+    assert.equal(manifest(res.run).jobs.filter((j) => j.kind === 'audience-fit').length, 1);
+  });
+}
+
 test('retry: invalid until MAX_ATTEMPTS → failed → LANE_FAILED names the kind and its skipped dependents', async () => {
   const { run, jobs } = await planSweep();
   const g = jobs.find((j) => j.kind === 'grounding');
@@ -230,6 +242,7 @@ test('retry: invalid until MAX_ATTEMPTS → failed → LANE_FAILED names the kin
   assert.equal(lf[0].severity, 'warning');
   assert.match(lf[0].note, /Grounding \(no JSON object/);
   assert.match(lf[0].note, /Cold read \(grounding failed\)/);
+  assert.match(lf[0].note, /Audience fit \(grounding failed\)/);
   assert.match(lf[0].note, /Hero demo \(grounding failed\)/);
 });
 

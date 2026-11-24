@@ -1,0 +1,218 @@
+{
+  "runs": [
+    [
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 29,
+        "quote": "In the last measured run the system took 20 seconds to do the import.",
+        "why": "Operator needs the duration, not when/how it was measured; the historical framing goes stale.",
+        "rewrite": "The import takes about 20 seconds."
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 54,
+        "quote": "During our benchmark on 2026-03-01, indexing the imported rows took 4\nminutes.",
+        "why": "Narrates a specific benchmark session/date instead of stating the fact the operator needs.",
+        "rewrite": "Indexing the imported rows takes about 4 minutes."
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 76,
+        "quote": "Back when Priya set this up for the billing team, a full re-sync came in at\njust under an hour.",
+        "why": "Names a person and a historical setup session; operator only needs the expected duration.",
+        "rewrite": "A full re-sync takes just under an hour."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 31,
+        "quote": "Under the hood, the import planner builds a dependency graph of table tasks\nand sorts it topologically before it hands batches to a worker pool sized\nto the number of CPU cores.",
+        "why": "Internal scheduling implementation detail; not needed to schedule, confirm, or recover an import.",
+        "destination": "docs/dev/ (Dev persona)"
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 67,
+        "quote": "The retry queue is a Redis sorted\nset; we moved off RabbitMQ in 2023 because its delayed-message plugin\ndropped messages on restart.",
+        "why": "Internal queue technology and migration history; irrelevant to recovering a failed batch via the documented command.",
+        "destination": "docs/dev/ (Dev persona) or an ADR"
+      }
+    ],
+    [
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 29,
+        "quote": "In the last measured run the system took 20 seconds to do the import.",
+        "why": "Operator needs the current duration fact, not when/that it was measured; the history goes stale.",
+        "rewrite": "The import takes about 20 seconds."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 31,
+        "quote": "Under the hood, the import planner builds a dependency graph of table tasks and sorts it topologically before it hands batches to a worker pool sized to the number of CPU cores.",
+        "why": "Internal planner/scheduling algorithm detail; operator only needs to schedule, confirm, and recover imports.",
+        "destination": "docs/dev/ (Dev persona)"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 54,
+        "quote": "During our benchmark on 2026-03-01, indexing the imported rows took 4 minutes.",
+        "why": "Narrates a specific benchmark session and date instead of stating the durable timing fact.",
+        "rewrite": "Indexing the imported rows takes about 4 minutes."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 66,
+        "quote": "The retry queue is a Redis sorted set; we moved off RabbitMQ in 2023 because its delayed-message plugin dropped messages on restart.",
+        "why": "Internal queue implementation choice and migration history; operator only needs to know failed batches are retried and resumable.",
+        "destination": "docs/dev/ (Dev persona) or an ADR"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 76,
+        "quote": "Back when Priya set this up for the billing team, a full re-sync came in at just under an hour.",
+        "why": "Names a person and a past setup anecdote instead of the durable timing fact the operator needs.",
+        "rewrite": "A full re-sync takes just under an hour."
+      }
+    ],
+    [
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 29,
+        "quote": "In the last measured run the system took 20 seconds to do the import.",
+        "why": "Narrates a past run's timing instead of stating the fact; the history goes stale and the operator only needs the duration.",
+        "rewrite": "The import takes about 20 seconds."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 31,
+        "quote": "Under the hood, the import planner builds a dependency graph of table tasks and sorts it topologically before it hands batches to a worker pool sized to the number of CPU cores.",
+        "why": "Internal planner implementation detail not needed to schedule, confirm, or recover a nightly import.",
+        "destination": "docs/dev/ (Dev persona)"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 54,
+        "quote": "During our benchmark on 2026-03-01, indexing the imported rows took 4 minutes.",
+        "why": "Narrates a specific benchmark session and date rather than giving the duration as a fact.",
+        "rewrite": "Indexing the imported rows takes about 4 minutes."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 67,
+        "quote": "The retry queue is a Redis sorted set; we moved off RabbitMQ in 2023 because its delayed-message plugin dropped messages on restart.",
+        "why": "Maintainer-facing backend history and design rationale; operator only needs to know failed batches sit in a retry queue for resume.",
+        "destination": "docs/dev/ (Dev persona)"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 76,
+        "quote": "Back when Priya set this up for the billing team, a full re-sync came in at just under an hour.",
+        "why": "Tells who set it up and for which team instead of stating the re-sync duration directly.",
+        "rewrite": "A full re-sync takes just under an hour."
+      }
+    ],
+    [
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 29,
+        "quote": "In the last measured run the system took 20 seconds to do the import.",
+        "why": "Tells the reader how/when the duration was measured instead of just stating it; history goes stale.",
+        "rewrite": "The import takes about 20 seconds."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 31,
+        "quote": "Under the hood, the import planner builds a dependency graph of table tasks and sorts it topologically",
+        "why": "Internal planner algorithm detail; an operator scheduling or checking imports doesn't need it to reach the stated outcome.",
+        "destination": "docs/dev/ (Dev persona)"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 54,
+        "quote": "During our benchmark on 2026-03-01, indexing the imported rows took 4 minutes.",
+        "why": "Frames a current timing fact as a specific one-off benchmark session/date rather than giving the reusable fact.",
+        "rewrite": "Indexing the imported rows takes about 4 minutes."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 67,
+        "quote": "we moved off RabbitMQ in 2023 because its delayed-message plugin dropped messages on restart.",
+        "why": "Maintainer history/design rationale for the retry-queue backend choice; not needed to recover a failed batch.",
+        "destination": "docs/dev/ or an ADR (Dev persona)"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 76,
+        "quote": "Back when Priya set this up for the billing team, a full re-sync came in at just under an hour.",
+        "why": "Names a person and a past setup anecdote instead of stating the duration the operator needs.",
+        "rewrite": "A full re-sync takes just under an hour."
+      }
+    ],
+    [
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 29,
+        "quote": "In the last measured run the system took 20 seconds to do the import.",
+        "why": "Tells how the timing was learned (a specific past run) instead of stating the fact; the history goes stale.",
+        "rewrite": "The import takes about 20 seconds."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 31,
+        "quote": "Under the hood, the import planner builds a dependency graph of table tasks",
+        "why": "Internal planner/algorithm detail not needed to schedule, confirm, or recover an import.",
+        "destination": "docs/dev/ (Dev persona)"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 54,
+        "quote": "During our benchmark on 2026-03-01, indexing the imported rows took 4",
+        "why": "Narrates a specific benchmark session and date instead of stating the fact.",
+        "rewrite": "Indexing the imported rows takes about 4 minutes."
+      },
+      {
+        "code": "OFF_AUDIENCE",
+        "line": 66,
+        "quote": "The retry queue is a Redis sorted",
+        "why": "Internal queue implementation and migration rationale, irrelevant to resuming a failed batch.",
+        "destination": "docs/dev/ (Dev persona)"
+      },
+      {
+        "code": "PROVENANCE_NARRATION",
+        "line": 76,
+        "quote": "Back when Priya set this up for the billing team, a full re-sync came in at",
+        "why": "Narrates who set it up and for which team instead of stating the timing fact.",
+        "rewrite": "A full re-sync takes just under an hour."
+      }
+    ]
+  ],
+  "hits": {
+    "p-measured-run": 5,
+    "p-benchmark": 5,
+    "p-paraphrase": 5,
+    "o-redis": 4,
+    "o-planner": 5
+  },
+  "controls": {
+    "c-hardware": 0,
+    "c-default": 0,
+    "c-changelog": 0,
+    "c-timing-log": 0,
+    "c-we-instruction": 0
+  },
+  "unassigned": [
+    0,
+    0,
+    0,
+    0,
+    1
+  ],
+  "errors": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "gate": false
+}

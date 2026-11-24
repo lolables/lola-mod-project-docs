@@ -115,6 +115,39 @@ test('cold-read: actionable is warning with prefix, else info', () => {
   assert.match(out[0].note, /^actionable: /);
 });
 
+const PROV = { code: 'PROVENANCE_NARRATION', line: 4, quote: 'It is not uncommon to fail', why: 'the reader needs the rate, not the history', rewrite: 'It often fails.' };
+const OFF = { code: 'OFF_AUDIENCE', line: 5, quote: 'Tasks live in ~/.app.json', why: 'an operator never edits it', destination: 'docs/dev/ (Dev persona)' };
+
+test('audience-fit: code, line, quote, why, and the per-code rewrite or destination', () => {
+  const v = (f) => KINDS['audience-fit'].validate({ findings: [f] }, ctx());
+  assert.equal(KINDS['audience-fit'].validate({ findings: [PROV, OFF] }, ctx()).ok, true);
+  assert.equal(v({ ...PROV, destination: undefined }).ok, true);
+  assert.equal(v({ ...OFF, rewrite: undefined }).ok, true);
+  assert.match(v({ ...PROV, code: 'COLD_READ' }).reason, /code "COLD_READ"/);
+  assert.match(v({ ...PROV, line: 0 }).reason, /outside lines 1-5/);
+  assert.match(v({ ...PROV, line: 6 }).reason, /outside lines 1-5/);
+  assert.match(v({ ...PROV, quote: 'never said' }).reason, /not in the file/);
+  assert.match(v({ ...PROV, quote: undefined }).reason, /not in the file/);
+  assert.match(v({ ...PROV, line: '4' }).reason, /outside lines 1-5/);
+  assert.match(v({ ...OFF, destination: 42 }).reason, /OFF_AUDIENCE without a destination/);
+  assert.match(v({ ...PROV, why: ' ' }).reason, /no why/);
+  assert.match(v({ ...PROV, rewrite: undefined }).reason, /PROVENANCE_NARRATION without a rewrite/);
+  assert.match(v({ ...OFF, destination: '' }).reason, /OFF_AUDIENCE without a destination/);
+  assert.match(KINDS['audience-fit'].validate({}, ctx()).reason, /no "findings" array/);
+});
+
+test('audience-fit maps both codes to info with their note formats', () => {
+  assert.deepEqual(KINDS['audience-fit'].toFindings({ findings: [PROV, OFF] }, job('audience-fit')), {
+    findings: [
+      { code: 'PROVENANCE_NARRATION', severity: 'info', file: 'doc.md', line: 4, note: '"It is not uncommon to fail" — the reader needs the rate, not the history; rewrite: "It often fails."' },
+      { code: 'OFF_AUDIENCE', severity: 'info', file: 'doc.md', line: 5, note: '"Tasks live in ~/.app.json" — an operator never edits it; move to: docs/dev/ (Dev persona)' },
+    ],
+    other: [],
+  });
+  assert.equal(KINDS['audience-fit'].groundingNote, true);
+  assert.equal(KINDS['audience-fit'].label, 'Audience fit');
+});
+
 test('missing-diagrams type enum; hero-demo at most one; completeness line may be null; steps positive', () => {
   assert.match(KINDS['missing-diagrams'].validate({ findings: [{ section: 'S', line: 1, type: 'pie', why: 'w' }] }, ctx()).reason, /type "pie"/);
   const demo = { commands: ['app sync'], success: 's', format: 'asciinema' };
@@ -160,7 +193,7 @@ test('adjudicate: every id once; suppress only volatile/time; maps keep/drop/sup
 });
 
 test('every kind has a label and the two hooks', () => {
-  assert.deepEqual(Object.keys(KINDS).sort(), ['adjudicate', 'cold-read', 'completeness', 'diagram-drift', 'drift-cited', 'drift-extract', 'drift-verify', 'grounding', 'hero-demo', 'missing-diagrams', 'plain-language', 'procedure-structure']);
+  assert.deepEqual(Object.keys(KINDS).sort(), ['adjudicate', 'audience-fit', 'cold-read', 'completeness', 'diagram-drift', 'drift-cited', 'drift-extract', 'drift-verify', 'grounding', 'hero-demo', 'missing-diagrams', 'plain-language', 'procedure-structure']);
   for (const k of Object.values(KINDS)) {
     assert.equal(typeof k.label, 'string');
     assert.equal(typeof k.groundingNote, 'boolean');

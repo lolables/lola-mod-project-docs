@@ -21,6 +21,7 @@ and `LANE_FAILED`.
 | `TIME_ANCHORED` | Google developer documentation style guide, Timeless documentation | "Words like now, new, and currently can render such documentation inaccurate, outdated, or unmeaningful." | <https://developers.google.com/style/timeless-documentation> |
 | `NOUN_STRING` | Google developer documentation style guide, Write for a global audience | "don't use more than two nouns as modifiers of another noun" | <https://developers.google.com/style/translation> |
 | `HIDDEN_VERB` | digital.gov plain-language guide, Writing | "A hidden verb (or nominalization) is a verb converted into a noun. It often needs an extra verb to make sense." | <https://digital.gov/guides/plain-language/writing> |
+| `OFF_AUDIENCE` | Google Technical Writing One, Audience | "make sure your document provides the information that your audience needs but doesn't already have." | <https://developers.google.com/tech-writing/one/audience> |
 | `NEEDS_STRUCTURE` | Google developer documentation style guide, Procedures | "A procedure is a sequence of numbered steps for accomplishing a task." | <https://developers.google.com/style/procedures> |
 | `COLD_READ` | Google developer documentation style guide, Jargon and Abbreviations — the undefined term or acronym category only | "define the term in plain language on the first occurrence"; "Spell out abbreviations on first reference." | <https://developers.google.com/style/jargon>, <https://developers.google.com/style/abbreviations> |
 | `MODE_MIXING` | Diátaxis | Four documentation modes (tutorial, how-to, reference, explanation), each serving one reader need; a document that commits to one should not interrupt it with another. | <https://diataxis.fr> |
@@ -35,6 +36,7 @@ and `LANE_FAILED`.
 | `WALL_OF_TEXT`, `DENSE_BULLET`, `SPLIT_CANDIDATE` | house convention | A paragraph of 120+ words, a flat bullet of 90+ words, a file over 600 reading lines, or a level-2 section over 250 reading lines. Set when the lane was first written; not derived from an external standard or tuned against test runs. | `THRESHOLDS` in `scripts/check-prose.mjs` |
 | `VOLATILE_DETAIL` | house convention — the `count`, `popularity`, and `version` kinds | A digit count of things that grow with the project (tests, files, rules, dependencies, contributors), a popularity figure (stars, downloads, "used by" a number of teams), or a full software version (`markdown-it 14.1.0`) that duplicates a manifest. Each one must be refreshed on every change, and the reader rarely needs it to act. | `VOLATILE_NOUNS` and `VERSION_AT_RE` in `scripts/check-prose.mjs` |
 | `COLD_READ` | house convention — every category except an undefined term or acronym | A missing or out-of-order step, a dangling cross-reference, prose contradicting its own example, two names for one thing, an unstated prerequisite, an example that would not work as written, or an unresolvable spec reference. | `reference/lane6-prompts/cold-read.md`; `reference/diataxis-grounding.md` |
+| `PROVENANCE_NARRATION` | house convention | A result stated with the run, session, date, or person that produced it. The reader must strip the history to find the fact, and the history goes stale. | `reference/lane6-prompts/audience-fit.md` |
 | `MISSING_DIAGRAM` | house convention (encouragement) | A section whose relationships a reader must draw in their head to follow. | The missing-diagram prompt in `/docs-audit` |
 | `MISSING_DEMO` | house convention (encouragement) | A user-facing tool's README with no demo of the tool running. | The hero-demo prompt in `/docs-audit` |
 | `FRONT_DOOR_BLOCKED`, `LONG_QUICKSTART`, `MISPLACED_SECTION` | house convention | A front door whose first getting-started heading sits more than 40 visible lines below the title, a getting-started section over 60 reading lines, or a front-door level-2 section over 30 reading lines that serves a reader other than the new user. Set by the persona-routing design; not tuned against test runs. | `THRESHOLDS` in `scripts/check-routing.mjs`; `reference/personas.md` |
@@ -82,6 +84,11 @@ rule and not tuned against test runs.
 - **digital.gov plain-language guide.** US government work in the public
   domain, and the live successor to the Federal Plain Language Guidelines.
   It covers hidden verbs, which Google does not.
+- **Google Technical Writing One.** Google's free technical-writing course,
+  cited for `OFF_AUDIENCE` because the Google style guide has no audience
+  page (`/style/audience` returns 404, checked 2026-11-23). Its Audience
+  lesson states the rule: give the reader what they need and don't already
+  have.
 - **Not the 2011 Federal Plain Language Guidelines.** `plainlanguage.gov`
   now redirects to digital.gov, whose pages no longer carry the
   double-negative or noun-string rules; the 2011 text survives only in web

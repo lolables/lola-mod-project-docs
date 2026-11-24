@@ -77,6 +77,7 @@ present, skip the `adr` activation.
      `STALE_README`, `STALE_DOC`, `WALL_OF_TEXT`, `DENSE_BULLET`,
      `SPLIT_CANDIDATE`, `DOUBLE_NEGATIVE`, `SLASH_ALTERNATIVE`,
      `VOLATILE_DETAIL`, `TIME_ANCHORED`, `NOUN_STRING`, `HIDDEN_VERB`,
+     `PROVENANCE_NARRATION`, `OFF_AUDIENCE`,
      `REF_BROKEN`, `REF_NOT_IN_GIT`, `UNLINKED_REF`, `UNLINKED_POINTER`,
      `PARSE_WARNING` (fix: correct the markup the parser names), `COLD_READ`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`,
      `SYNTAX_ERROR`, `INLINE_CLASS_NOT_SUPPORTED`, `UNAPPROVED_CLASSNAME`,
@@ -284,6 +285,16 @@ present, skip the `adr` activation.
          pipeline in a hybrid environment".
        - `HIDDEN_VERB`: restore the verb and drop the support verb — "perform
          an evaluation of the logs" → "evaluate the logs".
+     - For `PROVENANCE_NARRATION`: replace the quoted text with the audit's
+       rewrite, which states the fact without the run, session, date, or
+       person that produced it. Keep every number, unit, flag, and path
+       verbatim. Show the sentence before and after.
+     - For `OFF_AUDIENCE`: offer two choices, and confirm each finding
+       separately:
+       - move the passage to the destination after `move to:` in the note.
+         Create the target section if it is missing, and link it from the
+         source when the reader may want it;
+       - delete it.
      - For `VOLATILE_DETAIL`: delete the claim, or replace it with the
        command or artifact that produces the number ("`task test` prints the
        count"). Never update the number in place: a refreshed number goes

@@ -1104,3 +1104,65 @@ through `--verify` and `--classify` and reported `WALKTHROUGH_LOST` rows and
 the scripts: it paraphrased the script's messages instead of copying them,
 and it skipped Lane 6's per-file prompts on placeholder docs to save cost,
 recording that as `LANE_FAILED` rather than a pass.
+
+## Round 18 — audience fit: provenance narration and off-audience detail (isolated runs)
+
+Origin: an operator doc said "In the last measured run the system took 20
+seconds to do the import", and no lane flagged it. `check-prose.mjs`
+returns zero findings on it.
+
+Prompt: `prompts/audience-fit.txt`, generated from the shipped
+`audience-fit.md` with the grounding note filled in. It runs once per run
+over the whole file, under `isolated_config()`. Fixture:
+`fixtures/audience-fit`, an operator how-to with:
+
+- three planted provenance sentences, one paraphrased with no stock phrase
+  ("Back when Priya set this up for the billing team");
+- two planted off-audience passages (planner internals; the Redis queue and
+  why it replaced RabbitMQ);
+- five controls: a hardware qualifier, a documented default, a "What
+  changed in 2.0" note that links the changelog, a timing log in a code
+  block, and a "we" sentence that gives an instruction.
+
+K=5.
+
+The first run (`results/r18-audiencefit.json`) failed the gate on a
+scoring fault, not a prompt fault. Run 5 flagged the Redis passage as
+`OFF_AUDIENCE` but quoted it only to the line break ("The retry queue is a
+Redis sorted"). Neither `sorted set` nor `rabbitmq` appeared in the
+finding, so it scored as a miss and as one unassigned finding. Adding
+`redis` to the item's tokens fixed it. Rescored, that run is 25/25 with
+no unassigned findings. The prompt was not changed. Two caveats:
+
+- The 4/5 on `o-redis` alone met the K−1 bar. The unassigned finding is
+  what failed the gate.
+- The token was added after seeing the result. That is why the gate
+  decision rests on a fresh run, not on the rescore.
+
+The truncated quote is a model-quality signal: a quote cut at a source
+line break still validates, because `quoteIn` matches across whitespace.
+`o-redis` accepts either code, but every hit in both runs was
+`OFF_AUDIENCE`.
+
+The second run is the ship-decision run:
+
+| Item | Hits |
+| --- | --- |
+| `p-measured-run` | 5/5 |
+| `p-benchmark` | 5/5 |
+| `p-paraphrase` | 5/5 |
+| `o-redis` | 5/5 |
+| `o-planner` | 5/5 |
+
+| Control | Flagged |
+| --- | --- |
+| `c-hardware` | 0/5 |
+| `c-default` | 0/5 |
+| `c-changelog` | 0/5 |
+| `c-timing-log` | 0/5 |
+| `c-we-instruction` | 0/5 |
+
+Unassigned findings per run: 0, 0, 0, 0, 0.
+
+Ship gate: **PASS**, prompt unchanged. Results:
+`results/r18-audiencefit-v2.json`.
