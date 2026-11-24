@@ -1,0 +1,17 @@
+{
+  "lane": "audience-fit",
+  "planted": [
+    {"id": "p-measured-run", "desc": "origin sentence: 'In the last measured run the system took 20 seconds'", "groups": [["provenance_narration"], ["last measured run"]]},
+    {"id": "p-benchmark", "desc": "dated benchmark: 'During our benchmark on 2026-03-01, indexing ... took 4 minutes'", "groups": [["provenance_narration"], ["our benchmark", "indexing the imported rows"]]},
+    {"id": "p-paraphrase", "desc": "paraphrased, no stock phrase: 'Back when Priya set this up for the billing team'", "groups": [["provenance_narration"], ["priya", "billing team"]]},
+    {"id": "o-redis", "desc": "internals plus maintainer history: Redis sorted set, moved off RabbitMQ in 2023 (either code)", "groups": [["redis", "sorted set", "rabbitmq"]]},
+    {"id": "o-planner", "desc": "internal implementation: planner dependency graph, topological sort", "groups": [["off_audience"], ["dependency graph", "topologically", "import planner"]]}
+  ],
+  "controls": [
+    {"id": "c-hardware", "desc": "'On a 4-core runner with an SSD' is a measurement condition", "groups": [["4-core"]]},
+    {"id": "c-default", "desc": "'By default ferry retries a failed batch 3 times' is a documented default", "groups": [["retries a failed batch", "30 seconds apart"]]},
+    {"id": "c-changelog", "desc": "'What changed in 2.0' note that links the changelog", "groups": [["ferry cron", "what changed in 2.0"]]},
+    {"id": "c-timing-log", "desc": "timing log inside a code block", "groups": [["dry run finished", "20.1s", "planned 12 batches"]]},
+    {"id": "c-we-instruction", "desc": "'We recommend running the import outside business hours' is an instruction", "groups": [["we recommend", "business hours"]]}
+  ]
+}
