@@ -94,39 +94,9 @@ block syntax are in `reference/supported-formats.md`.
 
 ## When a diagram earns its place
 
-This skill nudges authors toward diagrams, but applies a strict bar.
-A `MISSING_DIAGRAM` finding fires only when **both** are true:
-
-1. The relationships are non-obvious from a linear top-to-bottom read —
-   real branching, parallelism, state transitions, or non-trivial
-   component interactions — not a sequential procedure with at most one
-   binary branch.
-2. A reader would have to mentally render a diagram anyway to follow
-   the prose.
-
-Reject candidates that already read as a diagram in text form
-(directory trees, numbered install steps), small matrices better served
-by a table, three-item role lists framed as "pipelines", and meta-loops
-whose value is conceptual rather than informational. The
-`reference/mermaid-house-style.md` "Skip the diagram for" rule is the
-sibling test — apply it strictly.
-
-The full concept-to-diagram-type table (with rationale for each
-pairing) and the skip rule live in `reference/mermaid-house-style.md`.
-Consult it when emitting `MISSING_DIAGRAM` findings or when scaffolding
-a starter block. `/docs-update` offers to scaffold a starter mermaid
-block only for findings that clear the bar. Findings are info-level —
-never blockers. Authors are nudged, not forced.
-
-A **hero demo** (`MISSING_DEMO`) is the demo-recording sibling of the diagram
-nudge, on the same strict-bar/encouragement contract. It fires only for a
-README/landing page of a **user-facing, runnable tool** (CLI, TUI, app) that does
-not already show itself in action (no GIF, screenshot, asciinema, or linked
-screencast) — never for a library (its demo is a code snippet), a spec, or a
-maintainer doc, and at most once per repo (the hero slot). Because an LLM cannot
-record a screencast, `/docs-update` drops an **HTML-comment spec** at the hero
-slot — the command sequence to record, what the viewer should see, and a suggested
-tool (asciinema / VHS) — never a fabricated artifact.
+Diagram and demo nudges are info-level, never blockers. The concept-to-diagram
+type table and the skip rule are in `reference/mermaid-house-style.md`; the bar
+each nudge must clear is in its prompt under `reference/lane6-prompts/`.
 
 ## Tools this skill uses
 
@@ -134,79 +104,17 @@ Every check is a script under `scripts/` that prints JSON and exits 0 (no
 findings), 1 (findings), or 2 (internal error). What each script checks and
 reports is in `reference/scripts.md`.
 
-### Deterministic where it's unambiguous, LLM where it's fuzzy
-
-Size is mechanical, so `check-prose.mjs` owns enumeration (`WALL_OF_TEXT`,
-`DENSE_BULLET`, `SPLIT_CANDIDATE`) and repeats it identically every run; an
-LLM asked to enumerate under-reports on long files. The LLM lane adjudicates
-only the candidates the script surfaces: choppy rhythm, and dense-prose
-*genres* (academic, legal, formal spec) where `WALL_OF_TEXT` should be
-suppressed, and `reference` enumerations (glossaries, changelogs, punch
-lists) where `SPLIT_CANDIDATE` may be. The same script enumerates lexical
-candidates for the LLM to keep or drop: plain language (`DOUBLE_NEGATIVE`,
-`SLASH_ALTERNATIVE`) and details that go stale as the project changes
-(`VOLATILE_DETAIL`, `TIME_ANCHORED`); noun strings and hidden verbs need
-part-of-speech judgment, so a chunked Lane 6 prompt finds them. A procedure spread across many small
-blocks trips no size check but is absence-of-structure, so it belongs to the
-grounded `NEEDS_STRUCTURE` sub-check in Lane 6.
-
-Why each signal sits where it does:
-`$SKILL_DIR/reference/deterministic-vs-llm.md`.
-
-### References should be followable
-
-A reference the reader cannot follow is a defect, and much of it is
-deterministic: `check-refs.mjs` resolves every *link* (and AsciiDoc
-cross-reference and include) against the
-git-tracked file set. A link to a missing path (`REF_BROKEN`) or to a real but
-gitignored/unstaged file (`REF_NOT_IN_GIT`) dangles for anyone who clones. It
-also surfaces `§` section citations that carry no link (`UNLINKED_REF`) — a
-cheap tell for a prose reference (often to an internal spec) the reader can't
-follow. It likewise flags stock pointer phrases with no link in the same
-block — "contact the maintainers", "see the contributing guide", "open an
-issue" (`UNLINKED_POINTER`) — because a reader must never have to search
-the docs for clarifying or relevant information. The fix is a link, or the
-content included in place; naming where to look does not count. The rule is "a reference should be followable", not "everything
-referenced must be committed": some references are legitimately private or
-external, so the script only surfaces danglers and the author resolves them in
-`/docs-update` (link, commit, or mark external — never strip a `§` citation).
-Inline-code mentions of source paths are intentionally *not* resolved — they are
-repo-root-relative and full of placeholders, so a heuristic there is mostly
-false positives.
-
-### Ground the review in Diátaxis, then cold-read it
-
-Three LLM lanes judge a document by what it is *for*. A **grounding** pass
-classifies the file's [Diátaxis](https://diataxis.fr) mode (`tutorial`,
-`how-to`, `reference`, `explanation`, or `landing`) plus audience and
-reader-goal, threads that into the other prompts, and emits `MODE_MIXING` when
-a non-`landing` doc embeds a mode that interrupts its job. The **cold read**
-reads the doc as its intended audience and flags where a real reader gets
-stuck. The **completeness** check (`INCOMPLETE_FOR_TYPE`) asks whether a reader
-of that type would be blocked by something the doc omits. All three are
-info-level: the framework guides, it does not dictate.
-
-Why each lane is shaped that way and the guards that keep it from nagging:
-`$SKILL_DIR/reference/diataxis-grounding.md`.
-
-### Never read an empty LLM lane as "clean"
-
-The content-drift and missing-diagram lanes are irreducibly LLM-driven. Their
-main consistency risk is not partial recall but a *transient empty reply*
-(~1 run in 5) that reads as a spurious all-clear. The command procedure
-therefore validates every subagent reply, retries an empty/errored one up to
-twice, and records a `LANE_FAILED` **Warning** if it still yields nothing.
-An unaudited file is "unknown", never "clean".
-
 ## References
 
 - `reference/mermaid-house-style.md` — palette, init header, examples,
   and **merval syntax constraints** (the strict-subset gotchas every
   diagram in this project must follow; consult before scaffolding).
-- `reference/diataxis-grounding.md` — why the grounding, cold-read, and
-  completeness lanes are shaped as they are.
+- `reference/diataxis-grounding.md` — why the grounded Lane 6 checks are
+  shaped as they are.
 - `reference/deterministic-vs-llm.md` — why each readability signal is owned
   by `check-prose.mjs` or by an LLM lane, and the guards on each.
+- `reference/followable-references.md` — why a reference must be followable,
+  and which danglers `check-refs.mjs` surfaces.
 - `reference/rule-sources.md` — the published rule (or house convention)
   behind each writing-quality finding code; `/docs-audit` cites it.
 - `reference/readme-template.md` — minimum acceptable README structure.
