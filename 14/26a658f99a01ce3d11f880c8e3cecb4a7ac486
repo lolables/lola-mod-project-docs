@@ -1,0 +1,19 @@
+module/skills/docs-organization/scripts/lane6.mjs
+  s_1997ba331bbeda::t_ee811ca3d0ba18 72-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "1426a658f99a01ce3d11f880c8e3cecb4a7ac486",
+  "prompts": {},
+  "sessions": {
+    "s_1997ba331bbeda": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd06dc36-a641-47f4-bf64-c3e339411dc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
