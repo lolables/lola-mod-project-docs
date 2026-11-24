@@ -1,0 +1,36 @@
+eval/fixtures/audience-fit/expected.json
+  s_bd9b99e8344fed::t_e22f374f3e6bb7 7
+  s_bd9b99e8344fed::t_1ae9dafde00e69 1-6,8-17
+eval/run_audiencefit.py
+  s_bd9b99e8344fed::t_9a0ccab05b013e 1-67
+eval/README.md
+  s_bd9b99e8344fed::t_6eee79967f38ad 37
+eval/REPORT.md
+  s_bd9b99e8344fed::t_6eee79967f38ad 1107-1134,1148-1168
+  s_bd9b99e8344fed::t_fa6ca6d008a4d5 1135-1147
+eval/results/r18-audiencefit.json
+  s_bd9b99e8344fed::t_8baf4041b0c3b2 1-218
+eval/fixtures/audience-fit/DOC.md
+  s_bd9b99e8344fed::t_65d1fb1fef0638 1-82
+eval/prompts/audience-fit.txt
+  s_bd9b99e8344fed::t_47617a0dd7f537 26
+  s_bd9b99e8344fed::t_d6aa8dd5e90b1a 1-25,27-34
+eval/results/r18-audiencefit-v2.json
+  s_bd9b99e8344fed::t_fb7efa0964ca30 1-218
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "d3aade59f90a8f3b9e08876b7cac1223ee41e1db",
+  "prompts": {},
+  "sessions": {
+    "s_bd9b99e8344fed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4aa468c-1771-466f-8444-8435dce19ddb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
