@@ -141,7 +141,7 @@ function citedSources(citations, file) {
 // Grounding-dependent kinds for one doc file. mode is null when grounding
 // failed or has not ended: then every kind that could apply is listed.
 function groundedKinds(scope, f, mode) {
-  const kinds = ['missing-diagrams', 'cold-read', 'procedure-structure'];
+  const kinds = ['missing-diagrams', 'cold-read', 'procedure-structure', 'audience-fit'];
   if (mode !== 'landing') kinds.push('completeness');
   if (scope !== 'document' && (f.rootReadme || (scope === 'sweep' && mode === 'landing'))) kinds.push('hero-demo');
   if (f.sources) kinds.push('drift-cited');

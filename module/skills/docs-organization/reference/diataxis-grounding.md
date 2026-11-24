@@ -1,8 +1,8 @@
-# Grounding, cold read, and completeness — why these lanes are shaped this way
+# Grounding, cold read, completeness, and audience fit — why these lanes are shaped this way
 
-Design rationale for the three LLM lanes in `/docs-audit` that judge a document
-by what it is *for*: the Diátaxis grounding pass, the cold read, and the
-completeness check. The operative procedure — prompts, retries, finding
+Design rationale for the four LLM lanes in `/docs-audit` that judge a document
+by what it is *for*: the Diátaxis grounding pass, the cold read, the
+completeness check, and the audience-fit check. The operative procedure — prompts, retries, finding
 emission — lives in the `/docs-audit` command. This file explains the reasoning
 behind it, and is loaded on demand rather than at skill activation.
 
@@ -30,6 +30,25 @@ term, a missing step, a dangling "see below", prose that contradicts its own
 example, terminology that drifts, an unstated prerequisite, a spec citation the
 reader can't resolve. It is high-precision, so its findings are treated as
 real but kept info-level.
+
+## Then check audience fit
+
+The cold read reports only what confuses its reader, so a clear sentence
+written for the wrong reader passes it. The audience-fit lane asks the
+other question: does this sentence serve the grounded audience?
+
+- It judges sentences and short passages. Whole sections in the wrong
+  mode belong to `MODE_MIXING`, and whole docs in the wrong place to
+  placement.
+- It has no phrase list. "Back when Priya set this up" narrates history
+  as surely as "last run", and paraphrase defeats any list. Lane 3's
+  `TIME_ANCHORED` already covers the stock time phrases.
+- Snapshot genres are exempt, as in Lane 3 adjudication: in a changelog
+  or benchmark report the provenance is the content.
+- A measurement condition stays. "On a 4-core runner" lets the reader
+  judge the number; "in the last run" does not.
+
+Round 18 in `eval/REPORT.md` measured it before it shipped.
 
 ## Completeness, without a section checklist
 

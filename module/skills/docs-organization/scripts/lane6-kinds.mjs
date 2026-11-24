@@ -264,6 +264,24 @@ export const KINDS = {
     toFindings: mapFindings((f, job) => finding(job, 'COLD_READ', f.actionable ? 'warning' : 'info', f.line, `${f.actionable ? 'actionable: ' : ''}"${f.quote}" — ${f.why}`)),
   },
 
+  'audience-fit': {
+    label: 'Audience fit',
+    groundingNote: true,
+    validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
+      if (!['PROVENANCE_NARRATION', 'OFF_AUDIENCE'].includes(f.code)) return `has code "${f.code}", not PROVENANCE_NARRATION or OFF_AUDIENCE`;
+      const lp = lineProblem(f.line, ctx);
+      if (lp) return lp;
+      if (!isStr(f.quote) || !quoteIn(f.quote, ctx)) return 'quotes text that is not in the file';
+      if (!isStr(f.why)) return 'has no why';
+      if (f.code === 'PROVENANCE_NARRATION' && !isStr(f.rewrite)) return 'is PROVENANCE_NARRATION without a rewrite';
+      if (f.code === 'OFF_AUDIENCE' && !isStr(f.destination)) return 'is OFF_AUDIENCE without a destination';
+      return null;
+    }),
+    toFindings: mapFindings((f, job) => finding(job, f.code, 'info', f.line, f.code === 'PROVENANCE_NARRATION'
+      ? `"${f.quote}" — ${f.why}; rewrite: "${f.rewrite}"`
+      : `"${f.quote}" — ${f.why}; move to: ${f.destination}`)),
+  },
+
   completeness: {
     label: 'Completeness for type',
     groundingNote: true,

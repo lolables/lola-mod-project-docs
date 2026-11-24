@@ -77,8 +77,8 @@ These scripts exist to remove LLM variance; re-implementing their work by hand
 is a defect even when the output looks similar. The scripts are the source of
 truth for their finding codes — never invent a code outside the schema below.
 
-Lane 6 (grounding, content drift, missing diagrams, cold read, plain language,
-completeness for type, structure for procedures, hero demo, persona
+Lane 6 (grounding, content drift, missing diagrams, cold read, audience fit,
+plain language, completeness for type, structure for procedures, hero demo, persona
 walkthroughs) is the ONLY
 agent-owned lane, because those judgments are irreducibly fuzzy. Even there
 the guardrail is mandatory: `lane6.mjs` validates every subagent reply,
@@ -166,7 +166,7 @@ Which lanes run:
 | 3 Prose | run | run | run |
 | 4 Refs | run | run | run |
 | 5 Mermaid | run | run | run |
-| 6 Grounding, Cold read, Completeness for type, Structure for procedures, Plain language, Missing diagrams | run | run | run |
+| 6 Grounding, Cold read, Audience fit, Completeness for type, Structure for procedures, Plain language, Missing diagrams | run | run | run |
 | 6 Content drift | vs. repo code | vs. repo code | vs. cited sources |
 | 6 Diagram drift | run | run | skip |
 | 6 Hero demo | README / landing | only the repo's root README | skip |
@@ -419,7 +419,7 @@ pass.
      merval rejects the diagram (see Stop conditions for the exit-code
      contract).
 
-7. **Lane 6 — Grounding, content, diagram, and cold-read (slow, subagent-driven):**
+7. **Lane 6 — Grounding, content, diagram, cold-read, and audience-fit (slow, subagent-driven):**
    - **Citations first (document mode only).** Run `fetch-citations.mjs`
      once per path argument, over the document-mode files that argument
      produced (`<files>`), with `--root '<root>'`: `<root>` is the
@@ -435,7 +435,7 @@ pass.
      (`CITATION_BLOCKED` warning; `CITATION_FETCH_FAILED`, `CITATION_LIMIT`,
      `CITATIONS_NOT_FETCHED` info). `lane6.mjs` derives each file's
      snapshots, unread sources, and local sources from the saved JSON.
-   - **Grounding, content, diagram, cold-read, and plain-language prompts
+   - **Grounding, content, diagram, cold-read, audience-fit, and plain-language prompts
      run through `lane6.mjs`.** The script enumerates every job, renders
      every prompt, checks every reply, and reports every job that did not
      finish. You dispatch and record; you never decide which jobs run.
@@ -673,8 +673,9 @@ pass.
          `UNAPPROVED_CLASSNAME`, `UNAPPROVED_STYLE`, `LOW_CONTRAST_TEXT`,
          `LOW_CONTRAST_LIGHT_BG`, `LOW_CONTRAST_DARK_BG`.
        - Lane 6: `MISSING_DIAGRAM`, `CONTENT_DRIFT`, `COLD_READ`,
-         `NOUN_STRING`, `HIDDEN_VERB`, `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`,
-         `NEEDS_STRUCTURE`, `MISSING_DEMO`, `WALKTHROUGH_LOST`, and in document
+         `NOUN_STRING`, `HIDDEN_VERB`, `PROVENANCE_NARRATION`, `OFF_AUDIENCE`,
+         `MODE_MIXING`, `INCOMPLETE_FOR_TYPE`, `NEEDS_STRUCTURE`, `MISSING_DEMO`,
+         `WALKTHROUGH_LOST`, and in document
          mode `NOT_VERIFIABLE`, `CITATION_BLOCKED`, `CITATION_FETCH_FAILED`,
          `CITATION_LIMIT`, `CITATIONS_NOT_FETCHED`.
        - Any lane: `LANE_FAILED`.
@@ -741,6 +742,11 @@ pass.
          behavior without the anchor and keeps any real version boundary.
        - `NOUN_STRING` / `HIDDEN_VERB`: the quoted text, why a first-time
          reader stumbles, and the subagent's rewrite. Info.
+       - `PROVENANCE_NARRATION`: the quoted text, why the reader needs only
+         the fact, and the subagent's rewrite. Info.
+       - `OFF_AUDIENCE`: the quoted text, why the grounded audience does not
+         need it, and `move to:` the destination the subagent named, per
+         `$SKILL_DIR/reference/placement-rules.md`. Info.
        - `REF_BROKEN` / `REF_NOT_IN_GIT`: the link target and whether it is
          missing or merely untracked. Warning. Fix is author's call in
          `/docs-update` (repoint, commit, or make it an explicit external link).
@@ -932,7 +938,7 @@ pass.
 
 A run against a small project part-way through cleanup might report:
 
-`3 blockers, 7 warnings, 17 info`
+`3 blockers, 7 warnings, 19 info`
 
 Mode: repo sweep; docs: repo
 
@@ -976,6 +982,8 @@ Mode: repo sweep; docs: repo
 | `VOLATILE_DETAIL` | `README.md` | 9 | volatile count: "1,200 unit tests"; delete it or point to the command that reports it |
 | `TIME_ANCHORED` | `README.md` | 15 | time-anchored: "now supports"; describe the behavior without the time anchor |
 | `NOUN_STRING` | `docs/how-to-rotate-keys.md` | 22 | "cluster node pool autoscaler setting" — four nouns before "setting"; rewrite: "the autoscaler setting for the cluster's node pool" |
+| `PROVENANCE_NARRATION` | `docs/usage/import.md` | 31 | "In the last measured run the system took 20 seconds" — the reader needs the duration, not the run that produced it; rewrite: "The import takes about 20 seconds." |
+| `OFF_AUDIENCE` | `docs/usage/import.md` | 44 | "Internally the scheduler keeps a min-heap" — an operator scheduling jobs never touches the heap; move to: `docs/dev/` (Dev persona) |
 | `MISSING_STATUS` | `README.md` | — | no Status line; add `**Status:**` under the description |
 
 ### Other
@@ -996,6 +1004,8 @@ Mode: repo sweep; docs: repo
 - `MISSING_DEMO` — house convention (encouragement): The hero-demo prompt in `/docs-audit`
 - `DOUBLE_NEGATIVE` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
 - `NOUN_STRING` — Google developer documentation style guide, Write for a global audience: <https://developers.google.com/style/translation>
+- `PROVENANCE_NARRATION` — house convention: `reference/lane6-prompts/audience-fit.md`
+- `OFF_AUDIENCE` — Google Technical Writing One, Audience: <https://developers.google.com/tech-writing/one/audience>
 - `VOLATILE_DETAIL` — Google developer documentation style guide, Excessive claims — the `metric` kind only: <https://developers.google.com/style/excessive-claims>
 - `VOLATILE_DETAIL` — house convention — the `count`, `popularity`, and `version` kinds: `VOLATILE_NOUNS` and `VERSION_AT_RE` in `scripts/check-prose.mjs`
 - `TIME_ANCHORED` — Google developer documentation style guide, Timeless documentation: <https://developers.google.com/style/timeless-documentation>

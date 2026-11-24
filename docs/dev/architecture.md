@@ -61,7 +61,7 @@ would be faster.
 | 3 readability | `check-prose.mjs` | wall-of-text, dense bullets, oversized files and sections, double-negative and slash-alternative candidates |
 | 4 reference integrity | `check-refs.mjs` | broken links and file references; Antora xrefs, images, and includes by resource ID |
 | 5 mermaid | `lint-mermaid.mjs` | syntax, init header, palette classes, contrast |
-| 6 LLM | `lane6.mjs` (dispatch), `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode; `check-walkthrough.mjs` for persona walkthroughs | content drift, missing diagrams/demo, readers who cannot finish a task by following links, cold-read comprehension, mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
+| 6 LLM | `lane6.mjs` (dispatch), `doc-chunks.mjs` for the drift claim ledger and plain-language ranges; `fetch-citations.mjs` in document mode; `check-walkthrough.mjs` for persona walkthroughs | content drift, missing diagrams/demo, readers who cannot finish a task by following links, cold-read comprehension, audience fit (provenance narration, off-audience detail), mode mixing, completeness for type, unscannable procedures, noun strings and hidden verbs (chunked); cited-source snapshots |
 
 Lane 6 is the model-owned exception, but a script owns its control flow.
 `lane6.mjs` enumerates every job, renders every prompt from
