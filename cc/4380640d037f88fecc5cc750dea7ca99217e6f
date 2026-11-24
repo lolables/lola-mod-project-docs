@@ -1,0 +1,47 @@
+tests/scripts/docs-organization/lane6.test.mjs
+  s_bd9b99e8344fed::t_56d7aa7ae2bdac 215-225
+  s_bd9b99e8344fed::t_fdcce88f9f88e5 193-194
+  s_bd9b99e8344fed::t_7300e7525128e6 245
+docs/dev/architecture.md
+  s_bd9b99e8344fed::t_be54e19e6f3323 64
+tests/scripts/docs-organization/lane6-kinds.test.mjs
+  s_bd9b99e8344fed::t_53c00d324076fa 118-129,133-150,196
+  s_bd9b99e8344fed::t_fa6ca6d008a4d5 130-132
+module/skills/docs-organization/reference/scripts.md
+  s_bd9b99e8344fed::t_be54e19e6f3323 56
+module/skills/docs-organization/reference/lane6-prompts/audience-fit.md
+  s_bd9b99e8344fed::t_c271181c1af415 1-12,14-18,20-27
+  s_bd9b99e8344fed::t_501ded4cfa3a7f 19
+  s_bd9b99e8344fed::t_09249bc6e69b54 13
+module/commands/docs-update.md
+  s_bd9b99e8344fed::t_3fac09d1adaaea 80
+  s_bd9b99e8344fed::t_be54e19e6f3323 288-297
+module/skills/docs-organization/scripts/lane6.mjs
+  s_bd9b99e8344fed::t_a1f31b85138ccf 144
+module/skills/docs-organization/reference/rule-sources.md
+  s_bd9b99e8344fed::t_be54e19e6f3323 24,39,87-91
+module/skills/docs-organization/reference/diataxis-grounding.md
+  s_bd9b99e8344fed::t_be54e19e6f3323 1,3-5,34-51
+  s_bd9b99e8344fed::t_a38ba3e8b2d6d4 52
+module/skills/docs-organization/scripts/lane6-kinds.mjs
+  s_bd9b99e8344fed::t_b10a8d1856afff 267-284
+module/commands/docs-audit.md
+  s_bd9b99e8344fed::t_d5c12fe1d3388c 169,438,676-678,745-749,941,985-986,1007-1008
+  s_bd9b99e8344fed::t_fa6ca6d008a4d5 80-81,422
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "cc4380640d037f88fecc5cc750dea7ca99217e6f",
+  "prompts": {},
+  "sessions": {
+    "s_bd9b99e8344fed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e4aa468c-1771-466f-8444-8435dce19ddb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
