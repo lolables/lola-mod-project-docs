@@ -80,6 +80,18 @@ prompt (they are slash commands, not shell commands):
      `/docs-audit --no-cache`.
    - With `--fetch`, cited-source drift checks always re-run.
    - `DOCS_AUDIT_SESSION_CACHE_MAX` of 0 or 1 turns reuse off.
+
+   A docs repo that holds no code of its own can name the checkouts it
+   describes:
+
+   ```text
+   /docs-audit --code-root ../api --code-root ../worker
+   ```
+
+   Drift findings then cite code by root number (`root 2: src/cli.py:40`),
+   never by repo name. A claim the roots do not cover is "not verifiable",
+   not drift. A path that is not a git checkout reports `CODE_ROOT_MISSING`
+   and skips drift. Staleness stays unassessed in a docs-only repo.
 4. `/diagram-test` — lint every mermaid diagram.
 5. `/adr-new "Use Postgres for primary storage"` — draft an ADR with an
    inline self-review. It writes an `NNNN-*.md` file under `docs/dev/adr/`

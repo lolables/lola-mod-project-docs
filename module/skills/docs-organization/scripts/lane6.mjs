@@ -20,7 +20,7 @@
 // Job kinds: lane6-kinds.mjs. Prompts: reference/lane6-prompts/<kind>.md.
 
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, openSync, closeSync, unlinkSync, realpathSync, readdirSync, statSync, rmSync, lstatSync, readlinkSync, utimesSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes, createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join, resolve, dirname, basename, isAbsolute } from 'node:path';
@@ -38,6 +38,9 @@ export const VERIFY_BATCH = 20;
 export const SCOPES = ['sweep', 'path', 'document'];
 const PROMPTS = fileURLToPath(new URL('../reference/lane6-prompts/', import.meta.url));
 const CHUNKED = new Set(['plain-language', 'drift-extract']);
+// The kinds that read the code a doc describes; with --code-root their
+// prompts end with _code-roots.md.
+const ROOTED = new Set(['drift-extract', 'drift-verify', 'diagram-drift']);
 // Bump when a reply's meaning changes without a prompt change: a validator or
 // toFindings that reads a payload differently.
 export const CACHE_VERSION = 1;
@@ -212,12 +215,46 @@ function repoFingerprint(repoRoot) {
   return sha256(JSON.stringify([index, modified, untracked]));
 }
 
-export async function planRun({ scope, repoRoot = null, citations = [], prose = [], files, session = null, cache = true }) {
+// The docs repo plus each code root in flag order: a reply that read a root
+// goes stale when that root changes. With no roots it is the docs repo's
+// fingerprint alone, so entries cached before --code-root existed still hit.
+function fingerprintOf(repoRoot, codeRoots) {
+  const docs = repoFingerprint(repoRoot);
+  return codeRoots.length ? sha256(JSON.stringify([docs, ...codeRoots.map(repoFingerprint)])) : docs;
+}
+
+// Why `dir` cannot be a code root, or null when it can: it must be a
+// directory inside a git work tree. The reason is git's own message, so a
+// broken git config is reported, not mistaken for a missing checkout.
+function codeRootProblem(dir) {
+  if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory()) return 'no such directory';
+  const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: dir, encoding: 'utf8' });
+  if (r.error) throw r.error;
+  return r.status === 0 ? null : (r.stderr.trim() || `git rev-parse exited ${r.status}`);
+}
+
+export async function planRun({ scope, repoRoot = null, codeRoots = [], citations = [], prose = [], files, session = null, cache = true }) {
   if (!SCOPES.includes(scope)) throw new UsageError(`--scope must be one of ${SCOPES.join(', ')}`);
   if (scope !== 'document' && !repoRoot) throw new UsageError('--repo-root is required for the sweep and path scopes');
   if (!files.length) throw new UsageError('no files to plan');
+  if (codeRoots.length && scope === 'document') throw new UsageError('--code-root applies to the sweep and path scopes');
+  const rootsOk = [];
+  const rootsMissing = [];
+  for (const given of codeRoots) {
+    const path = resolve(given);
+    const problem = codeRootProblem(path);
+    if (problem) rootsMissing.push({ path, reason: problem });
+    else {
+      const real = realpathSync(path);
+      if (!rootsOk.includes(real)) rootsOk.push(real);
+    }
+  }
+  // Any bad root skips drift: an incomplete set would turn a typo into
+  // "not verifiable" noise. The good roots are not used either.
+  const roots = rootsMissing.length ? [] : rootsOk;
+  const drift = !rootsMissing.length;
   // Before the run directory exists, so a git failure leaves nothing behind.
-  const fingerprint = cache && scope !== 'document' ? repoFingerprint(repoRoot) : null;
+  const fingerprint = cache && scope !== 'document' ? fingerprintOf(repoRoot, roots) : null;
   const run = mkdtempSync(join(session ? checkedSession(session) : startSession().session, 'lane6-'));
   mkdirSync(join(run, 'prompts'));
   mkdirSync(join(run, 'results'));
@@ -225,7 +262,7 @@ export async function planRun({ scope, repoRoot = null, citations = [], prose = 
     mkdirSync(cacheDir(run), { recursive: true, mode: 0o700 });
     pruneCache(run);
   }
-  const m = { version: 1, scope, repoRoot, cache, fingerprint, eof: `LANE6_EOF_${randomBytes(8).toString('hex')}`, seq: 0, files: [], jobs: [], skipped: [], other: [], unmatched: [] };
+  const m = { version: 1, scope, repoRoot, cache, fingerprint, codeRoots: roots, codeRootsMissing: rootsMissing, eof: `LANE6_EOF_${randomBytes(8).toString('hex')}`, seq: 0, files: [], jobs: [], skipped: [], other: [], unmatched: [] };
   const readmes = new Set(readmeNames());
   // Sweep and path scopes audit and report the real path (check-prose.mjs does
   // the same); document scope keeps the path it was given. Either way a
@@ -243,7 +280,7 @@ export async function planRun({ scope, repoRoot = null, citations = [], prose = 
     const text = readFileSync(file, 'utf8');
     if (file.endsWith('.mmd')) {
       m.files.push({ file, lines: countLines(text), diagramOnly: true });
-      if (scope !== 'document') addJob(m, 'diagram-drift', file, 1, { startLine: 1 });
+      if (scope !== 'document' && drift) addJob(m, 'diagram-drift', file, 1, { startLine: 1 });
       continue;
     }
     const model = await parseDoc(file, text);
@@ -259,7 +296,7 @@ export async function planRun({ scope, repoRoot = null, citations = [], prose = 
     addJob(m, 'grounding', file, 1, {});
     const { chunks } = chunkDoc(model);
     for (const c of chunks) addJob(m, 'plain-language', file, 1, { start: c.start, end: c.end });
-    if (scope !== 'document') {
+    if (scope !== 'document' && drift) {
       for (const c of chunks) addJob(m, 'drift-extract', file, 1, { start: c.start, end: c.end });
       for (const d of model.diagrams) addJob(m, 'diagram-drift', file, 1, { startLine: d.startLine });
     }
@@ -293,6 +330,7 @@ function validationCtx(m, job) {
     end: job.params.end ?? f.lines,
     claims: job.params.allClaims ?? job.params.claims,
     candidates: job.params.candidates,
+    codeRoots: m.codeRoots ?? [],
   };
 }
 
@@ -408,7 +446,7 @@ function expand(m) {
 // The repo as it is now, fingerprinted at most once per advance or collect.
 function lazyFingerprint(m) {
   let now;
-  return () => (now ??= repoFingerprint(m.repoRoot));
+  return () => (now ??= fingerprintOf(m.repoRoot, m.codeRoots ?? []));
 }
 
 function advance(run) {
@@ -471,11 +509,13 @@ function render(m, job) {
     local_sources: p.sources && list(p.sources.local),
     snapshots: p.sources && list(p.sources.snapshots),
     unread_sources: p.sources && list(p.sources.unread),
+    code_roots: m.codeRoots?.length ? m.codeRoots.map((r, i) => `root ${i + 1}: ${r}`).join('\n') : null,
   };
   const parts = [fill('_read-only', vars, job)];
   if (m.scope === 'document') parts.push(fill('_untrusted', vars, job));
   if (KINDS[job.kind].groundingNote) parts.push(fill('_grounding-note', vars, job));
   parts.push(fill(job.kind, vars, job));
+  if (m.codeRoots?.length && ROOTED.has(job.kind)) parts.push(fill('_code-roots', vars, job));
   if (job.remediation) parts.push(`Your previous reply was rejected: ${job.reason}. ${job.remediation}\n`);
   return parts.join('\n');
 }
@@ -555,8 +595,12 @@ export function collectRun(run) {
     if (f.expanded.verify && m.jobs.some((j) => j.kind === 'drift-extract' && j.file === f.file && j.status === 'ok')) {
       const verdicts = m.jobs.filter((j) => j.kind === 'drift-verify' && j.file === f.file).flatMap((j) => j.payload?.verdicts ?? []);
       const n = (v) => verdicts.filter((x) => x.verdict === v).length;
-      other.push(`content drift: ${f.file} — ${f.claims} claims, ${n('drift')} drift, ${n('unverifiable')} unverifiable`);
+      const unverifiable = m.codeRoots?.length ? 'not verifiable against the supplied roots' : 'unverifiable';
+      other.push(`content drift: ${f.file} — ${f.claims} claims, ${n('drift')} drift, ${n('unverifiable')} ${unverifiable}`);
     }
+  }
+  for (const r of m.codeRootsMissing ?? []) {
+    findings.push({ code: 'CODE_ROOT_MISSING', severity: 'warning', file: null, line: null, note: `--code-root ${r.path}: ${r.reason}; content drift and diagram drift skipped` });
   }
   for (const [file, parts] of failed) {
     findings.push({ code: 'LANE_FAILED', severity: 'warning', file, line: null, note: `Lane 6: ${parts.join(', ')} did not run; unknown, not clean` });
@@ -564,11 +608,11 @@ export function collectRun(run) {
   const modes = {};
   for (const j of m.jobs) if (j.kind === 'grounding' && j.status === 'ok') modes[j.file] = j.payload.mode;
   other.push(`lane 6 run: ${run}`);
-  return { status: 'collected', jobs: m.jobs.length, cached: m.jobs.filter((j) => j.cached).length, findings: findings.map((f) => ({ ...f, note: cell(f.note) })), other, modes };
+  return { status: 'collected', jobs: m.jobs.length, cached: m.jobs.filter((j) => j.cached).length, findings: findings.map((f) => ({ ...f, note: cell(f.note) })), other, modes, codeRoots: m.codeRoots ?? [], skipped: m.codeRootsMissing?.length ? ['content drift', 'diagram drift'] : [] };
 }
 
 const USAGE = `usage:
-  lane6.mjs plan --scope sweep|path|document [--repo-root <dir>] [--citations <json>]... [--prose <json>] [--session <dir>] [--no-cache] <file>...
+  lane6.mjs plan --scope sweep|path|document [--repo-root <dir>] [--code-root <dir>]... [--citations <json>]... [--prose <json>] [--session <dir>] [--no-cache] <file>...
   lane6.mjs session              (print a new session directory for this audit's artifacts)
   lane6.mjs record <run> <id>    (reply on stdin, through <<'<eof>' with the eof from plan or next)
   lane6.mjs next <run>
@@ -590,7 +634,7 @@ function readJsonFile(path, option) {
 }
 
 function parsePlanArgs(args) {
-  const opts = { scope: null, repoRoot: null, citations: [], prose: [], files: [], cache: true };
+  const opts = { scope: null, repoRoot: null, codeRoots: [], citations: [], prose: [], files: [], cache: true };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     const value = () => {
@@ -599,6 +643,7 @@ function parsePlanArgs(args) {
     };
     if (a === '--scope') opts.scope = value();
     else if (a === '--repo-root') opts.repoRoot = value();
+    else if (a === '--code-root') opts.codeRoots.push(value());
     else if (a === '--citations') opts.citations.push(readJsonFile(value(), '--citations'));
     else if (a === '--session') opts.session = value();
     else if (a === '--prose') opts.prose = readJsonFile(value(), '--prose').findings ?? [];

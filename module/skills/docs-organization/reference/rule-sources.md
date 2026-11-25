@@ -8,8 +8,8 @@ the source; unquoted text summarises it.
 
 Tool-correctness codes have no row. They enforce the module's own
 conventions or factual accuracy, not a writing rule: structure, staleness,
-references, mermaid syntax and palette classes, content drift, citations,
-and `LANE_FAILED`.
+references, mermaid syntax and palette classes, content drift, code roots,
+citations, and `LANE_FAILED`.
 
 ## External rules
 

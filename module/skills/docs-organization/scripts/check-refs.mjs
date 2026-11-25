@@ -23,6 +23,10 @@
 //                  block, a malformed list). Info: reported here, once per
 //                  file, because this lane already reads every doc.
 //
+// A link from a tracked doc to a path outside its repo is not followable from
+// a clone, but this script cannot see the other repo: it goes to `unresolved`
+// ({file, line, target, reason}), which /docs-audit prints under "Other".
+//
 // Design notes:
 //   - Only links, images, cross-references, and includes written as such are
 //     resolved (any registered format — formats/index.mjs). Their targets are
@@ -78,7 +82,7 @@
 // (no shell) with fixed git arguments.
 
 import { readFileSync, existsSync, lstatSync, realpathSync, statSync } from 'node:fs';
-import { basename, dirname, join, posix, resolve, relative } from 'node:path';
+import { basename, dirname, join, posix, resolve, relative, sep } from 'node:path';
 import { parseDoc } from './formats/index.mjs';
 import { proseBlocks, lineAt } from './check-prose.mjs';
 import { walkDocs } from './doc-files.mjs';
@@ -143,8 +147,11 @@ const DESCRIBE = { image: 'image', include: 'include of', link: 'link to', xref:
 // resolution; a `link:` macro maps through resolveLink), and a reference to what this repo does
 // not hold is skipped, never broken. `unchecked` is an array when the file's
 // component failed to load: AsciiDoc refs that need it are skipped and pushed
-// to `unchecked`, and every other check still runs.
-export async function analyzeFile(file, root, tracked, antora = null, unchecked = null) {
+// to `unchecked`, and every other check still runs. `unresolved`, when an
+// array, receives {line, target, reason} for each link a tracked doc points
+// out of its repo: never broken, never checked, but listed so the report can
+// say so.
+export async function analyzeFile(file, root, tracked, antora = null, unchecked = null, unresolved = null) {
   const content = readFileSync(file, 'utf8');
   const model = await parseDoc(file, content);
   const findings = [];
@@ -191,7 +198,12 @@ export async function analyzeFile(file, root, tracked, antora = null, unchecked 
       where = abs;
       if (tracked) {
         where = relative(root, abs);
-        if (where.startsWith('..')) continue;
+        if (where === '..' || where.startsWith(`..${sep}`)) {
+          const key = 'U' + where + '@' + ref.line;
+          if (!seen.has(key)) unresolved?.push({ line: ref.line, target, reason: 'leaves the docs repo' });
+          seen.add(key);
+          continue;
+        }
         // A tracked file, or a directory that contains tracked files, is followable.
         if (tracked.has(where) || trackedDirs.has(where)) continue;
       } else if (existsSync(abs)) continue;
@@ -312,6 +324,7 @@ async function main(argv) {
   const shown = (root, p) => (root ? relative(root, p) : resolve(p));
 
   const findings = [];
+  const unresolved = [];
   const seenReal = new Set();
   const uncheckedFiles = []; // [file, count of refs that needed the failed component]
   const unsupportedFiles = []; // same, for pages of a component in an unsupported layout
@@ -325,7 +338,9 @@ async function main(argv) {
     const isBroken = tracked && rel.startsWith(brokenModules.get(root) ?? '\0');
     const isUnsupported = tracked && unsupportedModules.get(root).some((prefix) => rel.startsWith(prefix));
     const unchecked = isBroken || isUnsupported ? [] : null;
-    const found = await analyzeFile(tracked ? phys : f, root, tracked, component, unchecked);
+    const leaving = [];
+    const found = await analyzeFile(tracked ? phys : f, root, tracked, component, unchecked, leaving);
+    for (const u of leaving) unresolved.push({ file: shown(root, root ? phys : f), ...u });
     if (unchecked?.length) (isBroken ? uncheckedFiles : unsupportedFiles).push([rel, unchecked.length]);
     for (const x of found) {
       if (CONTENT_ONLY.has(x.code) && !firstVisit) continue; // same text, already reported
@@ -335,7 +350,7 @@ async function main(argv) {
       findings.push({ ...x, file: shown(root, root ? phys : f) });
     }
   }
-  process.stdout.write(JSON.stringify({ status: findings.length ? 'findings' : 'ok', scanned: docs.length, findings }, null, 2) + '\n');
+  process.stdout.write(JSON.stringify({ status: findings.length ? 'findings' : 'ok', scanned: docs.length, findings, unresolved }, null, 2) + '\n');
   const listOf = (files) => files.map(([file, n]) => `${file} (${n} ref${n === 1 ? '' : 's'})`).join(', ');
   if (unsupportedFiles.length) {
     process.stderr.write(`check-refs: Antora refs not checked (unsupported Antora layout): ${listOf(unsupportedFiles)}\n`);

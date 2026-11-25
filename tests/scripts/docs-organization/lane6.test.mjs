@@ -861,3 +861,165 @@ test('CLI: a git failure in a cached plan exits 2 naming git', () => {
   assert.equal(r.status, 2);
   assert.match(r.stderr, /^lane6: git rev-parse/);
 });
+
+// --- --code-root ---
+
+test('code roots: valid roots are stored as realpaths, deduplicated, in flag order', async () => {
+  const docs = repo({ 'docs/a.md': GUIDE });
+  const api = repo({ 'src/cli.py': 'x\n' });
+  const web = repo({ 'app.js': 'y\n' });
+  const alias = join(dirname(api), `${basename(api)}-alias`);
+  symlinkSync(api, alias);
+  dirs.push(alias);
+  const res = await planRun({ scope: 'path', repoRoot: docs, files: [join(docs, 'docs/a.md')], codeRoots: [api, web, join(api, '.'), alias] });
+  dirs.push(res.run);
+  const m = manifest(res.run);
+  assert.deepEqual(m.codeRoots, [api, web]);
+  assert.deepEqual(m.codeRootsMissing, []);
+  assert.ok(m.jobs.some((j) => j.kind === 'drift-extract'));
+});
+
+test('code roots: a missing path or a non-work-tree skips drift and yields CODE_ROOT_MISSING', async () => {
+  const docs = repo({ 'docs/a.md': '# A\n\n```mermaid\nflowchart LR\n  A-->B\n```\n', 'docs/d.mmd': 'flowchart LR\n  A-->B\n' });
+  const api = repo({ 'src/cli.py': 'x\n' });
+  const plain = plainDir();
+  const gone = join(plain, 'nope');
+  const res = await planRun({ scope: 'path', repoRoot: docs, files: [join(docs, 'docs/a.md'), join(docs, 'docs/d.mmd')], codeRoots: [api, gone, plain] });
+  dirs.push(res.run);
+  const m = manifest(res.run);
+  assert.deepEqual(m.codeRootsMissing.map((r) => r.path), [gone, plain]);
+  assert.match(m.codeRootsMissing[0].reason, /no such directory/);
+  assert.match(m.codeRootsMissing[1].reason, /not a git repository/);
+  assert.ok(!m.jobs.some((j) => ['drift-extract', 'diagram-drift'].includes(j.kind)));
+  await drain(res.run, res.jobs, replyFor);
+  const out = collectRun(res.run);
+  const missing = out.findings.filter((f) => f.code === 'CODE_ROOT_MISSING');
+  assert.deepEqual(missing.map((f) => [f.severity, f.file, f.line]), [['warning', null, null], ['warning', null, null]]);
+  assert.match(missing[0].note, /--code-root .*nope: no such directory; content drift and diagram drift skipped/);
+  assert.deepEqual(out.skipped, ['content drift', 'diagram drift']);
+  assert.ok(!out.findings.some((f) => f.code === 'LANE_FAILED'));
+});
+
+test('code roots: none given leaves the manifest and collect output as before', async () => {
+  const { run, jobs } = await planSweep();
+  assert.deepEqual(manifest(run).codeRoots, []);
+  await drain(run, jobs, replyFor);
+  const out = collectRun(run);
+  assert.deepEqual(out.codeRoots, []);
+  assert.deepEqual(out.skipped, []);
+});
+
+test('code roots: document scope rejects --code-root', async () => {
+  const d = plainDir();
+  await assert.rejects(planRun({ scope: 'document', files: [join(d, 'a.md')], codeRoots: [d] }), /--code-root applies to the sweep and path scopes/);
+});
+
+test('CLI: --code-root is repeatable and reaches the manifest', () => {
+  const docs = repo({ 'docs/a.md': GUIDE });
+  const api = repo({ 'x.py': '1\n' });
+  const web = repo({ 'y.js': '2\n' });
+  const plan = cli(['plan', '--scope', 'path', '--repo-root', docs, '--code-root', api, '--code-root', web, join(docs, 'docs/a.md')]);
+  assert.equal(plan.status, 0, plan.stderr);
+  const { run } = JSON.parse(plan.stdout);
+  dirs.push(run);
+  assert.deepEqual(manifest(run).codeRoots, [api, web]);
+});
+
+test('cache: a change inside a code root changes the fingerprint; no roots keeps the docs-only fingerprint', async () => {
+  const docs = repo({ 'docs/a.md': GUIDE });
+  const api = repo({ 'src/cli.py': 'x\n' });
+  const fp = async (codeRoots) => {
+    const res = await planRun({ scope: 'path', repoRoot: docs, files: [join(docs, 'docs/a.md')], codeRoots });
+    dirs.push(res.run);
+    return manifest(res.run).fingerprint;
+  };
+  const alone = await fp([]);
+  const withApi = await fp([api]);
+  assert.notEqual(withApi, alone);
+  assert.equal(await fp([api]), withApi);
+  writeFileSync(join(api, 'src/cli.py'), 'y\n');
+  assert.notEqual(await fp([api]), withApi);
+  assert.equal(await fp([]), alone);
+});
+
+test('cache: a drift-verify reply is reused until a code root changes', async () => {
+  const docs = repo({ 'docs/a.md': '# A\n\nRun `app sync`.\n' });
+  const api = repo({ 'src/cli.py': 'x\n' });
+  const claim = { kind: 'fact', line: '3', quote: 'Run `app sync`.', target: 'cli' };
+  const reply = (j) => {
+    if (j.kind === 'drift-extract') return fence({ claims: [claim] });
+    if (j.kind === 'drift-verify') return fence({ verdicts: [{ id: 'C1', verdict: 'match', evidence: 'root 1: src/cli.py:1' }] });
+    return replyFor(j);
+  };
+  const run = async () => {
+    const res = await planRun({ scope: 'path', repoRoot: docs, files: [join(docs, 'docs/a.md')], codeRoots: [api] });
+    dirs.push(res.run);
+    if (res.status === 'dispatch') await drain(res.run, res.jobs, reply);
+    return manifest(res.run).jobs.find((j) => j.kind === 'drift-verify');
+  };
+  assert.ok(!(await run()).cached);
+  assert.equal((await run()).cached, true);
+  writeFileSync(join(api, 'src/cli.py'), 'y\n');
+  assert.ok(!(await run()).cached);
+});
+
+test('code roots: drift prompts end with the numbered roots; other prompts and no-root runs do not', async () => {
+  const docs = repo({ 'docs/a.md': '# A\n\nRun `app sync`.\n\n```mermaid\nflowchart LR\n  A-->B\n```\n' });
+  const api = repo({ 'x.py': '1\n' });
+  const web = repo({ 'y.js': '2\n' });
+  const res = await planRun({ scope: 'path', repoRoot: docs, files: [join(docs, 'docs/a.md')], codeRoots: [api, web], cache: false });
+  dirs.push(res.run);
+  const byKind = (k) => res.jobs.find((j) => j.kind === k).prompt;
+  for (const k of ['drift-extract', 'diagram-drift']) {
+    assert.match(byKind(k), new RegExp(`root 1: ${api}\\nroot 2: ${web}`));
+    assert.match(byKind(k), /`root 2: src\/cli\.py:40`/);
+  }
+  for (const k of ['grounding', 'plain-language']) assert.doesNotMatch(byKind(k), /root 1:/);
+  const { run, jobs } = await planSweep({ cache: false });
+  assert.doesNotMatch(jobs.find((j) => j.kind === 'drift-extract').prompt, /root 1:/);
+  dirs.push(run);
+});
+
+test('code roots: the coverage line says not verifiable against the supplied roots; the finding cites by root number', async () => {
+  const docs = repo({ 'docs/a.md': '# A\n\nRun `app sync`.\n' });
+  const api = repo({ 'src/cli.py': 'x\n' });
+  const claim = { kind: 'fact', line: '3', quote: 'Run `app sync`.', target: 'cli' };
+  const res = await planRun({ scope: 'path', repoRoot: docs, files: [join(docs, 'docs/a.md')], codeRoots: [api], cache: false });
+  dirs.push(res.run);
+  await drain(res.run, res.jobs, (j) => {
+    if (j.kind === 'drift-extract') return fence({ claims: [claim, claim] });
+    if (j.kind === 'drift-verify') return fence({ verdicts: [
+      { id: 'C1', verdict: 'drift', evidence: 'root 1: src/cli.py:1', code_says: 'sync is gone', instructs: true },
+      { id: 'C2', verdict: 'unverifiable', evidence: 'in none of the roots' },
+    ] });
+    return replyFor(j);
+  });
+  const out = collectRun(res.run);
+  assert.ok(out.other.includes(`content drift: ${join(docs, 'docs/a.md')} — 2 claims, 1 drift, 1 not verifiable against the supplied roots`));
+  const drift = out.findings.find((f) => f.code === 'CONTENT_DRIFT');
+  assert.match(drift.note, /\(root 1: src\/cli\.py:1\)/);
+  assert.ok(!JSON.stringify(out.findings).includes(api));
+  assert.deepEqual(out.codeRoots, [api]);
+});
+
+test('code roots: a reply citing outside its root is rejected and retried', async () => {
+  const docs = repo({ 'docs/a.md': '# A\n\nRun `app sync`.\n' });
+  const api = repo({ 'src/cli.py': 'x\n' });
+  const res = await planRun({ scope: 'path', repoRoot: docs, files: [join(docs, 'docs/a.md')], codeRoots: [api], cache: false });
+  dirs.push(res.run);
+  let batch = { jobs: res.jobs };
+  let rejected = null;
+  while (!rejected && batch.jobs) {
+    for (const j of batch.jobs) {
+      const reply = j.kind === 'drift-extract'
+        ? fence({ claims: [{ kind: 'fact', line: '3', quote: 'Run `app sync`.', target: 'cli' }] })
+        : j.kind === 'drift-verify' ? fence({ verdicts: [{ id: 'C1', verdict: 'match', evidence: 'root 1: ../../etc/passwd:1' }] }) : replyFor(j);
+      const r = recordReply(res.run, j.id, reply);
+      if (j.kind === 'drift-verify') rejected = r;
+    }
+    batch = await nextBatch(res.run);
+  }
+  assert.equal(rejected.status, 'invalid');
+  assert.match(rejected.reason, /not inside root 1/);
+  assert.equal(rejected.retry, true);
+});

@@ -29,6 +29,8 @@ const TOOL_CORRECTNESS = new Set([
   // accuracy and citations
   'CONTENT_DRIFT', 'NOT_VERIFIABLE', 'CITATION_BLOCKED', 'CITATION_FETCH_FAILED', 'CITATION_LIMIT',
   'CITATIONS_NOT_FETCHED',
+  // code roots
+  'CODE_ROOT_MISSING',
   'LANE_FAILED',
 ]);
 

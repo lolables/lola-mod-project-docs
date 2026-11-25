@@ -71,6 +71,11 @@ orchestrator only dispatches and records. On a 20-doc repository a Sonnet
 orchestrator skipped every judgment prompt as "budget" although the prompt
 wording forbade it; now a skip can come only from the script.
 
+With `--code-root`, the subagent reads the roots with its own tools, so
+the validator is the escape guard. Each `root N:` cite must resolve inside
+root N (`insideRepo` from `nav-graph.mjs`), and no field may contain a
+root's absolute path. A rejected reply is retried like any invalid reply.
+
 Lane 6 also caches validated replies, so a re-run dispatches only what
 changed. The key holds the prompt, the doc's bytes, and one more input per
 kind (`reads` in `lane6-kinds.mjs`):
@@ -79,6 +84,11 @@ kind (`reads` in `lane6-kinds.mjs`):
   key on a whole-repo fingerprint, so any repo file change re-runs all of
   them. Editing one doc re-runs that doc's jobs and every repo-reading
   job, since the doc is itself a repo file.
+- With `--code-root`, the fingerprint hashes the docs repo's fingerprint
+  and each root's, in flag order, so an edit in any root re-runs every
+  `repo` kind. Without roots it is the docs repo's alone, so older entries
+  still hit. The submodule and skip-worktree limits below apply to each
+  root too.
 - `sources` (`drift-cited`) keys on the hashes of its local sources and
   snapshots; `doc` kinds key on nothing extra.
 

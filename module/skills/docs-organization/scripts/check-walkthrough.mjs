@@ -131,6 +131,11 @@ export async function planWalks(root) {
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isLine = (v) => Number.isInteger(v) && v > 0;
 // A reply path as the graph writes it: no leading ./, no trailing /.
+// Whether a reader of this repo can open `p`: inside the repo and tracked (a
+// file, or a directory that holds tracked files). A walker that followed a
+// link out of the repo reports a path like this, and needs telling why.
+const inRepo = (graph, p) => !(p === '..' || p.startsWith('../') || posix.isAbsolute(p))
+  && (graph.tracked.has(p) || [...graph.tracked].some((t) => t.startsWith(`${p}/`)));
 const clean = (p) => (typeof p === 'string' && p.trim() ? posix.normalize(p.trim().replace(/^\.\//, '')).replace(/\/+$/, '') : null);
 
 export function verifyWalk({ graph, plan, edges }, reply) {
@@ -166,7 +171,10 @@ export function verifyWalk({ graph, plan, edges }, reply) {
     // An edge serves the hop when it targets `to`, lands on `to`, or lands on a
     // page directly inside `to` (a link that names a directory).
     const serving = (byFrom.get(from) ?? []).filter(({ e, landed }) => e.to === to || landed.includes(to) || landed.some((p) => posix.dirname(p) === to));
-    if (serving.length === 0) return reject(at, `${from}:${hop.line} → ${to}: ${from} has no link to ${to}`);
+    if (serving.length === 0) {
+      const outside = inRepo(graph, to) ? '' : `; ${to} is not in this repository, so a link to it is a dead end for the reader: drop this hop and mark its tasks stuck at ${from}`;
+      return reject(at, `${from}:${hop.line} → ${to}: ${from} has no link to ${to}${outside}`);
+    }
     const lines = [...new Set(serving.map(({ e }) => e.line))].sort((a, b) => a - b);
     if (!lines.includes(hop.line)) return reject(at, `${from}:${hop.line} → ${to}: no link to it on line ${hop.line} (links on line ${lines.join(', ')})`);
     for (const { e, landed } of serving) if (e.line === hop.line) for (const p of landed) if (p === to || posix.dirname(p) === to) opened.add(p);

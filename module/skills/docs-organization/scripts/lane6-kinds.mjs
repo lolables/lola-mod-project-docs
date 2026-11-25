@@ -1,9 +1,11 @@
 // Reply validation and finding mapping for each lane6.mjs job kind.
 //
 // validate(payload, ctx) -> {ok: true, payload} | {ok: false, reason, remediation}
-//   ctx: {file, text, lines, start, end, claims?, candidates?}; start..end is
+//   ctx: {file, text, lines, start, end, claims?, candidates?, codeRoots?}; start..end is
 //   the chunk range, or 1..lines for a whole-file kind. `remediation` is
 //   appended to the retried prompt, so it speaks to the subagent.
+//   codeRoots: the --code-root realpaths, or empty. With roots, every cite is
+//   `root N: <path>:<line>` inside root N, and no field may hold a root's path.
 // toFindings(payload, job) -> {findings: [{code, severity, file, line, note}], other: [string]}
 //   severity and note follow docs-audit.md's report schema; `other` holds the
 //   lines /docs-update skips (dropped and suppressed candidates).
@@ -14,6 +16,10 @@
 // lane6.mjs reply cache: 'doc' (nothing), 'repo' (any file in the repo:
 // cold-read resolves references in it, hero-demo judges whether it is a
 // runnable tool), or 'sources' (drift-cited's local sources and snapshots).
+
+import { existsSync } from 'node:fs';
+import { isAbsolute, resolve } from 'node:path';
+import { insideRepo } from './nav-graph.mjs';
 
 export const MODES = ['tutorial', 'how-to', 'reference', 'explanation', 'landing'];
 export const ADJUDICATED = ['DOUBLE_NEGATIVE', 'SLASH_ALTERNATIVE', 'VOLATILE_DETAIL', 'TIME_ANCHORED'];
@@ -27,6 +33,40 @@ const words = (s) => s.trim().split(/\s+/).length;
 const bad = (reason, remediation) => ({ ok: false, reason, remediation });
 const none = () => ({ findings: [], other: [] });
 const lineProblem = (n, ctx) => (Number.isInteger(n) && n >= ctx.start && n <= ctx.end ? null : `has line ${n}, outside lines ${ctx.start}-${ctx.end}`);
+
+// With --code-root the subagent reads each root with its own tools, so a
+// `..` or symlink escape can only be caught here, after the fact: every cite
+// must name a root and resolve inside it, outside its .git directory (which
+// holds no code and may hold credentials in remote URLs).
+const CITE_RE = /^root (\d+): (.+):\d+(?:-\d+)?$/;
+// The cites in a "; "-separated list, and in each code_set member's trailing
+// "(root N: …)". A member without one yields itself, which fails as a cite.
+const split = (text) => String(text).split('; ').map((c) => c.trim());
+const setCites = (v) => (Array.isArray(v.code_set) ? v.code_set.flatMap((s) => split(String(s).match(/\((root \d+: .+)\)\s*$/)?.[1] ?? s)) : []);
+function citeProblem(cite, roots) {
+  const m = cite.match(CITE_RE);
+  if (!m) return `cite "${cite}" is not root N: path:line`;
+  const n = Number(m[1]);
+  if (n < 1 || n > roots.length) return `cite "${cite}" names no root ${n}`;
+  if (isAbsolute(m[2])) return `cite "${cite}" has an absolute path`;
+  if (m[2].split(/[\\/]/).includes('.git')) return `cite "${cite}" is inside .git`;
+  const abs = resolve(roots[n - 1], m[2]);
+  if (!existsSync(abs) || !insideRepo(roots[n - 1], abs)) return `cite "${cite}" is not inside root ${n}`;
+  return null;
+}
+const firstCiteProblem = (cites, roots) => cites.map((c) => citeProblem(c, roots)).find(Boolean) ?? null;
+const leaksRoot = (v, roots) => roots.some((r) => JSON.stringify(v).includes(r));
+const CITE_FIX = 'Cite code as root N: <path relative to root N>:<line>, a file inside that root; separate several cites with "; ", and never write a root\'s path.';
+// Evidence from more than one checkout: `; cites roots 1, 2`. The same code
+// in two roots and a claim that spans two roots look alike from the cites,
+// so the suffix says only which roots, not why. Only when every cite is a
+// root cite, so a run without roots never gets it.
+function collision(cites) {
+  const ms = cites.map((c) => c.match(CITE_RE));
+  if (ms.some((m) => !m)) return '';
+  const roots = [...new Set(ms.map((m) => m[1]))];
+  return roots.length > 1 ? `; cites roots ${roots.join(', ')}` : '';
+}
 
 // The orchestrator copies each reply into a heredoc and may HTML-escape it on
 // the way (seen in a smoke run: `>` arrived as `&gt;`). Decoding happens on
@@ -205,6 +245,12 @@ export const KINDS = {
         if (v.verdict === 'drift' && (!isStr(v.code_says) || typeof v.instructs !== 'boolean')) {
           return bad(`${v.id} is drift without code_says or instructs`, 'For a drift verdict give code_says and instructs (true or false).');
         }
+        const roots = ctx.codeRoots ?? [];
+        if (roots.length) {
+          if (leaksRoot(v, roots)) return bad(`${v.id} names a root's absolute path`, CITE_FIX);
+          const problem = firstCiteProblem(v.verdict === 'unverifiable' ? setCites(v) : [...split(v.evidence), ...setCites(v)], roots);
+          if (problem) return bad(`${v.id} ${problem}`, CITE_FIX);
+        }
       }
       return { ok: true, payload: p };
     },
@@ -212,7 +258,7 @@ export const KINDS = {
       const byId = new Map(job.params.allClaims.map((c) => [c.id, c]));
       const findings = p.verdicts.filter((v) => v.verdict === 'drift').map((v) => {
         const c = byId.get(v.id);
-        return finding(job, 'CONTENT_DRIFT', v.instructs ? 'blocker' : 'warning', lineSpan(c.line).start, `doc: "${c.quote}"; code: ${v.code_says} (${v.evidence})`);
+        return finding(job, 'CONTENT_DRIFT', v.instructs ? 'blocker' : 'warning', lineSpan(c.line).start, `doc: "${c.quote}"; code: ${v.code_says} (${v.evidence})${collision([...split(v.evidence), ...setCites(v)])}`);
       });
       return { findings, other: [] };
     },
@@ -239,12 +285,14 @@ export const KINDS = {
     label: 'Diagram drift',
     groundingNote: false,
     reads: 'repo',
-    validate: (p) => eachEntry(p, 'findings', (f) => {
+    validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       if (!isStr(f.element)) return 'names no node or edge';
       if (!isStr(f.code_says) || !isStr(f.evidence)) return 'lacks code_says or evidence';
-      return null;
+      const roots = ctx.codeRoots ?? [];
+      if (roots.length && leaksRoot(f, roots)) return "names a root's absolute path";
+      return roots.length ? firstCiteProblem(split(f.evidence), roots) : null;
     }),
-    toFindings: mapFindings((f, job) => finding(job, 'CONTENT_DRIFT', 'warning', job.params.startLine, `diagram ${f.element}: ${f.code_says} (${f.evidence})`)),
+    toFindings: mapFindings((f, job) => finding(job, 'CONTENT_DRIFT', 'warning', job.params.startLine, `diagram ${f.element}: ${f.code_says} (${f.evidence})${collision(split(f.evidence))}`)),
   },
 
   'missing-diagrams': {
