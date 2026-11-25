@@ -1,0 +1,71 @@
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_0ec92510117f5f::t_e0f6f96f7a7944 26-29
+  s_0ec92510117f5f::t_9570d95156b5e8 150-154,205-206,327,341-343,353
+  s_0ec92510117f5f::t_2ffdc4d1a5b3a1 201-204
+  s_0ec92510117f5f::t_54edf9ac2b0f8f 85
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_0ec92510117f5f::t_9570d95156b5e8 1005-1019,1031-1047
+  s_0ec92510117f5f::t_2d3543cdaf0e6b 1020-1030
+module/commands/docs-audit.md
+  s_0ec92510117f5f::t_c94f629c3a57fb 724
+  s_0ec92510117f5f::t_bf31ba475e83a1 725
+  s_0ec92510117f5f::t_6a6b0bfd583df9 3,105-116,227-228,466,471-473,689,949-952,965-966
+  s_0ec92510117f5f::t_66ecb7a68e6d3e 352-355
+  s_0ec92510117f5f::t_a7d5393b7b9156 677-688
+  s_0ec92510117f5f::t_2f18e3f14338fe 538-540,557
+module/skills/docs-organization/scripts/lane6.mjs
+  s_0ec92510117f5f::t_c94f629c3a57fb 23,226-236,240-246,251-255,265,283,299,602-604,611,615,637,646
+  s_0ec92510117f5f::t_490b76e8dc7d8e 247-250
+  s_0ec92510117f5f::t_b69056480a9dc7 218-225,257,449
+  s_0ec92510117f5f::t_674f6c873347c5 41-43,512,518
+  s_0ec92510117f5f::t_21071c1dd1a98f 333,598-599
+tests/scripts/docs-organization/rule-sources.test.mjs
+  s_0ec92510117f5f::t_c94f629c3a57fb 32-33
+tests/scripts/docs-organization/lane6.test.mjs
+  s_0ec92510117f5f::t_e89aad04cb422c 864-923
+  s_0ec92510117f5f::t_42ab50e0269bf9 954
+  s_0ec92510117f5f::t_f2e056e21e1f62 924-953,955-961
+  s_0ec92510117f5f::t_674f6c873347c5 962-978
+  s_0ec92510117f5f::t_26a5967aada660 979-1022
+module/skills/docs-organization/reference/rule-sources.md
+  s_0ec92510117f5f::t_cff85302f8c9a8 11-12
+module/skills/docs-organization/reference/lane6-prompts/_code-roots.md
+  s_0ec92510117f5f::t_674f6c873347c5 1-3
+tests/scripts/docs-organization/lane6-kinds.test.mjs
+  s_0ec92510117f5f::t_26a5967aada660 1,3-5,214-267,269,271,294
+  s_0ec92510117f5f::t_41a6953325c014 274-290,294
+  s_0ec92510117f5f::t_ff868305d254a5 268,270,272,291-293
+module/skills/docs-organization/scripts/lane6-kinds.mjs
+  s_0ec92510117f5f::t_21071c1dd1a98f 4,7-8,20-23,37-38,41,55-56,58-59,69-70,248-250,253,288,291-292
+  s_0ec92510117f5f::t_acc6dda4034bd6 39-40,42-54,57,64-67,251-252,261,293,295
+  s_0ec92510117f5f::t_3ef450b917d530 60-63,68
+module/skills/docs-organization/reference/scripts.md
+  s_0ec92510117f5f::t_74f6b08133dd2b 48
+  s_0ec92510117f5f::t_fd8286565fd8d9 44-47,146-147
+README.md
+  s_0ec92510117f5f::t_fd8286565fd8d9 83-94
+module/commands/docs-update.md
+  s_0ec92510117f5f::t_66ecb7a68e6d3e 317-321
+docs/dev/architecture.md
+  s_0ec92510117f5f::t_fd8286565fd8d9 74-78,87-91
+module/skills/docs-organization/scripts/check-walkthrough.mjs
+  s_0ec92510117f5f::t_198720f69a65d3 134-138,174-177
+tests/scripts/docs-organization/check-walkthrough.test.mjs
+  s_0ec92510117f5f::t_2a1d0f50be1893 493-506
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "167c60ec50d4ed5fafaf5270169ff414d7c4b0cf",
+  "prompts": {},
+  "sessions": {
+    "s_0ec92510117f5f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ea0d03c-930a-430d-a20b-dd1f3fbcc2f2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
