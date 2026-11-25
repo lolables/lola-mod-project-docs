@@ -201,3 +201,10 @@ test('every kind has a label and the two hooks', () => {
     assert.equal(typeof k.toFindings, 'function');
   }
 });
+
+test('every kind declares what its reply reads beyond the doc', () => {
+  for (const [k, v] of Object.entries(KINDS)) assert.ok(['doc', 'repo', 'sources'].includes(v.reads), k);
+  const by = (r) => Object.keys(KINDS).filter((k) => KINDS[k].reads === r).sort();
+  assert.deepEqual(by('repo'), ['cold-read', 'diagram-drift', 'drift-verify', 'hero-demo']);
+  assert.deepEqual(by('sources'), ['drift-cited']);
+});

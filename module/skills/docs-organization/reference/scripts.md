@@ -69,6 +69,35 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   ```text
   Lane 6: Grounding (no JSON object (Unexpected token 'n')), Cold read (grounding failed) did not run; unknown, not clean
   ```
+
+  **Reply cache.** A job that ended `ok` is stored, and a later run with
+  the same key reuses it without dispatching a subagent. Entries live in
+  `$XDG_CACHE_HOME/docs-audit/<project>/lane6-cache/<sha256>.json`
+  (directory mode 0700), beside the session directories and never in the
+  audited repo. `collect` prints `jobs` and `cached`; the report's `Mode:`
+  line adds `Lane 6: 24 jobs, 21 from cache`.
+
+  | Part | Behavior |
+  |---|---|
+  | Key | sha256 of `CACHE_VERSION`, the kind, the first-attempt prompt (no retry note), the sha256 of the doc's bytes, and the `reads` input below |
+  | `reads: repo` | `drift-verify`, `diagram-drift`, `cold-read`, `hero-demo`. The input is the repo fingerprint: index entries, working-tree files that differ from the index, and untracked files that are not ignored. A gitignored file does not count. In document scope there is no repo, so the fingerprint is null |
+  | `reads: sources` | `drift-cited`. The input is the hashes of the doc's local sources and snapshots. With `--fetch` the snapshot directory and fetched-at header are fresh, so it always re-runs |
+  | `reads: doc` | every other kind. No extra input |
+  | On read | The entry is validated again against the current doc. A bad, corrupt, or old-version entry is deleted and the job runs |
+  | On write | Only a job that ended `ok`. `drift-verify` stores its verdicts merged across retries |
+  | Pruning | A session prune also deletes entries last used before the oldest kept session began. `DOCS_AUDIT_SESSION_CACHE_MAX` of 0 or 1 means no reuse |
+  | `--no-cache` | No lookup, no write, no git call. Use it after switching the subagent model, or when a result looks wrong |
+
+  What a re-run does:
+
+  - Nothing changed: 0 jobs dispatched.
+  - One doc edited: that doc's jobs re-run, and so does every
+    repo-reading job, because the edited doc is a repo file.
+  - Any repo file changed: every repo-reading job re-runs.
+
+  Bump `CACHE_VERSION` when a reply's meaning changes without a prompt
+  change, such as a validator or `toFindings` that reads a payload
+  differently.
 - `scripts/nav-graph.mjs` — the docs mode (`--mode`: `repo`, `site:<generator>`,
   `site-unsupported:<generator>`, `site-unsupported:multiple`) from site-config file names, and the link
   graph `check-routing.mjs` reads. It reads `mkdocs.yml`, `antora.yml`, and

@@ -1,0 +1,13 @@
+{
+  "fixture": "routing-fixtures.mjs crosscodex",
+  "model": "sonnet",
+  "runs": [
+    {"run": 1, "change": "none (cold cache)", "lane6_jobs": 60, "from_cache": 0, "dispatched": 60, "failed": 0, "agents_total": 72, "cost_usd": 4.31, "wall_s": 453},
+    {"run": 2, "change": "none", "lane6_jobs": 60, "from_cache": 60, "dispatched": 0, "failed": 0, "agents_total": 10, "cost_usd": 0.91, "wall_s": 108},
+    {"run": 3, "change": "appended a paragraph to SECURITY.md", "lane6_jobs": 59, "from_cache": 38, "dispatched": 21, "failed": 0, "agents_total": 33, "cost_usd": 2.28, "wall_s": 266}
+  ],
+  "run1_vs_run2_findings_identical": true,
+  "run1_findings": 10,
+  "run3_dispatched": {"SECURITY.md": ["grounding", "plain-language", "drift-extract", "audience-fit", "cold-read", "completeness", "missing-diagrams", "procedure-structure"], "other docs": {"cold-read": 5, "drift-verify": 5, "hero-demo": 3}},
+  "run3_unexpected_dispatch": []
+}

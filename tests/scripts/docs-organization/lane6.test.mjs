@@ -4,6 +4,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync, realpathSync, readFileSy
 import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { planRun, nextBatch, recordReply, collectRun, startSession, MAX_ATTEMPTS } from '../../../module/skills/docs-organization/scripts/lane6.mjs';
 
@@ -11,6 +12,24 @@ const dirs = [];
 // Runs land under $XDG_CACHE_HOME/docs-audit; point it at a scratch dir so no test touches the real cache.
 const cacheHome = realpathSync(mkdtempSync(join(tmpdir(), 'lane6-cache-')));
 process.env.XDG_CACHE_HOME = cacheHome;
+// Sweep and path plans run git in the audited repo; never read the caller's git config.
+Object.assign(process.env, {
+  GIT_CONFIG_GLOBAL: '/dev/null',
+  GIT_CONFIG_SYSTEM: '/dev/null',
+  GIT_AUTHOR_NAME: 'lane6-test',
+  GIT_AUTHOR_EMAIL: 'lane6-test@invalid',
+  GIT_COMMITTER_NAME: 'lane6-test',
+  GIT_COMMITTER_EMAIL: 'lane6-test@invalid',
+});
+const git = (cwd, ...args) => {
+  const r = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  return r.stdout;
+};
+const commitAll = (root) => {
+  git(root, 'add', '-A');
+  git(root, 'commit', '-qm', 'fixture');
+};
 after(() => {
   for (const d of dirs) rmSync(d, { recursive: true, force: true });
   rmSync(cacheHome, { recursive: true, force: true });
@@ -22,6 +41,7 @@ function repo(files) {
     mkdirSync(join(root, p, '..'), { recursive: true });
     writeFileSync(join(root, p), text);
   }
+  git(root, 'init', '-q');
   return root;
 }
 const fence = (o) => '```json\n' + JSON.stringify(o) + '\n```\n';
@@ -109,6 +129,9 @@ test('plan: --session outside the audit cache is a usage error', async () => {
   }
 });
 
+// lane6-cache/ shares the project directory with the sessions and is not one.
+const sessionDirs = (session) => readdirSync(dirname(session)).filter((n) => n !== 'lane6-cache');
+
 test('session: keeps the newest DOCS_AUDIT_SESSION_CACHE_MAX sessions and never the one just made', () => {
   const saved = process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
   try {
@@ -119,10 +142,10 @@ test('session: keeps the newest DOCS_AUDIT_SESSION_CACHE_MAX sessions and never 
       const when = new Date(Date.now() - (10 - i) * 60000);
       utimesSync(session, when, when);
     }
-    assert.equal(readdirSync(dirname(session)).length, 3);
+    assert.equal(sessionDirs(session).length, 3);
     process.env.DOCS_AUDIT_SESSION_CACHE_MAX = '0';
     const last = startSession().session;
-    assert.deepEqual(readdirSync(dirname(last)), [basename(last)]);
+    assert.deepEqual(sessionDirs(last), [basename(last)]);
   } finally {
     if (saved === undefined) delete process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
     else process.env.DOCS_AUDIT_SESSION_CACHE_MAX = saved;
@@ -134,7 +157,7 @@ test('session: a non-numeric cap falls back to 20', () => {
   try {
     process.env.DOCS_AUDIT_SESSION_CACHE_MAX = 'lots';
     for (let i = 0; i < 22; i++) startSession();
-    assert.equal(readdirSync(dirname(startSession().session)).length, 20);
+    assert.equal(sessionDirs(startSession().session).length, 20);
   } finally {
     if (saved === undefined) delete process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
     else process.env.DOCS_AUDIT_SESSION_CACHE_MAX = saved;
@@ -449,6 +472,65 @@ test('{{mode}} in a file name or candidate message stays literal in the prompt',
 const CLI = fileURLToPath(new URL('../../../module/skills/docs-organization/scripts/lane6.mjs', import.meta.url));
 const cli = (args, input) => spawnSync(process.execPath, [CLI, ...args], { input, encoding: 'utf8' });
 
+const plainDir = () => {
+  const d = realpathSync(mkdtempSync(join(tmpdir(), 'lane6-nogit-')));
+  dirs.push(d);
+  writeFileSync(join(d, 'a.md'), GUIDE);
+  return d;
+};
+
+test('cache: a sweep outside a git repo is an error; with --no-cache it plans without git', async () => {
+  const d = plainDir();
+  await assert.rejects(planRun({ scope: 'sweep', repoRoot: d, files: [join(d, 'a.md')] }), /git rev-parse in .* failed/);
+  const res = await planRun({ scope: 'sweep', repoRoot: d, files: [join(d, 'a.md')], cache: false });
+  dirs.push(res.run);
+  assert.equal(manifest(res.run).cache, false);
+  assert.equal(manifest(res.run).fingerprint, null);
+});
+
+test('cache: the fingerprint works with no commits and tracks index, edits, and untracked files, not ignored ones', async () => {
+  const root = repo({ 'a.md': GUIDE, 'src/x.js': '1\n', '.gitignore': '*.log\n' });
+  assert.notEqual(spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root }).status, 0);
+  const fp = async () => {
+    const res = await planRun({ scope: 'path', repoRoot: root, files: [join(root, 'a.md')] });
+    dirs.push(res.run);
+    return manifest(res.run).fingerprint;
+  };
+  const unborn = await fp();
+  assert.match(unborn, /^[0-9a-f]{64}$/);
+  assert.equal(await fp(), unborn);
+  commitAll(root);
+  const committed = await fp();
+  writeFileSync(join(root, 'debug.log'), 'noise\n');
+  assert.equal(await fp(), committed);
+  writeFileSync(join(root, 'src/x.js'), '2\n');
+  const edited = await fp();
+  assert.notEqual(edited, committed);
+  git(root, 'add', 'src/x.js');
+  const staged = await fp();
+  assert.notEqual(staged, committed);
+  assert.equal(await fp(), staged);
+  writeFileSync(join(root, 'src/new.js'), '3\n');
+  assert.notEqual(await fp(), staged);
+});
+
+test('cache: document scope runs no git and has no fingerprint', async () => {
+  const d = plainDir();
+  const res = await planRun({ scope: 'document', files: [join(d, 'a.md')] });
+  dirs.push(res.run);
+  assert.equal(manifest(res.run).cache, true);
+  assert.equal(manifest(res.run).fingerprint, null);
+});
+
+test('CLI: --no-cache reaches the manifest', () => {
+  const root = repo({ 'docs/a.md': GUIDE });
+  const plan = cli(['plan', '--scope', 'path', '--repo-root', root, '--no-cache', join(root, 'docs/a.md')]);
+  assert.equal(plan.status, 0, plan.stderr);
+  const { run } = JSON.parse(plan.stdout);
+  dirs.push(run);
+  assert.equal(manifest(run).cache, false);
+});
+
 test('CLI: plan → record → next → collect round trip', () => {
   const root = repo({ 'docs/a.md': GUIDE });
   const prose = join(root, 'prose.json');
@@ -509,4 +591,273 @@ test('CLI: usage errors exit 2', () => {
   assert.equal(cli(['plan', '--scope', 'path', '--repo-root']).status, 2);
   assert.equal(cli(['next', '/nonexistent-run']).status, 2);
   assert.equal(cli(['record', tmpdir(), '../../etc'], '').status, 2);
+});
+
+const REPO_KINDS = ['cold-read', 'diagram-drift', 'drift-verify', 'hero-demo'];
+const cacheDirOf = (run) => join(projectOf(run), 'lane6-cache');
+const CLAIM = { kind: 'fact', line: 3, quote: 'It is not uncommon to fail', target: '?' };
+// Replies with real findings, so "same findings" means something.
+function richReply(j) {
+  const guide = j.file.endsWith('guide.md');
+  if (j.kind === 'drift-extract') return fence({ claims: guide ? [CLAIM, { ...CLAIM, quote: 'not uncommon' }] : [] });
+  if (j.kind === 'drift-verify') return fence({ verdicts: ['C1', 'C2'].map((id) => ({ id, verdict: 'drift', evidence: 'src/x.js:1', code_says: 'fails', instructs: false })) });
+  if (j.kind === 'cold-read' && guide) return fence({ findings: [{ line: 3, quote: 'not uncommon', why: 'vague', actionable: false }] });
+  if (j.kind === 'adjudicate') return fence({ decisions: j.prompt.match(/^P\d+/gm).map((id) => ({ id, decision: 'keep' })) });
+  return replyFor(j);
+}
+const FILES = ['README.md', 'docs/guide.md'];
+const cacheRepo = () => repo({ 'README.md': README, 'docs/guide.md': GUIDE, 'src/x.js': '1\n', '.gitignore': '*.log\n' });
+async function audit(root, { reply = richReply, ...opts } = {}) {
+  const res = await planRun({ scope: 'sweep', repoRoot: root, files: FILES.map((f) => join(root, f)), ...opts });
+  dirs.push(res.run);
+  const dispatched = [];
+  await drain(res.run, res.status === 'dispatch' ? res.jobs : [], (j) => {
+    dispatched.push(j);
+    return reply(j);
+  });
+  return { run: res.run, dispatched, collected: collectRun(res.run) };
+}
+const entries = (run) => readdirSync(cacheDirOf(run)).filter((n) => n.endsWith('.json'));
+
+test('cache: an unchanged repo dispatches nothing the second time and reports the same findings', async () => {
+  const root = cacheRepo();
+  const first = await audit(root);
+  assert.equal(first.collected.cached, 0);
+  assert.ok(first.collected.findings.some((f) => f.code === 'CONTENT_DRIFT'));
+  assert.ok(first.collected.findings.some((f) => f.code === 'COLD_READ'));
+  const second = await audit(root);
+  assert.deepEqual(second.dispatched, []);
+  assert.deepEqual(second.collected.findings, first.collected.findings);
+  assert.equal(second.collected.jobs, first.collected.jobs);
+  assert.equal(second.collected.cached, second.collected.jobs);
+  const m = manifest(second.run);
+  assert.ok(m.jobs.filter((j) => j.wave === 2).length > 0);
+  assert.ok(m.jobs.every((j) => j.status === 'ok' && j.cached));
+});
+
+test('cache: editing one doc re-runs its jobs and every repo-reading job, nothing else', async () => {
+  const root = cacheRepo();
+  await audit(root);
+  writeFileSync(join(root, 'docs/guide.md'), GUIDE + '\nMore.\n');
+  const { dispatched } = await audit(root);
+  const readme = dispatched.filter((j) => j.file.endsWith('README.md'));
+  assert.ok(readme.length > 0);
+  assert.ok(readme.every((j) => REPO_KINDS.includes(j.kind)), kinds(readme).join());
+  assert.ok(dispatched.some((j) => j.file.endsWith('guide.md') && j.kind === 'grounding'));
+});
+
+test('cache: a source edit or a new untracked file re-runs only repo-reading jobs; an ignored file re-runs nothing', async () => {
+  const root = cacheRepo();
+  commitAll(root);
+  await audit(root);
+  writeFileSync(join(root, 'debug.log'), 'noise\n');
+  assert.deepEqual((await audit(root)).dispatched, []);
+  for (const change of [() => writeFileSync(join(root, 'src/x.js'), '2\n'), () => writeFileSync(join(root, 'src/new.js'), '3\n')]) {
+    change();
+    const got = [...new Set(kinds((await audit(root)).dispatched))].sort();
+    assert.deepEqual(got, REPO_KINDS);
+  }
+});
+
+test('cache: a changed prompt (other adjudicate candidates) misses for that job only', async () => {
+  const root = cacheRepo();
+  const prose = (message) => [{ code: 'DOUBLE_NEGATIVE', line: 3, message, file: join(root, 'docs/guide.md') }];
+  await audit(root, { prose: prose('m1') });
+  assert.deepEqual((await audit(root, { prose: prose('m1') })).dispatched, []);
+  assert.deepEqual(kinds((await audit(root, { prose: prose('m2') })).dispatched), ['adjudicate']);
+});
+
+test('cache: an invalid reply is never cached', async () => {
+  const root = cacheRepo();
+  const bad = (j) => (j.kind === 'grounding' && j.file.endsWith('guide.md') ? 'nope' : richReply(j));
+  await audit(root, { reply: bad });
+  const { dispatched } = await audit(root);
+  assert.ok(dispatched.some((j) => j.kind === 'grounding' && j.file.endsWith('guide.md')));
+  assert.ok(!dispatched.some((j) => j.kind === 'grounding' && j.file.endsWith('README.md')));
+});
+
+test('cache: --no-cache dispatches every job and writes no entry', async () => {
+  const root = cacheRepo();
+  const first = await audit(root);
+  const before = entries(first.run).sort();
+  const again = await audit(root, { cache: false });
+  assert.equal(again.dispatched.length, first.dispatched.length);
+  assert.deepEqual(entries(first.run).sort(), before);
+  assert.ok(manifest(again.run).jobs.every((j) => j.key === null));
+});
+
+test('cache: a corrupt, invalid, or old-version entry is a miss and is deleted', async () => {
+  const root = cacheRepo();
+  const first = await audit(root);
+  const key = manifest(first.run).jobs.find((j) => j.kind === 'grounding' && j.file.endsWith('guide.md')).key;
+  const path = join(cacheDirOf(first.run), `${key}.json`);
+  const valid = JSON.parse(readFileSync(path, 'utf8'));
+  for (const bad of ['not json', JSON.stringify({ ...valid, payload: { mode: 'bogus' } }), JSON.stringify({ ...valid, version: 999 }), JSON.stringify({ ...valid, kind: 'cold-read' })]) {
+    writeFileSync(path, bad);
+    const { dispatched } = await audit(root);
+    assert.deepEqual(dispatched.map((j) => `${j.kind} ${basename(j.file)}`), ['grounding guide.md'], bad);
+    assert.deepEqual(JSON.parse(readFileSync(path, 'utf8')), valid);
+  }
+});
+
+test('cache: drift-verify answered over two attempts caches the merged verdicts; a partial entry is a miss', async () => {
+  const root = cacheRepo();
+  let attempt = 0;
+  const split = (j) => {
+    if (j.kind !== 'drift-verify') return richReply(j);
+    attempt += 1;
+    const id = attempt === 1 ? 'C1' : 'C2';
+    return fence({ verdicts: [{ id, verdict: 'match', evidence: 'src/x.js:1' }] });
+  };
+  const first = await audit(root, { reply: split });
+  assert.equal(attempt, 2);
+  const second = await audit(root);
+  assert.deepEqual(second.dispatched, []);
+  const verify = manifest(second.run).jobs.find((j) => j.kind === 'drift-verify');
+  assert.deepEqual(verify.payload.verdicts.map((v) => v.id), ['C1', 'C2']);
+  const path = join(cacheDirOf(first.run), `${verify.key}.json`);
+  const entry = JSON.parse(readFileSync(path, 'utf8'));
+  writeFileSync(path, JSON.stringify({ ...entry, payload: { verdicts: entry.payload.verdicts.slice(0, 1) } }));
+  assert.deepEqual(kinds((await audit(root)).dispatched), ['drift-verify']);
+});
+
+const withCap = async (cap, fn) => {
+  const saved = process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
+  process.env.DOCS_AUDIT_SESSION_CACHE_MAX = cap;
+  try {
+    return await fn();
+  } finally {
+    if (saved === undefined) delete process.env.DOCS_AUDIT_SESSION_CACHE_MAX;
+    else process.env.DOCS_AUDIT_SESSION_CACHE_MAX = saved;
+  }
+};
+
+test('cache: session pruning never deletes lane6-cache', async () => {
+  const { run } = await audit(cacheRepo());
+  await withCap('0', () => startSession());
+  assert.ok(existsSync(cacheDirOf(run)));
+});
+
+test('cache: an entry last used before the oldest kept session began is deleted', async () => {
+  const root = cacheRepo();
+  const { run } = await audit(root);
+  const stale = join(cacheDirOf(run), `${'0'.repeat(64)}.json`);
+  writeFileSync(stale, '{}');
+  utimesSync(stale, new Date('2020-01-01'), new Date('2020-01-01'));
+  const used = entries(run).filter((n) => n !== basename(stale));
+  assert.deepEqual((await audit(root)).dispatched, []);
+  assert.ok(!existsSync(stale));
+  for (const n of used) assert.ok(existsSync(join(cacheDirOf(run), n)), n);
+  // A cap of 0 keeps only the new session, so nothing older survives and every job dispatches.
+  const before = new Date(Date.now() - 5000);
+  for (const n of entries(run)) utimesSync(join(cacheDirOf(run), n), before, before);
+  const res = await withCap('0', () => planRun({ scope: 'sweep', repoRoot: root, files: FILES.map((f) => join(root, f)) }));
+  dirs.push(res.run);
+  assert.equal(res.status, 'dispatch');
+  assert.deepEqual(entries(run), []);
+});
+
+test('cache: the cache directory is private to the user', async () => {
+  const { run } = await audit(cacheRepo());
+  assert.equal(statSync(cacheDirOf(run)).mode & 0o777, 0o700);
+});
+
+// The cache is shared by every test here, so an "entry absent" assertion needs keys no other test makes.
+const uniqueRepo = () => repo({ 'README.md': README, 'docs/guide.md': `${GUIDE}\nid ${randomUUID()}\n`, 'src/x.js': `${randomUUID()}\n`, '.gitignore': '*.log\n' });
+
+// Records the first batch, runs `change`, then settles: the change lands mid-run.
+async function auditChangedMidRun(root, change) {
+  const res = await planRun({ scope: 'sweep', repoRoot: root, files: FILES.map((f) => join(root, f)) });
+  dirs.push(res.run);
+  let batch = res;
+  let first = true;
+  while (batch.status === 'dispatch') {
+    for (const j of batch.jobs) recordReply(res.run, j.id, richReply(j));
+    if (first) change();
+    first = false;
+    batch = await nextBatch(res.run);
+  }
+  return res.run;
+}
+
+test('cache: a repo edit during the run stores no repo-reading reply, under the old fingerprint or any other', async () => {
+  const root = uniqueRepo();
+  const run = await auditChangedMidRun(root, () => writeFileSync(join(root, 'src/x.js'), '2\n'));
+  const jobs = manifest(run).jobs;
+  const stored = (j) => existsSync(join(cacheDirOf(run), `${j.key}.json`));
+  assert.ok(jobs.some((j) => REPO_KINDS.includes(j.kind)));
+  for (const j of jobs.filter((x) => REPO_KINDS.includes(x.kind))) assert.equal(stored(j), false, j.id);
+  for (const j of jobs.filter((x) => !REPO_KINDS.includes(x.kind))) assert.equal(stored(j), true, j.id);
+  const { dispatched } = await audit(root);
+  assert.deepEqual([...new Set(kinds(dispatched))].sort(), REPO_KINDS);
+});
+
+test('cache: a doc edit during the run stores no wave-1 reply for that doc', async () => {
+  const root = uniqueRepo();
+  const run = await auditChangedMidRun(root, () => writeFileSync(join(root, 'docs/guide.md'), GUIDE + '\nMore.\n'));
+  const stored = (j) => existsSync(join(cacheDirOf(run), `${j.key}.json`));
+  const wave1 = manifest(run).jobs.filter((j) => j.wave === 1 && j.status === 'ok');
+  for (const j of wave1.filter((x) => x.file.endsWith('guide.md'))) assert.equal(stored(j), false, j.id);
+  for (const j of wave1.filter((x) => x.file.endsWith('README.md') && !REPO_KINDS.includes(x.kind))) assert.equal(stored(j), true, j.id);
+});
+
+test('cache: drift-cited depends on its local sources; a doc with sources is otherwise served from the cache', async () => {
+  const root = repo({ 'a.md': GUIDE, 'spec.md': 'x' });
+  const citations = [{ citations: [], localSources: [{ file: join(root, 'a.md'), line: 3, target: 'spec.md', path: join(root, 'spec.md') }], unreadSources: [] }];
+  const docAudit = async () => {
+    const res = await planRun({ scope: 'document', citations, files: [join(root, 'a.md')] });
+    dirs.push(res.run);
+    const dispatched = [];
+    await drain(res.run, res.status === 'dispatch' ? res.jobs : [], (j) => {
+      dispatched.push(j);
+      return replyFor(j);
+    });
+    return kinds(dispatched);
+  };
+  assert.ok((await docAudit()).includes('drift-cited'));
+  assert.deepEqual(await docAudit(), []);
+  writeFileSync(join(root, 'spec.md'), 'y');
+  assert.deepEqual(await docAudit(), ['drift-cited']);
+});
+
+test('cache: a non-top --repo-root fingerprints the whole repo', async () => {
+  const root = repo({ 'docs/a.md': GUIDE, 'src/x.js': '1\n' });
+  const fp = async (repoRoot) => {
+    const res = await planRun({ scope: 'path', repoRoot, files: [join(root, 'docs/a.md')] });
+    dirs.push(res.run);
+    return manifest(res.run).fingerprint;
+  };
+  assert.equal(await fp(join(root, 'docs')), await fp(root));
+});
+
+test('cache: a directory in the cache dir is left alone, not a plan failure', async () => {
+  const root = cacheRepo();
+  const { run } = await audit(root);
+  const sub = join(cacheDirOf(run), 'subdir');
+  mkdirSync(sub);
+  utimesSync(sub, new Date('2020-01-01'), new Date('2020-01-01'));
+  const res = await planRun({ scope: 'sweep', repoRoot: root, files: FILES.map((f) => join(root, f)) });
+  dirs.push(res.run);
+  assert.ok(existsSync(sub));
+});
+
+test('cache: a hit refreshes the entry mtime', async () => {
+  const root = cacheRepo();
+  const { run } = await audit(root);
+  const [y, mo, d, h, mi, s] = basename(sessionOf(run)).match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})-/).slice(1).map(Number);
+  // The first session's own start: old enough to prove a touch, never pruned.
+  const backdated = new Date(Date.UTC(y, mo - 1, d, h, mi, s));
+  // The cache is shared by every test here, so touch only this audit's entries.
+  const mine = manifest(run).jobs.map((j) => join(cacheDirOf(run), `${j.key}.json`));
+  for (const path of mine) utimesSync(path, backdated, backdated);
+  const started = Date.now();
+  assert.deepEqual((await audit(root)).dispatched, []);
+  for (const path of mine) assert.ok(statSync(path).mtimeMs >= started, path);
+});
+
+test('CLI: a git failure in a cached plan exits 2 naming git', () => {
+  const d = plainDir();
+  const r = cli(['plan', '--scope', 'sweep', '--repo-root', d, join(d, 'a.md')]);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /^lane6: git rev-parse/);
 });
