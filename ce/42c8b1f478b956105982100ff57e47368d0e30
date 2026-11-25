@@ -1,0 +1,22 @@
+module/skills/docs-organization/scripts/check-refs.mjs
+  s_0ec92510117f5f::t_e0f6f96f7a7944 26-29
+  s_0ec92510117f5f::t_9570d95156b5e8 150-154,201-204,325,339-341,351
+tests/scripts/docs-organization/check-refs.test.mjs
+  s_0ec92510117f5f::t_9570d95156b5e8 1005-1036
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "ce42c8b1f478b956105982100ff57e47368d0e30",
+  "prompts": {},
+  "sessions": {
+    "s_0ec92510117f5f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ea0d03c-930a-430d-a20b-dd1f3fbcc2f2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
