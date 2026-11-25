@@ -19,7 +19,8 @@
 //
 // Job kinds: lane6-kinds.mjs. Prompts: reference/lane6-prompts/<kind>.md.
 
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, openSync, closeSync, unlinkSync, realpathSync, readdirSync, statSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, openSync, closeSync, unlinkSync, realpathSync, readdirSync, statSync, rmSync, lstatSync, readlinkSync, utimesSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { randomBytes, createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { join, resolve, dirname, basename, isAbsolute } from 'node:path';
@@ -37,6 +38,11 @@ export const VERIFY_BATCH = 20;
 export const SCOPES = ['sweep', 'path', 'document'];
 const PROMPTS = fileURLToPath(new URL('../reference/lane6-prompts/', import.meta.url));
 const CHUNKED = new Set(['plain-language', 'drift-extract']);
+// Bump when a reply's meaning changes without a prompt change: a validator or
+// toFindings that reads a payload differently.
+export const CACHE_VERSION = 1;
+const CACHE_NAME = 'lane6-cache';
+const sha256 = (data) => createHash('sha256').update(data).digest('hex');
 
 export class UsageError extends Error {}
 
@@ -53,16 +59,21 @@ function auditCacheDir() {
   return join(base, 'docs-audit');
 }
 
+const sessionCap = () => (/^\d+$/.test(process.env.DOCS_AUDIT_SESSION_CACHE_MAX ?? '') ? Number(process.env.DOCS_AUDIT_SESSION_CACHE_MAX) : DEFAULT_SESSION_CAP);
+
+// Newest first. lane6-cache/ sits beside the sessions and is not one.
+function sessionsByAge(project) {
+  return readdirSync(project, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && e.name !== CACHE_NAME)
+    .map((e) => ({ path: join(project, e.name), mtime: statSync(join(project, e.name)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
+}
+
 // Keep the newest DOCS_AUDIT_SESSION_CACHE_MAX sessions of one project (a cap
 // of 0 still keeps `keep`: the run that owns it has to finish). Without this a
 // cache nobody inspects grows by one directory per audit, forever.
 function pruneSessions(project, keep) {
-  const cap = /^\d+$/.test(process.env.DOCS_AUDIT_SESSION_CACHE_MAX ?? '') ? Number(process.env.DOCS_AUDIT_SESSION_CACHE_MAX) : DEFAULT_SESSION_CAP;
-  const sessions = readdirSync(project, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => ({ path: join(project, e.name), mtime: statSync(join(project, e.name)).mtimeMs }))
-    .sort((a, b) => b.mtime - a.mtime);
-  for (const { path } of sessions.slice(cap)) if (path !== keep) rmSync(path, { recursive: true, force: true });
+  for (const { path } of sessionsByAge(project).slice(sessionCap())) if (path !== keep) rmSync(path, { recursive: true, force: true });
 }
 
 // The project key is a hash of the cwd (the audited repo), as review-council
@@ -96,6 +107,28 @@ const loadManifest = (run) => JSON.parse(readFileSync(join(run, 'manifest.json')
 const saveManifest = (run, m) => atomicWrite(join(run, 'manifest.json'), JSON.stringify(m, null, 2) + '\n');
 const resultPath = (run, job) => join(run, 'results', `${job.id}.${job.attempts}.json`);
 const promptPath = (run, job) => join(run, 'prompts', `${job.id}.md`);
+const cacheDir = (run) => join(dirname(dirname(run)), CACHE_NAME);
+const entryPath = (run, key) => join(cacheDir(run), `${key}.json`);
+
+// A cache entry lives as long as the sessions pruneSessions keeps: one last
+// used before the oldest kept session began goes. A session's start is the
+// UTC stamp startSession puts in its name, not its mtime: writing the report
+// moves a session's mtime past its own entries.
+const STAMP_RE = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})-/;
+function pruneCache(run) {
+  const session = dirname(run);
+  const kept = [session, ...sessionsByAge(dirname(session)).slice(0, sessionCap()).map((s) => s.path)];
+  const starts = kept.map((p) => STAMP_RE.exec(basename(p))).filter(Boolean).map((s) => {
+    const [y, mo, d, h, mi, se] = s.slice(1).map(Number);
+    return Date.UTC(y, mo - 1, d, h, mi, se);
+  });
+  if (!starts.length) return;
+  const oldest = Math.min(...starts);
+  for (const name of readdirSync(cacheDir(run))) {
+    const st = statSync(join(cacheDir(run), name), { throwIfNoEntry: false });
+    if (st?.isFile() && st.mtimeMs < oldest) rmSync(join(cacheDir(run), name), { force: true });
+  }
+}
 const ended = (job) => job.status === 'ok' || job.status === 'failed';
 // A file's identity: symlinks resolved. A path that cannot be resolved (a stale
 // prose entry) keeps its absolute spelling and so matches nothing planned.
@@ -127,7 +160,7 @@ function withLock(run, fn) {
 
 function addJob(m, kind, file, wave, params) {
   m.seq += 1;
-  m.jobs.push({ id: `${String(m.seq).padStart(3, '0')}-${kind}`, kind, file, wave, params, status: 'due', attempts: 0, reason: null, remediation: null, payload: null });
+  m.jobs.push({ id: `${String(m.seq).padStart(3, '0')}-${kind}`, kind, file, wave, params, status: 'due', attempts: 0, reason: null, remediation: null, payload: null, key: null, cached: false });
 }
 
 // One file's sources from fetch-citations.mjs outputs (spec: document mode).
@@ -150,14 +183,49 @@ function groundedKinds(scope, f, mode) {
   return kinds;
 }
 
-export async function planRun({ scope, repoRoot = null, citations = [], prose = [], files, session = null }) {
+// What a repo-reading reply could have read: the index plus every working-tree
+// file git would show. The diff is against the index, not HEAD, so a repo with
+// no commits works; the index entries already carry staged changes.
+function repoFingerprint(repoRoot) {
+  const git = (...args) => {
+    // Everything but rev-parse runs from the toplevel, so a --repo-root below it still fingerprints the whole repo.
+    const cwd = args[0] === 'rev-parse' ? repoRoot : top;
+    try {
+      return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (e) {
+      throw new UsageError(`git ${args[0]} in ${cwd} failed: ${String(e.stderr || e.message).trim()}`);
+    }
+  };
+  const top = git('rev-parse', '--show-toplevel').trim();
+  const paths = (out) => out.split('\0').filter(Boolean).sort();
+  // Git records a symlink as its target text, so the fingerprint does too.
+  const onDisk = (p) => {
+    const abs = join(top, p);
+    const st = lstatSync(abs, { throwIfNoEntry: false });
+    if (!st) return 'deleted';
+    if (st.isSymbolicLink()) return `link:${readlinkSync(abs)}`;
+    return st.isFile() ? sha256(readFileSync(abs)) : 'not-a-file';
+  };
+  const index = git('ls-files', '-s', '-z');
+  const modified = paths(git('diff', '--name-only', '-z')).map((p) => [p, onDisk(p)]);
+  const untracked = paths(git('ls-files', '--others', '--exclude-standard', '--full-name', '-z')).map((p) => [p, onDisk(p)]);
+  return sha256(JSON.stringify([index, modified, untracked]));
+}
+
+export async function planRun({ scope, repoRoot = null, citations = [], prose = [], files, session = null, cache = true }) {
   if (!SCOPES.includes(scope)) throw new UsageError(`--scope must be one of ${SCOPES.join(', ')}`);
   if (scope !== 'document' && !repoRoot) throw new UsageError('--repo-root is required for the sweep and path scopes');
   if (!files.length) throw new UsageError('no files to plan');
+  // Before the run directory exists, so a git failure leaves nothing behind.
+  const fingerprint = cache && scope !== 'document' ? repoFingerprint(repoRoot) : null;
   const run = mkdtempSync(join(session ? checkedSession(session) : startSession().session, 'lane6-'));
   mkdirSync(join(run, 'prompts'));
   mkdirSync(join(run, 'results'));
-  const m = { version: 1, scope, repoRoot, eof: `LANE6_EOF_${randomBytes(8).toString('hex')}`, seq: 0, files: [], jobs: [], skipped: [], other: [], unmatched: [] };
+  if (cache) {
+    mkdirSync(cacheDir(run), { recursive: true, mode: 0o700 });
+    pruneCache(run);
+  }
+  const m = { version: 1, scope, repoRoot, cache, fingerprint, eof: `LANE6_EOF_${randomBytes(8).toString('hex')}`, seq: 0, files: [], jobs: [], skipped: [], other: [], unmatched: [] };
   const readmes = new Set(readmeNames());
   // Sweep and path scopes audit and report the real path (check-prose.mjs does
   // the same); document scope keeps the path it was given. Either way a
@@ -214,7 +282,80 @@ export async function nextBatch(run) {
   return withLock(run, () => advance(run));
 }
 
-function settle(run, job) {
+// What a validator checks a payload against: the doc as it is now.
+function validationCtx(m, job) {
+  const f = m.files.find((x) => x.file === job.file);
+  return {
+    file: job.file,
+    text: readFileSync(job.file, 'utf8'),
+    lines: f.lines,
+    start: job.params.start ?? 1,
+    end: job.params.end ?? f.lines,
+    claims: job.params.allClaims ?? job.params.claims,
+    candidates: job.params.candidates,
+  };
+}
+
+// Everything a reply depends on: its first-attempt prompt (no retry note),
+// the doc's bytes, and what KINDS[kind].reads names beyond the doc. Computed
+// once, before the first dispatch: a drift-verify retry narrows its claims.
+function cacheKey(m, job, docHash) {
+  const reads = KINDS[job.kind].reads;
+  let extra = null;
+  if (reads === 'repo') extra = m.fingerprint;
+  else if (reads === 'sources') {
+    const { local, snapshots } = job.params.sources;
+    extra = [...local, ...snapshots].sort().map((p) => {
+      const st = statSync(p, { throwIfNoEntry: false });
+      return [p, st?.isFile() ? sha256(readFileSync(p)) : st ? 'not-a-file' : 'missing'];
+    });
+  }
+  return sha256(JSON.stringify([CACHE_VERSION, job.kind, render(m, job), docHash, extra]));
+}
+
+// An entry is untrusted: it is used only if it passes the kind's validator on
+// the doc as it is now. A drift-verify reply may omit claims and be retried
+// for them, so its entry, the merged reply, must answer every claim. An entry
+// that fails, or cannot be read or parsed, is deleted.
+function lookup(run, m, job) {
+  job.docHash = sha256(readFileSync(job.file));
+  job.key = cacheKey(m, job, job.docHash);
+  const path = entryPath(run, job.key);
+  if (!existsSync(path)) return false;
+  let entry;
+  try {
+    entry = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    entry = null;
+  }
+  const ok = entry?.version === CACHE_VERSION && entry.kind === job.kind
+    && KINDS[job.kind].validate(entry.payload, validationCtx(m, job)).ok
+    && (job.kind !== 'drift-verify' || entry.payload.verdicts.length === job.params.allClaims.length);
+  if (!ok) {
+    rmSync(path, { force: true });
+    return false;
+  }
+  Object.assign(job, { status: 'ok', payload: entry.payload, cached: true });
+  const now = new Date();
+  try {
+    utimesSync(path, now, now);
+  } catch (e) {
+    // A concurrent audit's prune may have deleted the entry since it was read.
+    if (e.code !== 'ENOENT') throw e;
+  }
+  return true;
+}
+
+// Only a job that ended ok is stored, with its final payload. A job has a key
+// only when the run caches. The key was fixed before the reply was read, so a
+// doc or repo that changed since may have been what the reply saw: skip then.
+function store(run, m, job, repoNow) {
+  if (!job.key || sha256(readFileSync(job.file)) !== job.docHash) return;
+  if (KINDS[job.kind].reads === 'repo' && m.scope !== 'document' && repoNow() !== m.fingerprint) return;
+  atomicWrite(entryPath(run, job.key), JSON.stringify({ version: CACHE_VERSION, kind: job.kind, file: job.file, payload: job.payload }) + '\n');
+}
+
+function settle(run, m, job, repoNow) {
   const path = resultPath(run, job);
   const r = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : { ok: false, reason: 'no reply was recorded', remediation: null };
   if (r.ok && job.kind === 'drift-verify') {
@@ -224,6 +365,7 @@ function settle(run, job) {
     job.params.claims = job.params.claims.filter((c) => !answered.has(c.id));
     if (!job.params.claims.length) {
       job.status = 'ok';
+      store(run, m, job, repoNow);
       return;
     }
     const ids = job.params.claims.map((c) => c.id).join(', ');
@@ -231,6 +373,7 @@ function settle(run, job) {
   } else if (r.ok) {
     job.status = 'ok';
     job.payload = r.payload;
+    store(run, m, job, repoNow);
     return;
   }
   job.reason = r.reason;
@@ -262,10 +405,25 @@ function expand(m) {
   }
 }
 
+// The repo as it is now, fingerprinted at most once per advance or collect.
+function lazyFingerprint(m) {
+  let now;
+  return () => (now ??= repoFingerprint(m.repoRoot));
+}
+
 function advance(run) {
   const m = loadManifest(run);
-  for (const job of m.jobs) if (job.status === 'dispatched') settle(run, job);
-  expand(m);
+  const repoNow = lazyFingerprint(m);
+  for (const job of m.jobs) if (job.status === 'dispatched') settle(run, m, job, repoNow);
+  // A cache hit ends a job, which can release wave-2 jobs, which can hit in turn.
+  let n;
+  let hits;
+  do {
+    n = m.jobs.length;
+    hits = 0;
+    if (m.cache) for (const job of m.jobs) if (job.status === 'due' && !job.key && lookup(run, m, job)) hits += 1;
+    expand(m);
+  } while (hits || m.jobs.length !== n);
   const due = m.jobs.filter((j) => j.status === 'due').slice(0, BATCH_SIZE);
   const out = [];
   for (const job of due) {
@@ -330,16 +488,7 @@ function judge(m, job, reply) {
   } catch (e) {
     return { ok: false, reason: `no JSON object (${e.message})`, remediation: 'End the reply with one fenced json block holding the JSON object the prompt asks for.' };
   }
-  const f = m.files.find((x) => x.file === job.file);
-  return KINDS[job.kind].validate(payload, {
-    file: job.file,
-    text: readFileSync(job.file, 'utf8'),
-    lines: f.lines,
-    start: job.params.start ?? 1,
-    end: job.params.end ?? f.lines,
-    claims: job.params.allClaims ?? job.params.claims,
-    candidates: job.params.candidates,
-  });
+  return KINDS[job.kind].validate(payload, validationCtx(m, job));
 }
 
 export function recordReply(run, id, reply) {
@@ -374,8 +523,10 @@ function partName(job) {
 
 export function collectRun(run) {
   const m = loadManifest(run);
-  // Replies recorded after the last next still count; settling here is in memory only.
-  for (const job of m.jobs) if (job.status === 'dispatched' && existsSync(resultPath(run, job))) settle(run, job);
+  const repoNow = lazyFingerprint(m);
+  // Replies recorded after the last next still count. Settling here never writes
+  // the manifest; it may store cache entries.
+  for (const job of m.jobs) if (job.status === 'dispatched' && existsSync(resultPath(run, job))) settle(run, m, job, repoNow);
   const findings = [];
   const other = [...m.other];
   const failed = new Map();
@@ -413,11 +564,11 @@ export function collectRun(run) {
   const modes = {};
   for (const j of m.jobs) if (j.kind === 'grounding' && j.status === 'ok') modes[j.file] = j.payload.mode;
   other.push(`lane 6 run: ${run}`);
-  return { status: 'collected', findings: findings.map((f) => ({ ...f, note: cell(f.note) })), other, modes };
+  return { status: 'collected', jobs: m.jobs.length, cached: m.jobs.filter((j) => j.cached).length, findings: findings.map((f) => ({ ...f, note: cell(f.note) })), other, modes };
 }
 
 const USAGE = `usage:
-  lane6.mjs plan --scope sweep|path|document [--repo-root <dir>] [--citations <json>]... [--prose <json>] [--session <dir>] <file>...
+  lane6.mjs plan --scope sweep|path|document [--repo-root <dir>] [--citations <json>]... [--prose <json>] [--session <dir>] [--no-cache] <file>...
   lane6.mjs session              (print a new session directory for this audit's artifacts)
   lane6.mjs record <run> <id>    (reply on stdin, through <<'<eof>' with the eof from plan or next)
   lane6.mjs next <run>
@@ -439,7 +590,7 @@ function readJsonFile(path, option) {
 }
 
 function parsePlanArgs(args) {
-  const opts = { scope: null, repoRoot: null, citations: [], prose: [], files: [] };
+  const opts = { scope: null, repoRoot: null, citations: [], prose: [], files: [], cache: true };
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     const value = () => {
@@ -451,6 +602,7 @@ function parsePlanArgs(args) {
     else if (a === '--citations') opts.citations.push(readJsonFile(value(), '--citations'));
     else if (a === '--session') opts.session = value();
     else if (a === '--prose') opts.prose = readJsonFile(value(), '--prose').findings ?? [];
+    else if (a === '--no-cache') opts.cache = false;
     else if (a.startsWith('--')) throw new UsageError(`unknown option ${a}`);
     else opts.files.push(a);
   }

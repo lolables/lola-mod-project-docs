@@ -1,6 +1,6 @@
 ---
 description: Find drift between code and documentation — structural, staleness, content, diagrams
-argument-hint: "[--fetch] [path...]"
+argument-hint: "[--fetch] [--no-cache] [path...]"
 ---
 
 # /docs-audit
@@ -102,7 +102,8 @@ hardcode `.claude/skills/...` or search candidate paths.
 
 ### Invocation and modes
 
-`$ARGUMENTS` is `[--fetch] [path...]`. Parse it before running any lane:
+`$ARGUMENTS` is `[--fetch] [--no-cache] [path...]`. Parse it before running any lane.
+`--no-cache` applies to every `lane6.mjs plan` of the run (step 7):
 
 - **No paths — repo sweep.** Audit the current repository's project docs,
   exactly as the steps below describe. If `--fetch` was given without paths,
@@ -450,7 +451,13 @@ pass.
        ```
 
        `<repo-root>` is `git rev-parse --show-toplevel` for a repo sweep,
-       and the group's repo root in path mode.
+       and the group's repo root in path mode. Append `--no-cache` to the
+       command when the user passed it.
+
+       `lane6.mjs` reuses a reply it validated in an earlier run when
+       nothing the reply depends on changed. Reused jobs are never
+       dispatched, so `plan` or `next` may print `{"status": "done"}` with
+       no batch to dispatch.
 
        It prints a batch:
 
@@ -493,7 +500,9 @@ pass.
      - **Collect.** Run `node "$SKILL_DIR/scripts/lane6.mjs" collect
        '<run>'`. Add every `findings` entry to the report as it is
        (`line` `null` → `—`), every `other` line to "Other", and use
-       `modes` for Lane 3's Diátaxis judgment.
+       `modes` for Lane 3's Diátaxis judgment. `collect` also prints `jobs`
+       (all jobs in the run) and `cached` (how many were reused); step 8
+       shows both in the `Mode:` line.
      - Exit 2 from any subcommand is a failure: record one `LANE_FAILED`
        **Warning** per file of the group, naming `lane6` and the message.
      - Which jobs run, for which file and scope:
@@ -640,6 +649,10 @@ pass.
      and before the tables, in one of two forms:
      - `Mode: repo-scoped (<repo-root>) — <N> file(s); skipped: <lanes>`
      - `` Mode: document; root: `<root>`, `<root>`... — <N> file(s); skipped: <lanes> ``
+
+     Every group's line ends with `; Lane 6: <jobs> jobs, <cached> from
+     cache`, from `collect`'s `jobs` and `cached`. For example:
+     `Mode: repo-scoped (/home/dev/acme) — 3 file(s); skipped: none; Lane 6: 24 jobs, 21 from cache`.
 
      A document-mode line names every `<root>` the citations step (step 7)
      passed to `fetch-citations.mjs` for that group — one per path argument

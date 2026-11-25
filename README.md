@@ -73,6 +73,13 @@ prompt (they are slash commands, not shell commands):
    more than 50 findings prints only its Blockers; pass the saved path, as its
    `Full report:` line shows:
    `/docs-update ~/.cache/docs-audit/4f9c1a07be52/20261111-093012-Hq2xZa/report.md`.
+   A re-run reuses the earlier Lane 6 results whose inputs did not change,
+   and the report's `Mode:` line says how many (`Lane 6: 24 jobs, 21 from
+   cache`). Limits:
+   - After you switch the subagent model, or when a result looks wrong, run
+     `/docs-audit --no-cache`.
+   - With `--fetch`, cited-source drift checks always re-run.
+   - `DOCS_AUDIT_SESSION_CACHE_MAX` of 0 or 1 turns reuse off.
 4. `/diagram-test` — lint every mermaid diagram.
 5. `/adr-new "Use Postgres for primary storage"` — draft an ADR with an
    inline self-review. It writes an `NNNN-*.md` file under `docs/dev/adr/`

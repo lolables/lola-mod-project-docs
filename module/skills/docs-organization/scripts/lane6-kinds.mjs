@@ -10,6 +10,10 @@
 // groundingNote: whether the prompt carries the file's grounding note. Rounds
 // 15/16 in eval/REPORT.md measured the drift ledger and plain language without
 // it, so those kinds stay without it.
+// reads: what a reply depends on beyond the doc and its prompt, for the
+// lane6.mjs reply cache: 'doc' (nothing), 'repo' (any file in the repo:
+// cold-read resolves references in it, hero-demo judges whether it is a
+// runnable tool), or 'sources' (drift-cited's local sources and snapshots).
 
 export const MODES = ['tutorial', 'how-to', 'reference', 'explanation', 'landing'];
 export const ADJUDICATED = ['DOUBLE_NEGATIVE', 'SLASH_ALTERNATIVE', 'VOLATILE_DETAIL', 'TIME_ANCHORED'];
@@ -93,6 +97,7 @@ export const KINDS = {
   grounding: {
     label: 'Grounding',
     groundingNote: false,
+    reads: 'doc',
     validate(p, ctx) {
       if (!isObj(p)) return bad('reply is not a JSON object', 'Reply with one JSON object holding mode, audience, outcome and mode_mixing.');
       if (!MODES.includes(p.mode)) return bad(`mode "${p.mode}" is not one of ${MODES.join(', ')}`, `Set mode to one of ${MODES.join(', ')}.`);
@@ -121,6 +126,7 @@ export const KINDS = {
   adjudicate: {
     label: 'Lane 3 adjudication',
     groundingNote: false,
+    reads: 'doc',
     validate(p, ctx) {
       const byId = new Map(ctx.candidates.map((c) => [c.id, c]));
       if (!isObj(p) || !Array.isArray(p.decisions)) return bad('reply has no "decisions" array', 'Reply with {"decisions": [...]}, one entry per candidate id.');
@@ -154,6 +160,7 @@ export const KINDS = {
   'plain-language': {
     label: 'Plain language',
     groundingNote: false,
+    reads: 'doc',
     validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       if (!['NOUN_STRING', 'HIDDEN_VERB'].includes(f.code)) return `has code "${f.code}", not NOUN_STRING or HIDDEN_VERB`;
       const lp = lineProblem(f.line, ctx);
@@ -168,6 +175,7 @@ export const KINDS = {
   'drift-extract': {
     label: 'Content drift (extract)',
     groundingNote: false,
+    reads: 'doc',
     validate: (p, ctx) => eachEntry(p, 'claims', (c) => {
       if (!['fact', 'set'].includes(c.kind)) return `has kind "${c.kind}", not fact or set`;
       const span = lineSpan(c.line);
@@ -182,6 +190,7 @@ export const KINDS = {
   'drift-verify': {
     label: 'Content drift (verify)',
     groundingNote: false,
+    reads: 'repo',
     // A reply may omit ids; lane6.mjs re-dispatches the rest (spec: partial result).
     validate(p, ctx) {
       const ids = new Set(ctx.claims.map((c) => c.id));
@@ -212,6 +221,7 @@ export const KINDS = {
   'drift-cited': {
     label: 'Content drift',
     groundingNote: true,
+    reads: 'sources',
     validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       if (!['CONTENT_DRIFT', 'NOT_VERIFIABLE'].includes(f.code)) return `has code "${f.code}", not CONTENT_DRIFT or NOT_VERIFIABLE`;
       const lp = lineProblem(f.line, ctx);
@@ -228,6 +238,7 @@ export const KINDS = {
   'diagram-drift': {
     label: 'Diagram drift',
     groundingNote: false,
+    reads: 'repo',
     validate: (p) => eachEntry(p, 'findings', (f) => {
       if (!isStr(f.element)) return 'names no node or edge';
       if (!isStr(f.code_says) || !isStr(f.evidence)) return 'lacks code_says or evidence';
@@ -239,6 +250,7 @@ export const KINDS = {
   'missing-diagrams': {
     label: 'Missing diagrams',
     groundingNote: true,
+    reads: 'doc',
     validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       if (!isStr(f.section)) return 'names no section';
       const lp = lineProblem(f.line, ctx);
@@ -253,6 +265,7 @@ export const KINDS = {
   'cold-read': {
     label: 'Cold read',
     groundingNote: true,
+    reads: 'repo',
     validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       const lp = lineProblem(f.line, ctx);
       if (lp) return lp;
@@ -267,6 +280,7 @@ export const KINDS = {
   'audience-fit': {
     label: 'Audience fit',
     groundingNote: true,
+    reads: 'doc',
     validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       if (!['PROVENANCE_NARRATION', 'OFF_AUDIENCE'].includes(f.code)) return `has code "${f.code}", not PROVENANCE_NARRATION or OFF_AUDIENCE`;
       const lp = lineProblem(f.line, ctx);
@@ -285,6 +299,7 @@ export const KINDS = {
   completeness: {
     label: 'Completeness for type',
     groundingNote: true,
+    reads: 'doc',
     validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       if (f.line !== null) {
         const lp = lineProblem(f.line, ctx);
@@ -299,6 +314,7 @@ export const KINDS = {
   'procedure-structure': {
     label: 'Structure for procedures',
     groundingNote: true,
+    reads: 'doc',
     validate: (p, ctx) => eachEntry(p, 'findings', (f) => {
       const lp = lineProblem(f.line, ctx);
       if (lp) return lp;
@@ -312,6 +328,7 @@ export const KINDS = {
   'hero-demo': {
     label: 'Hero demo',
     groundingNote: true,
+    reads: 'repo',
     validate(p) {
       if (isObj(p) && Array.isArray(p.findings) && p.findings.length > 1) return bad('reply has more than one finding; at most one is allowed', 'Return at most one MISSING_DEMO finding, for the hero slot.');
       return eachEntry(p, 'findings', (f) => {

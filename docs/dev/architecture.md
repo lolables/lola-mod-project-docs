@@ -71,6 +71,30 @@ orchestrator only dispatches and records. On a 20-doc repository a Sonnet
 orchestrator skipped every judgment prompt as "budget" although the prompt
 wording forbade it; now a skip can come only from the script.
 
+Lane 6 also caches validated replies, so a re-run dispatches only what
+changed. The key holds the prompt, the doc's bytes, and one more input per
+kind (`reads` in `lane6-kinds.mjs`):
+
+- `repo` kinds (`drift-verify`, `diagram-drift`, `cold-read`, `hero-demo`)
+  key on a whole-repo fingerprint, so any repo file change re-runs all of
+  them. Editing one doc re-runs that doc's jobs and every repo-reading
+  job, since the doc is itself a repo file.
+- `sources` (`drift-cited`) keys on the hashes of its local sources and
+  snapshots; `doc` kinds key on nothing extra.
+
+Why a whole-repo fingerprint and not the evidence a reply cited: keying on
+the cited files could reuse a stale `match` verdict, because the claim may
+have become false through a file the reply never named. A re-run costs
+more than it could, and never reports a stale verdict as current.
+
+The write happens in `settle`, not on each reply, because `drift-verify`
+merges partial replies across retries and only the merged verdicts are
+complete. A submodule's working tree is fingerprinted only as
+`not-a-file`, so an edit inside a submodule does not invalidate an entry.
+The same holds for a file marked skip-worktree or assume-unchanged (as in a
+sparse checkout), which `git diff` does not list. `--no-cache` is the way
+around both limits.
+
 Each job is its own subagent: a grounding job classifies each file's
 Diátaxis mode first, then a separate job runs each applicable prompt for
 that file — never grouped across files or prompts, per the dispatch
