@@ -1,0 +1,44 @@
+tests/scripts/docs-organization/lane6.test.mjs
+  s_1997ba331bbeda::t_6a9a04bb90eb1e 595-763
+  s_1997ba331bbeda::t_b365c1b32a4e33 764,768-783,785-795,797-849,853-854,856-863
+  s_1997ba331bbeda::t_0bc2b8cf53abe2 132-134,145,148,160
+  s_1997ba331bbeda::t_8b30489998aab3 15-32,44,475-532
+  s_1997ba331bbeda::t_887e244a332ea4 850-852,855
+  s_1997ba331bbeda::t_442f2f364292d4 7,765-767,784,796
+  s_1997ba331bbeda::t_900d5fe6aa55ab 533
+module/commands/docs-audit.md
+  s_1997ba331bbeda::t_16b834b073d2b5 656
+  s_1997ba331bbeda::t_ce38b9b724ab26 3,105-106,454-460,503-505,653-655
+module/skills/docs-organization/scripts/lane6.mjs
+  s_1997ba331bbeda::t_89c939104df39b 129,191-192,194,196,302,313,321-322,340-345,350-355,358,368,376,408-413,416-417,526,529
+  s_1997ba331bbeda::t_47cc89b42fb008 23,41-45,186-190,193,195,197-215,219-220,228,571,593,605
+  s_1997ba331bbeda::t_661da68d18d30f 527-528
+  s_1997ba331bbeda::t_e5f2edde15f49a 22,62-71,76,110-128,130-131,163,224-227,285-301,303-312,314-320,323-339,346-349,356-357,418-426,491,567
+tests/scripts/docs-organization/lane6-kinds.test.mjs
+  s_1997ba331bbeda::t_8b30489998aab3 204-210
+module/skills/docs-organization/reference/scripts.md
+  s_1997ba331bbeda::t_ce38b9b724ab26 72-100
+README.md
+  s_1997ba331bbeda::t_ce38b9b724ab26 76-82
+module/skills/docs-organization/scripts/lane6-kinds.mjs
+  s_1997ba331bbeda::t_8b30489998aab3 13-16,100,129,163,178,193,224,241,253,268,283,302,317,331
+docs/dev/architecture.md
+  s_1997ba331bbeda::t_ce38b9b724ab26 74-92,97
+  s_1997ba331bbeda::t_f9dbbc037cbf46 93-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b4db3ea925c65a123c435b31c2d54ba98aacc3ac",
+  "prompts": {},
+  "sessions": {
+    "s_1997ba331bbeda": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dd06dc36-a641-47f4-bf64-c3e339411dc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
