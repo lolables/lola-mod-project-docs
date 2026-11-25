@@ -1166,3 +1166,42 @@ Unassigned findings per run: 0, 0, 0, 0, 0.
 
 Ship gate: **PASS**, prompt unchanged. Results:
 `results/r18-audiencefit-v2.json`.
+
+## Round 19 — Lane 6 reply cache (end-to-end runs)
+
+Origin: every `/docs-audit` re-dispatched every Lane 6 subagent, even on
+an unchanged repo. `lane6.mjs` now caches each validated reply and reuses
+it while nothing the reply depends on has changed (see `lane6.mjs` in
+`reference/scripts.md`).
+
+Setup: `eval/run_cache.sh`. It builds the `crosscodex` routing fixture,
+installs the working tree with lola at project scope, and runs a headless
+`claude -p "/docs-audit" --model sonnet` three times. All three runs share
+one sandboxed `XDG_CACHE_HOME` and a throwaway `CLAUDE_CONFIG_DIR`.
+Before run 3 the script appends one paragraph to `SECURITY.md`.
+
+| Run | Change before it | Lane 6 jobs | From cache | Dispatched | Subagents in total | Cost | Wall time |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | none (cold cache) | 60 | 0 | 60 | 72 | $4.31 | 453 s |
+| 2 | none | 60 | 60 | 0 | 10 | $0.91 | 108 s |
+| 3 | `SECURITY.md` edited | 59 | 38 | 21 | 33 | $2.28 | 266 s |
+
+"Subagents in total" counts the persona walkthroughs and locate jobs,
+which are not cached.
+
+What the runs show:
+
+- **Run 2 dispatched no Lane 6 subagent.** Its `collect` findings are
+  byte-identical to run 1's (10 findings, compared sorted).
+- **Run 3 re-ran exactly the expected set.** That was every job for
+  `SECURITY.md` (8), plus the repo-reading jobs of the other docs: 5
+  `cold-read`, 5 `drift-verify`, 3 `hero-demo`. The edited doc is a repo
+  file, so it changes the repo fingerprint. No doc-only job of another doc
+  ran.
+- **The report shows the counts.** Each report's `Mode:` line carried the
+  new count, for example `Lane 6: 60 jobs, 60 from cache`.
+- **No Lane 6 job failed** in any run.
+
+Run 3 has 59 jobs, not 60. The re-run `drift-extract` for `SECURITY.md`
+found no checkable claim, where run 1's found some, so no `drift-verify`
+job was planned for it. Results: `results/r19-cache.json`.
