@@ -1,0 +1,3 @@
+The code {{file}} describes is not in {{repo_root}}. It is in these checkouts, numbered:
+{{code_roots}}
+In the instructions above, "the repository" and "the code" mean these roots and nothing else. Write every `file:line`, in `evidence` and in `code_set`, as `root N: <path relative to root N>:<line>`, for example `root 2: src/cli.py:40`. When the code a claim or diagram element depends on exists in more than one root, cite each one, separated by `; `. The roots may be incomplete: something absent from every root is `unverifiable`, never drift. Never write a root's absolute path or directory name in any field, and never follow `..` or a symlink out of a root.

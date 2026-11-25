@@ -314,6 +314,11 @@ present, skip the `adr` activation.
        code bug" for the user. For a file outside any git repo (document
        mode) the cited source the finding names is the source of truth
        instead of code.
+       When the finding cites `root N: <path>:<line>`, the audit ran with
+       `--code-root`: read the report's `Mode:` line to map N to a checkout and
+       re-read the code there. The fix states the behavior in the doc's own
+       terms. Never write a repo name, a root path, or a `root N` label into the
+       doc, and never edit a file inside a root.
        When a `CONTENT_DRIFT` finding and a kept `VOLATILE_DETAIL` name the
        same claim, present them together at the `CONTENT_DRIFT` position:
        offer the deletion first; if the user declines it, apply the drift fix

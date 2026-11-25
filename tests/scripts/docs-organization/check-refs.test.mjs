@@ -1002,3 +1002,46 @@ test('Antora resolution applies to AsciiDoc only: Markdown under modules/ resolv
   assert.deepEqual(findings.map((f) => f.code), ['REF_BROKEN']);
   assert.match(findings[0].message, /shot\.png/);
 });
+
+// --- links that leave the docs repo ---
+
+test('a link leaving the repo is never REF_BROKEN; it is listed as unresolved', async () => {
+  const { root, trackedSet } = makeRepo(
+    { 'README.md': '# R\n\nSee [cli](../api/src/cli.py) and [gone](docs/gone.md).\n' },
+    ['README.md'],
+  );
+  const unresolved = [];
+  const findings = await analyzeFile(join(root, 'README.md'), root, trackedSet, null, null, unresolved);
+  assert.deepEqual(codes(findings), ['REF_BROKEN']);
+  assert.match(findings[0].message, /docs\/gone\.md/);
+  assert.deepEqual(unresolved, [{ line: 3, target: '../api/src/cli.py', reason: 'leaves the docs repo' }]);
+});
+
+test('unresolved keeps the author\'s target, once per line; a "..name" file in the repo does not leave it', async () => {
+  const { root, trackedSet } = makeRepo(
+    { 'README.md': '# R\n\n[a](../api/x%20y.py#L4) [b](../api/x%20y.py#L4) [c](..notes.md) [d](..gone.md)\n', '..notes.md': '# n\n' },
+    ['README.md', '..notes.md'],
+  );
+  const unresolved = [];
+  const findings = await analyzeFile(join(root, 'README.md'), root, trackedSet, null, null, unresolved);
+  assert.deepEqual(unresolved, [{ line: 3, target: '../api/x%20y.py#L4', reason: 'leaves the docs repo' }]);
+  assert.deepEqual(findings.map((f) => [f.code, f.message.includes('..gone.md')]), [['REF_BROKEN', true]]);
+});
+
+test('on-disk mode has no repo to leave: a missing ../ target is still REF_BROKEN', async () => {
+  const dir = mktemp();
+  mkdirSync(join(dir, 'd'));
+  writeFileSync(join(dir, 'd', 'doc.md'), 'See [x](../missing.md).\n');
+  const unresolved = [];
+  const findings = await analyzeFile(join(dir, 'd', 'doc.md'), null, null, null, null, unresolved);
+  assert.deepEqual(codes(findings), ['REF_BROKEN']);
+  assert.deepEqual(unresolved, []);
+});
+
+test('CLI: unresolved carries file, line, target, and reason; status ignores it', async () => {
+  const { root } = makeRepo({ 'README.md': '# R\n\nSee [cli](../api/cli.py).\n' }, ['README.md']);
+  const { code, out } = runCli(root, join(root, 'README.md'));
+  assert.equal(code, 0);
+  assert.equal(out.status, 'ok');
+  assert.deepEqual(out.unresolved, [{ file: 'README.md', line: 3, target: '../api/cli.py', reason: 'leaves the docs repo' }]);
+});

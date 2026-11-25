@@ -490,3 +490,17 @@ test('classify: with no entry resolving to a single file, an absent answer falls
   delete noIndex['docs/dev/README.md'];
   assert.equal(await absentFile(noIndex, 'dev'), 'docs/dev/architecture.md');
 });
+
+test('verify: a hop out of the repository says the link is a dead end; an in-repo fabricated hop does not', async () => {
+  const ctx = await planWalks(tempRepo({ 'README.md': '# App\n\nThe CLI source is [cli.py](../api/src/cli.py).\n' }));
+  const persona = ctx.plan.personas.find((p) => p.starts.includes('README.md'));
+  const tasks = stuck(persona.tasks.length, 'README.md');
+  for (const to of ['api/src/cli.py', '../api/src/cli.py']) {
+    const r = verifyWalk(ctx, reply(persona.id, [{ from: 'README.md', line: 3, to }], tasks));
+    assert.match(r.rejected[0].reason, /is not in this repository, so a link to it is a dead end for the reader: drop this hop and mark its tasks stuck at README\.md$/);
+  }
+  assert.equal(verifyWalk(ctx, reply(persona.id, [], tasks)).valid, true);
+  const repo = await planWalks(tempRepo(walkFiles()));
+  const inRepo = verifyWalk(repo, reply('dev', [{ from: 'docs/dev/README.md', line: 3, to: 'docs/usage/config.md' }], stuck(3, 'docs/dev/README.md')));
+  assert.match(inRepo.rejected[0].reason, /has no link to docs\/usage\/config\.md$/);
+});

@@ -41,8 +41,11 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   `record <run> <id>` checks one reply (stdin, through `<<'<eof>'`)
   against its kind's schema and rejects a reply with a line equal to the `eof`; `next <run>` retries invalid or
   missing replies (three attempts per job) and prints the next batch, or
-  `{"status": "done"}`; `collect <run>` prints `findings`, `other`, and
-  `modes`. The jobs:
+  `{"status": "done"}`; `collect <run>` prints `findings`, `other`,
+  `modes`, `codeRoots`, and `skipped`. `plan --code-root <dir>`
+  (repeatable) points the drift kinds at separate checkouts; a bad one plans
+  no drift and `collect` reports `CODE_ROOT_MISSING` and a `skipped` list.
+  The jobs:
 
   | Kind | One per | Scope | Waits for |
   |---|---|---|---|
@@ -140,7 +143,8 @@ Scripts print JSON (lint-mermaid: with `--json`). Exit code:
   deeper one, or one next to `mkdocs.yml`) is an unsupported layout, as is a
   malformed `antora.yml`: its AsciiDoc files skip component refs (`link:`
   macros included), listed on stderr, rather than report
-  them `REF_BROKEN`.
+  them `REF_BROKEN`. It lists links that leave a tracked doc's repo in
+  `unresolved` (`{file, line, target, reason}`), never as findings.
 - `scripts/lint-mermaid.mjs` — merval parse, init header, palette,
   contrast.
 - `scripts/doc-files.mjs`, `doc-chunks.mjs` — path expansion; drift ranges.

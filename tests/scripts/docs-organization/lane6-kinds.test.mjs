@@ -1,5 +1,8 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, realpathSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { KINDS, extractJson, unjudged } from '../../../module/skills/docs-organization/scripts/lane6-kinds.mjs';
 
 const TEXT = '# Title\n\nRun `app sync --all` to sync.\nIt is not uncommon to fail.\nTasks live in `~/.app.json`.\n';
@@ -207,4 +210,85 @@ test('every kind declares what its reply reads beyond the doc', () => {
   const by = (r) => Object.keys(KINDS).filter((k) => KINDS[k].reads === r).sort();
   assert.deepEqual(by('repo'), ['cold-read', 'diagram-drift', 'drift-verify', 'hero-demo']);
   assert.deepEqual(by('sources'), ['drift-cited']);
+});
+
+// --- --code-root cites ---
+
+const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'lane6-kinds-roots-')));
+after(() => rmSync(scratch, { recursive: true, force: true }));
+const R1 = join(scratch, 'api');
+const R2 = join(scratch, 'web');
+mkdirSync(join(R1, 'src'), { recursive: true });
+mkdirSync(R2);
+writeFileSync(join(R1, 'src/cli.py'), 'x\n');
+writeFileSync(join(R2, 'cli.js'), 'y\n');
+writeFileSync(join(scratch, 'secret.txt'), 's\n');
+symlinkSync(join(scratch, 'secret.txt'), join(R1, 'out'));
+const rooted = (over = {}) => ctx({ claims: [{ id: 'C1', kind: 'fact', line: '3', quote: 'q', target: 't' }], codeRoots: [R1, R2], ...over });
+const verdict = (o) => ({ verdicts: [{ id: 'C1', verdict: 'match', evidence: 'root 1: src/cli.py:1', ...o }] });
+const vr = (o, c = rooted()) => KINDS['drift-verify'].validate(verdict(o), c);
+
+test('roots: a root N cite inside its root is valid, several separated by "; "', () => {
+  assert.equal(vr({}).ok, true);
+  assert.equal(vr({ evidence: 'root 1: src/cli.py:1; root 2: cli.js:1-2' }).ok, true);
+  assert.equal(vr({ code_set: ['sync (root 2: cli.js:1)'] }).ok, true);
+});
+
+test('roots: a plain, out-of-range, absolute, escaping, or missing cite is rejected', () => {
+  assert.match(vr({ evidence: 'src/cli.py:1' }).reason, /not root N: path:line/);
+  assert.match(vr({ evidence: 'root 3: cli.js:1' }).reason, /names no root 3/);
+  assert.match(vr({ evidence: `root 1: ${join(scratch, 'secret.txt')}:1` }).reason, /has an absolute path/);
+  assert.match(vr({ evidence: `root 1: ${join(R2, 'cli.js')}:1` }).reason, /root's absolute path/);
+  assert.match(vr({ evidence: 'root 1: ../secret.txt:1' }).reason, /not inside root 1/);
+  assert.match(vr({ evidence: 'root 1: out:1' }).reason, /not inside root 1/);
+  assert.match(vr({ evidence: 'root 1: src/nope.py:1' }).reason, /not inside root 1/);
+  assert.match(vr({ code_set: ['sync (cli.js:1)'] }).reason, /not root N: path:line/);
+});
+
+test('roots: an unverifiable verdict needs no cite, but no field may carry a root path', () => {
+  assert.equal(vr({ verdict: 'unverifiable', evidence: 'in none of the roots' }).ok, true);
+  assert.match(vr({ verdict: 'drift', evidence: 'root 1: src/cli.py:1', code_says: `see ${R1}/src/cli.py`, instructs: false }).reason, /root's absolute path/);
+});
+
+test('roots: without roots, plain file:line evidence stays valid', () => {
+  assert.equal(KINDS['drift-verify'].validate(verdict({ evidence: 'src/cli.py:1' }), ctx({ claims: [{ id: 'C1' }] })).ok, true);
+});
+
+test('roots: diagram-drift cites are checked the same way', () => {
+  const dd = (f) => KINDS['diagram-drift'].validate({ findings: [{ element: 'A-->B', code_says: 'B gone', ...f }] }, rooted());
+  assert.equal(dd({ evidence: 'root 2: cli.js:1' }).ok, true);
+  assert.match(dd({ evidence: 'root 1: ../secret.txt:1' }).reason, /not inside root 1/);
+  assert.match(dd({ evidence: 'root 2: cli.js:1', code_says: R2 }).reason, /root's absolute path/);
+});
+
+test('roots: a finding whose cites span roots says so', () => {
+  const allClaims = [{ id: 'C1', kind: 'fact', line: '3', quote: 'q', target: 't' }];
+  const verdicts = [{ id: 'C1', verdict: 'drift', evidence: 'root 1: src/cli.py:1; root 2: cli.js:1', code_says: 'renamed', instructs: false }];
+  const [f] = KINDS['drift-verify'].toFindings({ verdicts }, job('drift-verify', { allClaims })).findings;
+  assert.match(f.note, /\(root 1: src\/cli\.py:1; root 2: cli\.js:1\); cites roots 1, 2$/);
+  const [one] = KINDS['drift-verify'].toFindings({ verdicts: [{ ...verdicts[0], evidence: 'root 1: src/cli.py:1; root 1: src/cli.py:2' }] }, job('drift-verify', { allClaims })).findings;
+  assert.doesNotMatch(one.note, /cites roots/);
+  const [d] = KINDS['diagram-drift'].toFindings({ findings: [{ element: 'A', code_says: 'x', evidence: 'root 1: a:1; root 2: b:1' }] }, job('diagram-drift', { startLine: 4 })).findings;
+  assert.match(d.note, /cites roots 1, 2$/);
+});
+
+test('roots: a code_set cite may hold parentheses in its path; root 0, .git, and a bare member are rejected', () => {
+  mkdirSync(join(R2, 'app/(mkt)'), { recursive: true });
+  writeFileSync(join(R2, 'app/(mkt)/page.tsx'), 'p\n');
+  mkdirSync(join(R1, '.git'), { recursive: true });
+  writeFileSync(join(R1, '.git/config'), 'url = https://token@example.invalid/x\n');
+  assert.equal(vr({ code_set: ['Page (root 2: app/(mkt)/page.tsx:1)'] }).ok, true);
+  assert.equal(vr({ evidence: 'root 2: app/(mkt)/page.tsx:1' }).ok, true);
+  assert.match(vr({ evidence: 'root 0: src/cli.py:1' }).reason, /names no root 0/);
+  assert.match(vr({ evidence: 'root 1: .git/config:1' }).reason, /inside \.git/);
+  assert.match(vr({ code_set: ['Page'] }).reason, /not root N: path:line/);
+});
+
+test('roots: a collision counts code_set cites; prose that only mentions "root 1:" is not one', () => {
+  const allClaims = [{ id: 'C1', kind: 'set', line: '3', quote: 'q', target: 't' }];
+  const base = { id: 'C1', verdict: 'drift', evidence: 'root 1: src/cli.py:1', code_says: 'x', instructs: false };
+  const note = (v) => KINDS['drift-verify'].toFindings({ verdicts: [{ ...base, ...v }] }, job('drift-verify', { allClaims })).findings[0].note;
+  assert.match(note({ code_set: ['sync (root 2: cli.js:1)'] }), /cites roots 1, 2$/);
+  assert.doesNotMatch(note({ evidence: 'see root 1: and root 2: in the README' }), /cites roots/);
+  assert.doesNotMatch(note({ evidence: 'cli.js:1' }), /cites roots/);
 });
