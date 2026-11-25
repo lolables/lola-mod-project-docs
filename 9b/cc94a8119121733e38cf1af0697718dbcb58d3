@@ -1,0 +1,21 @@
+module/skills/docs-organization/reference/rule-sources.md
+  s_0ec92510117f5f::t_cff85302f8c9a8 11-12
+module/skills/docs-organization/scripts/lane6.mjs
+  s_0ec92510117f5f::t_490b76e8dc7d8e 236-239
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9bcc94a8119121733e38cf1af0697718dbcb58d3",
+  "prompts": {},
+  "sessions": {
+    "s_0ec92510117f5f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6ea0d03c-930a-430d-a20b-dd1f3fbcc2f2",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "LLM (riotbox) <llm@riotbox>"
+    }
+  }
+}
